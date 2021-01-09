@@ -274,7 +274,6 @@ class KodiPlaylistEntity(KodiMediaEntity):
         # "file",
         "genre",
         # "rating",
-        "label",
         "thumbnail",
         "title",
         "track",

@@ -57,7 +57,9 @@ async def async_setup_entry(
     playlist_entity = KodiPlaylistEntity(
         kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
     )
-    async_add_entities([tv_entity, movies_entity, playlist_entity])
+    async_add_entities(
+        [tv_entity, movies_entity, playlist_entity], update_before_add=True
+    )
 
 
 async def async_setup_platform(
