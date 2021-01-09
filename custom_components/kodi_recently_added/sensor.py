@@ -8,7 +8,11 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
 from .const import CONF_HIDE_WATCHED, DOMAIN
-from .entities import KodiRecentlyAddedMoviesEntity, KodiRecentlyAddedTVEntity
+from .entities import (
+    KodiRecentlyAddedMoviesEntity,
+    KodiRecentlyAddedTVEntity,
+    KodiPlaylistEntity,
+)
 from .utils import find_matching_config_entry, find_matching_config_entry_for_host
 
 PLATFORM_SCHEMA = vol.Any(
@@ -50,7 +54,10 @@ async def async_setup_entry(
     movies_entity = KodiRecentlyAddedMoviesEntity(
         kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
     )
-    async_add_entities([tv_entity, movies_entity])
+    playlist_entity = KodiPlaylistEntity(
+        kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
+    )
+    async_add_entities([tv_entity, movies_entity, playlist_entity])
 
 
 async def async_setup_platform(
@@ -87,4 +94,8 @@ async def async_setup_platform(
 
     tv_entity = KodiRecentlyAddedTVEntity(kodi, config_entry.data, hide_watched)
     movies_entity = KodiRecentlyAddedMoviesEntity(kodi, config_entry.data, hide_watched)
-    async_add_entities([tv_entity, movies_entity])
+    playlist_entity = KodiPlaylistEntity(kodi, config_entry.data, hide_watched)
+    # Added the auto scan before adding he sensors
+    async_add_entities(
+        [tv_entity, movies_entity, playlist_entity], update_before_add=True
+    )

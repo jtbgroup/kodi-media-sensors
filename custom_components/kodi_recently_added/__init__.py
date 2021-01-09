@@ -24,9 +24,7 @@ async def async_setup_entry(
     }
 
     if not entry.unique_id:
-        hass.config_entries.async_update_entry(
-            entry, unique_id="kodi_recently_added_media"
-        )
+        hass.config_entries.async_update_entry(entry, unique_id="kodi_media_sensors")
 
     for component in PLATFORMS:
         hass.async_create_task(

@@ -16,6 +16,7 @@ class KodiMediaEntity(Entity):
     properties: List[str] = NotImplemented
     result_key: str = NotImplemented
     update_method: str = NotImplemented
+    playlistid: int(0) = NotImplemented
 
     def __init__(
         self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
@@ -41,9 +42,17 @@ class KodiMediaEntity(Entity):
     async def async_update(self) -> None:
         result = None
         try:
-            result = await self.kodi.call_method(
-                self.update_method, properties=self.properties
-            )
+            if self.playlistid > -1:
+                result = await self.kodi.call_method(
+                    self.update_method,
+                    properties=self.properties,
+                    playlistid=self.playlistid,
+                )
+            else:
+                result = await self.kodi.call_method(
+                    self.update_method, properties=self.properties
+                )
+
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_OFF
@@ -89,8 +98,10 @@ class KodiMediaEntity(Entity):
             return path
         # This looks strange, but the path needs to be quoted twice in order
         # to work.
-        quoted_path = parse.quote(parse.quote(path, safe=""))
-        return self.base_web_url + quoted_path
+        # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
+        quoted_path2 = parse.quote(parse.quote(path, safe="@"))
+        encoded = self.base_web_url + quoted_path2
+        return encoded
 
 
 class KodiRecentlyAddedTVEntity(KodiMediaEntity):
@@ -110,6 +121,7 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedEpisodes"
     result_key = "episodes"
+    playlistid = int(-1)
 
     @property
     def unique_id(self) -> str:
@@ -192,6 +204,7 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedMovies"
     result_key = "movies"
+    playlistid = int(-1)
 
     @property
     def unique_id(self) -> str:
@@ -244,6 +257,102 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
                 poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
             card["fanart"] = fanart
             card["poster"] = poster
+            card_json.append(card)
+
+        attrs["data"] = json.dumps(card_json)
+        return attrs
+
+
+class KodiPlaylistEntity(KodiMediaEntity):
+
+    properties = [
+        "album",
+        "albumid",
+        "artist",
+        "artistid",
+        "duration",
+        # "file",
+        "genre",
+        # "rating",
+        "label",
+        "thumbnail",
+        "title",
+        "track",
+        "year",
+        # "duration",
+        # "playcount",
+        # "dateadded",
+        # "episode",
+        # "tvshowid",
+    ]
+    playlistid = int(0)
+    update_method = "Playlist.GetItems"
+    result_key = "items"
+
+    @property
+    def unique_id(self) -> str:
+        return self.name
+
+    @property
+    def name(self) -> str:
+        return "kodi_playlist"
+
+    @property
+    def device_state_attributes(self) -> DeviceStateAttrs:
+        attrs = {}
+        card_json = [
+            {
+                "title_default": "$title",
+                "icon": "mdi:eye-off",
+            }
+        ]
+
+        _LOGGER.info("=====> " + str(self.data))
+        for item in self.data:
+            #     if self.hide_watched and movie["playcount"] > 0:
+            #         continue
+            #     try:
+            card = {
+                "album": item["album"],
+                "albumid": item["albumid"],
+                "artist": ",".join(item["artist"]),
+                "artistid": item["artistid"],
+                "duration": item["duration"],
+                "genre": ",".join(item["genre"]),
+                "label": item["label"],
+                "thumbnail": "",
+                "title": item["title"],
+                "track": item["track"],
+                "year": item["year"],
+                # "file": item["file"],
+                # "genre": item["genre"],
+                # "rating": item["rating"],
+                # "playcount": item["playcount"],
+                # "dateadded": item["dateadded"],
+                # "episode": item["episode"],
+                # "tvshowid": item["tvshowid"],
+                # "flag": movie["playcount"] == 0,
+                # "rating": round(movie["rating"], 1),
+                # "release": "$date",
+                # "runtime": movie["runtime"] // 60,
+                # "title": movie["title"],
+                # "studio": ",".join(movie["studio"]),
+            }
+            #         rating = round(movie["rating"], 1)
+            #         if rating:
+            #             rating = f"\N{BLACK STAR} {rating}"
+            #         card["rating"] = rating
+            thumbnail = item["thumbnail"]
+            #         poster = movie["art"].get("poster", "")
+            #     except KeyError:
+            #         _LOGGER.warning("Error parsing key from movie blob: %s", movie)
+            #         continue
+            if thumbnail:
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+            #     if poster:
+            #         poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+            card["thumbnail"] = thumbnail
+            #     card["poster"] = poster
             card_json.append(card)
 
         attrs["data"] = json.dumps(card_json)

@@ -5,6 +5,6 @@
   "documentation": "https://github.com/boralyl/kodi-recently-added",
   "issue_tracker": "https://github.com/boralyl/kodi-recently-added/issues",
   "domain": "kodi_recently_added",
-  "name": "Kodi Recently Added Media",
+  "name": "Kodi Media Sensors",
   "requirements": ["typing-extensions==3.7.4.1"]
 }
