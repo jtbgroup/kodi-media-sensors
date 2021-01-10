@@ -1,19 +1,23 @@
 import logging
 
 from homeassistant import config_entries, core
+from homeassistant.helpers import entity_registry
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_HOST
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-from .const import CONF_HIDE_WATCHED, DOMAIN
+from .const import CONF_HIDE_WATCHED, DOMAIN, KODI_DOMAIN_PLATFORM
 from .entities import (
     KodiRecentlyAddedMoviesEntity,
     KodiRecentlyAddedTVEntity,
     KodiPlaylistEntity,
 )
-from .utils import find_matching_config_entry, find_matching_config_entry_for_host
+from .utils import (
+    find_matching_config_entry,
+    find_matching_config_entry_for_host,
+)
 
 PLATFORM_SCHEMA = vol.Any(
     PLATFORM_SCHEMA.extend(
@@ -34,6 +38,10 @@ async def async_setup_entry(
     """Setup sensors from a config entry created in the integrations UI."""
     conf = hass.data[DOMAIN][config_entry.entry_id]
     kodi_config_entry = find_matching_config_entry(hass, conf["kodi_config_entry_id"])
+    reg = await hass.helpers.entity_registry.async_get_registry()
+    kodi_entity_id = reg.async_get_entity_id(
+        KODI_DOMAIN_PLATFORM, KODI_DOMAIN, kodi_config_entry.entry_id
+    )
 
     try:
         data = hass.data[KODI_DOMAIN][conf["kodi_config_entry_id"]]
@@ -55,7 +63,10 @@ async def async_setup_entry(
         kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
     )
     playlist_entity = KodiPlaylistEntity(
-        kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
+        kodi,
+        kodi_config_entry.data,
+        kodi_entity_id,
+        hide_watched=conf.get(CONF_HIDE_WATCHED, False),
     )
     async_add_entities(
         [tv_entity, movies_entity, playlist_entity], update_before_add=True

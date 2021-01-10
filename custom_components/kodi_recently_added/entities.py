@@ -13,10 +13,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class KodiMediaEntity(Entity):
-    properties: List[str] = NotImplemented
     result_key: str = NotImplemented
     update_method: str = NotImplemented
-    playlistid: int(0) = NotImplemented
+    call_args: tuple()
 
     def __init__(
         self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
@@ -39,19 +38,17 @@ class KodiMediaEntity(Entity):
     def state(self) -> Optional[str]:
         return self._state
 
+    async def modify_params(self):
+        return
+
     async def async_update(self) -> None:
         result = None
+
+        await self.modify_params()
+
         try:
-            if self.playlistid > -1:
-                result = await self.kodi.call_method(
-                    self.update_method,
-                    properties=self.properties,
-                    playlistid=self.playlistid,
-                )
-            else:
-                result = await self.kodi.call_method(
-                    self.update_method, properties=self.properties
-                )
+            # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
+            result = await self.kodi.call_method(self.update_method, **self.call_args)
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
@@ -121,7 +118,7 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedEpisodes"
     result_key = "episodes"
-    playlistid = int(-1)
+    call_args = {"properties": properties}
 
     @property
     def unique_id(self) -> str:
@@ -204,7 +201,7 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedMovies"
     result_key = "movies"
-    playlistid = int(-1)
+    call_args = {"properties": properties}
 
     @property
     def unique_id(self) -> str:
@@ -278,15 +275,32 @@ class KodiPlaylistEntity(KodiMediaEntity):
         "title",
         "track",
         "year",
-        # "duration",
         # "playcount",
         # "dateadded",
         # "episode",
         # "tvshowid",
     ]
-    playlistid = int(0)
     update_method = "Playlist.GetItems"
     result_key = "items"
+    player_id = int(-1)
+    player_type = ""
+
+    def __init__(
+        self,
+        kodi: Kodi,
+        config: KodiConfig,
+        kodi_entity_id: str,
+        hide_watched: bool = False,
+    ):
+        super().__init__(kodi, config, hide_watched)
+        self.kodi_entity_id = kodi_entity_id
+        self.call_args = {"properties": self.properties, "playlistid": self.player_id}
+
+    # def registerListener(self):
+    #     async_listen
+
+    def load_args(self, player_id):
+        self.call_args = {"properties": self.properties, "playlistid": player_id}
 
     @property
     def unique_id(self) -> str:
@@ -296,12 +310,22 @@ class KodiPlaylistEntity(KodiMediaEntity):
     def name(self) -> str:
         return "kodi_playlist"
 
+    async def modify_params(self):
+        result2 = await self.kodi.call_method("Player.GetActivePlayers")
+        player_id = result2[0]["playerid"]
+        if self.player_id != player_id:
+            self.player_id = player_id
+            self.player_type = result2[0]["type"]
+            self.load_args(player_id)
+
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
         attrs = {}
         card_json = [
             {
                 "title_default": "$title",
+                "player_type": self.player_type,
+                "kodi_entity_id": self.kodi_entity_id,
                 "icon": "mdi:eye-off",
             }
         ]
@@ -313,10 +337,7 @@ class KodiPlaylistEntity(KodiMediaEntity):
             #     try:
             card = {
                 "album": item["album"],
-                "albumid": item["albumid"],
                 "artist": ",".join(item["artist"]),
-                "artistid": item["artistid"],
-                "duration": item["duration"],
                 "genre": ",".join(item["genre"]),
                 "label": item["label"],
                 "thumbnail": "",
@@ -337,6 +358,13 @@ class KodiPlaylistEntity(KodiMediaEntity):
                 # "title": movie["title"],
                 # "studio": ",".join(movie["studio"]),
             }
+            if "albumid" in item:
+                card["albumid"] = item["albumid"]
+            if "artistid" in item:
+                card["artistid"] = item["artistid"]
+            if "duration" in item:
+                card["duration"] = item["duration"]
+
             #         rating = round(movie["rating"], 1)
             #         if rating:
             #             rating = f"\N{BLACK STAR} {rating}"
