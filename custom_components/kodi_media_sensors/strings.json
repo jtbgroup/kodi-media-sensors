@@ -19,7 +19,7 @@
         "title": "Kodi Media Sensors Options",
         "description": "Additional settings for the component.",
         "data": {
-          "hide_watched": "Exclude media that is marked as watched."
+          "hide_watched": "Exclude recently added media that is marked as watched (movie sensors)."
         }
       }
     }

@@ -282,7 +282,7 @@ class KodiPlaylistEntity(KodiMediaEntity):
     ]
     update_method = "Playlist.GetItems"
     result_key = "items"
-    player_id = int(-1)
+    player_id = int(0)
     player_type = ""
 
     def __init__(
@@ -294,13 +294,13 @@ class KodiPlaylistEntity(KodiMediaEntity):
     ):
         super().__init__(kodi, config, hide_watched)
         self.kodi_entity_id = kodi_entity_id
-        self.call_args = {"properties": self.properties, "playlistid": self.player_id}
+        self.load_args()
 
     # def registerListener(self):
     #     async_listen
 
-    def load_args(self, player_id):
-        self.call_args = {"properties": self.properties, "playlistid": player_id}
+    def load_args(self):
+        self.call_args = {"properties": self.properties, "playlistid": self.player_id}
 
     @property
     def unique_id(self) -> str:
@@ -312,21 +312,24 @@ class KodiPlaylistEntity(KodiMediaEntity):
 
     async def modify_params(self):
         result2 = await self.kodi.call_method("Player.GetActivePlayers")
-        player_id = result2[0]["playerid"]
-        if self.player_id != player_id:
-            self.player_id = player_id
-            self.player_type = result2[0]["type"]
-            self.load_args(player_id)
+        if len(result2) == 0:
+            self.player_id = int(0)
+            self.player_type = "audio"
+            self.load_args()
+        else:
+            player_id = result2[0]["playerid"]
+            if self.player_id != player_id:
+                self.player_id = player_id
+                self.player_type = result2[0]["type"]
+                self.load_args()
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
         attrs = {}
         card_json = [
             {
-                "title_default": "$title",
                 "player_type": self.player_type,
                 "kodi_entity_id": self.kodi_entity_id,
-                "icon": "mdi:eye-off",
             }
         ]
 

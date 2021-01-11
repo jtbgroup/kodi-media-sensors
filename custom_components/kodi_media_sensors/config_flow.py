@@ -13,7 +13,7 @@ OPTIONS_SCHEMA = vol.Schema({vol.Optional(CONF_HIDE_WATCHED, default=False): boo
 
 
 class KodiRecentlyAddedConfifFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Kodi Recently Added config flow."""
+    """Kodi Media Sensor config flow."""
 
     async def async_step_user(self, user_input: Optional[Dict[str, Any]]):
         """Handle a flow initialized via the user interface."""
@@ -42,7 +42,7 @@ class KodiRecentlyAddedConfifFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 return self.async_create_entry(
-                    title="Kodi Recently Added", data={"kodi_entry_id": config_entry_id}
+                    title="Kodi Media Sensors", data={"kodi_entry_id": config_entry_id}
                 )
 
         return self.async_show_form(

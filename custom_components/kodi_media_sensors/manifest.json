@@ -1,0 +1,10 @@
+{
+  "codeowners": ["@boralyl", "@Gautier Vanderslyen"],
+  "config_flow": true,
+  "dependencies": ["kodi"],
+  "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
+  "issue_tracker": "https://github.com/jtbgroup/kodi-media-sensors/issues",
+  "domain": "kodi_media_sensors",
+  "name": "Kodi Media Sensors",
+  "requirements": ["typing-extensions==3.7.4.1"]
+}

@@ -1,4 +1,4 @@
-"""The Kodi Recently Added integration."""
+"""The Kodi Media Sensor integration."""
 
 import asyncio
 import logging
@@ -64,6 +64,6 @@ async def options_update_listener(
 
 
 async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
-    """Set up the Kodi Recently Added Media component from yaml configuration."""
+    """Set up the Kodi Media Sensor component from yaml configuration."""
     hass.data.setdefault(DOMAIN, {})
     return True
