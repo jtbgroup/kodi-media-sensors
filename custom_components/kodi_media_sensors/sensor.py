@@ -1,6 +1,7 @@
 import logging
 
 from homeassistant import config_entries, core
+from homeassistant.core import callback
 from homeassistant.helpers import entity_registry
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -70,6 +71,43 @@ async def async_setup_entry(
     )
     async_add_entities(
         [tv_entity, movies_entity, playlist_entity], update_before_add=True
+    )
+
+    @callback
+    async def template_bsensor_state_listener(event):
+        """Called when the target device changes state."""
+        if event.data.get("old_state"):
+            old_state = str(event.data.get("old_state").state)
+            new_state = str(event.data.get("new_state").state)
+            if old_state == "playing" and new_state == "playing":
+                await playlist_entity.async_update()
+                datas = str(playlist_entity.device_state_attributes.get("data"))
+                sensor_name = "sensor." + playlist_entity.name
+                hass.bus.fire(
+                    "state_changed",
+                    {
+                        "entity_id": sensor_name,
+                        "old_state": {
+                            "entity_id": sensor_name,
+                            "state": playlist_entity.state,
+                            "attributes": {
+                                "data": datas,
+                                "friendly_name": playlist_entity.name,
+                            },
+                        },
+                        "new_state": {
+                            "entity_id": sensor_name,
+                            "state": playlist_entity.state,
+                            "attributes": {
+                                "data": datas,
+                                "friendly_name": playlist_entity.name,
+                            },
+                        },
+                    },
+                )
+
+    hass.helpers.event.async_track_state_change_event(
+        kodi_entity_id, template_bsensor_state_listener
     )
 
 
