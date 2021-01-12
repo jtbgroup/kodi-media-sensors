@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
 from urllib import parse
 
@@ -38,21 +39,23 @@ class KodiMediaEntity(Entity):
     def state(self) -> Optional[str]:
         return self._state
 
-    async def modify_params(self):
-        return
+    async def before_update(self) -> bool:
+        return True
 
     async def async_update(self) -> None:
         result = None
+        can_update = await self.before_update()
 
-        await self.modify_params()
+        if can_update:
+            try:
+                # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
+                result = await self.kodi.call_method(
+                    self.update_method, **self.call_args
+                )
 
-        try:
-            # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
-            result = await self.kodi.call_method(self.update_method, **self.call_args)
-
-        except Exception:
-            _LOGGER.exception("Error updating sensor, is kodi running?")
-            self._state = STATE_OFF
+            except Exception:
+                _LOGGER.exception("Error updating sensor, is kodi running?")
+                self._state = STATE_OFF
 
         if result:
             self._handle_result(result)
@@ -282,8 +285,8 @@ class KodiPlaylistEntity(KodiMediaEntity):
     ]
     update_method = "Playlist.GetItems"
     result_key = "items"
-    player_id = int(0)
-    player_type = ""
+    player_id = int(-1)
+    player_type = "unknown"
 
     def __init__(
         self,
@@ -296,9 +299,6 @@ class KodiPlaylistEntity(KodiMediaEntity):
         self.kodi_entity_id = kodi_entity_id
         self.load_args()
 
-    # def registerListener(self):
-    #     async_listen
-
     def load_args(self):
         self.call_args = {"properties": self.properties, "playlistid": self.player_id}
 
@@ -310,11 +310,19 @@ class KodiPlaylistEntity(KodiMediaEntity):
     def name(self) -> str:
         return "kodi_playlist"
 
-    async def modify_params(self):
-        result2 = await self.kodi.call_method("Player.GetActivePlayers")
+    async def before_update(self) -> bool:
+        result = False
+        result2 = {}
+        # this is necessary because the player is not instantly ready when a GoTo function is called
+        time.sleep(1)
+        try:
+            result2 = await self.kodi.call_method("Player.GetActivePlayers")
+        except Exception:
+            _LOGGER.exception("Error updating sensor, is kodi running?")
+
         if len(result2) == 0:
-            self.player_id = int(0)
-            self.player_type = "audio"
+            self.player_id = int(-1)
+            self.player_type = "unknown"
             self.load_args()
         else:
             player_id = result2[0]["playerid"]
@@ -322,6 +330,8 @@ class KodiPlaylistEntity(KodiMediaEntity):
                 self.player_id = player_id
                 self.player_type = result2[0]["type"]
                 self.load_args()
+            result = True
+        return result
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
@@ -338,52 +348,56 @@ class KodiPlaylistEntity(KodiMediaEntity):
             #     if self.hide_watched and movie["playcount"] > 0:
             #         continue
             #     try:
-            card = {
-                "album": item["album"],
-                "artist": ",".join(item["artist"]),
-                "genre": ",".join(item["genre"]),
-                "label": item["label"],
-                "thumbnail": "",
-                "title": item["title"],
-                "track": item["track"],
-                "year": item["year"],
-                # "file": item["file"],
-                # "genre": item["genre"],
-                # "rating": item["rating"],
-                # "playcount": item["playcount"],
-                # "dateadded": item["dateadded"],
-                # "episode": item["episode"],
-                # "tvshowid": item["tvshowid"],
-                # "flag": movie["playcount"] == 0,
-                # "rating": round(movie["rating"], 1),
-                # "release": "$date",
-                # "runtime": movie["runtime"] // 60,
-                # "title": movie["title"],
-                # "studio": ",".join(movie["studio"]),
-            }
-            if "albumid" in item:
-                card["albumid"] = item["albumid"]
-            if "artistid" in item:
-                card["artistid"] = item["artistid"]
-            if "duration" in item:
-                card["duration"] = item["duration"]
+            if item["type"] == "unknown":
+                card = {}
+            else:
+                card = {
+                    "album": item["album"],
+                    "artist": ",".join(item["artist"]),
+                    "genre": ",".join(item["genre"]),
+                    "label": item["label"],
+                    "thumbnail": "",
+                    "title": item["title"],
+                    "track": item["track"],
+                    "year": item["year"],
+                    # "file": item["file"],
+                    # "genre": item["genre"],
+                    # "rating": item["rating"],
+                    # "playcount": item["playcount"],
+                    # "dateadded": item["dateadded"],
+                    # "episode": item["episode"],
+                    # "tvshowid": item["tvshowid"],
+                    # "flag": movie["playcount"] == 0,
+                    # "rating": round(movie["rating"], 1),
+                    # "release": "$date",
+                    # "runtime": movie["runtime"] // 60,
+                    # "title": movie["title"],
+                    # "studio": ",".join(movie["studio"]),
+                }
+                if "albumid" in item:
+                    card["albumid"] = item["albumid"]
+                if "artistid" in item:
+                    card["artistid"] = item["artistid"]
+                if "duration" in item:
+                    card["duration"] = item["duration"]
 
-            #         rating = round(movie["rating"], 1)
-            #         if rating:
-            #             rating = f"\N{BLACK STAR} {rating}"
-            #         card["rating"] = rating
-            thumbnail = item["thumbnail"]
-            #         poster = movie["art"].get("poster", "")
-            #     except KeyError:
-            #         _LOGGER.warning("Error parsing key from movie blob: %s", movie)
-            #         continue
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-            #     if poster:
-            #         poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-            card["thumbnail"] = thumbnail
-            #     card["poster"] = poster
+                #         rating = round(movie["rating"], 1)
+                #         if rating:
+                #             rating = f"\N{BLACK STAR} {rating}"
+                #         card["rating"] = rating
+                thumbnail = item["thumbnail"]
+                #         poster = movie["art"].get("poster", "")
+                #     except KeyError:
+                #         _LOGGER.warning("Error parsing key from movie blob: %s", movie)
+                #         continue
+                if thumbnail:
+                    thumbnail = self.get_web_url(
+                        parse.unquote(thumbnail)[8:].strip("/")
+                    )
+                #     if poster:
+                #         poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                card["thumbnail"] = thumbnail
+                #     card["poster"] = poster
             card_json.append(card)
-
         attrs["data"] = json.dumps(card_json)
         return attrs
