@@ -12,8 +12,8 @@ _LOGGER = logging.getLogger(__name__)
 OPTIONS_SCHEMA = vol.Schema({vol.Optional(CONF_HIDE_WATCHED, default=False): bool})
 
 
-class KodiRecentlyAddedConfifFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Kodi Media Sensor config flow."""
+class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Kodi Media Sensors config flow."""
 
     async def async_step_user(self, user_input: Optional[Dict[str, Any]]):
         """Handle a flow initialized via the user interface."""
