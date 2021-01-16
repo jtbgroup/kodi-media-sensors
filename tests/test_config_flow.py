@@ -21,7 +21,7 @@ async def test_flow_init_kodi_not_configured(hass):
         "description_placeholders": None,
         "errors": {"base": "kodi_not_configured"},
         "flow_id": mock.ANY,
-        "handler": "kodi_recently_added",
+        "handler": "kodi_media_sensors",
         "step_id": "user",
         "type": "form",
     } == result
@@ -67,7 +67,7 @@ async def test_flow_init_kodi_is_configured(hass):
         "description_placeholders": None,
         "errors": {},
         "flow_id": mock.ANY,
-        "handler": "kodi_recently_added",
+        "handler": "kodi_media_sensors",
         "step_id": "user",
         "type": "form",
     } == result
@@ -119,7 +119,7 @@ async def test_flow_user_setp_success(hass):
         "version": 1,
         "type": "create_entry",
         "flow_id": mock.ANY,
-        "handler": "kodi_recently_added",
+        "handler": "kodi_media_sensors",
         "title": "Kodi Recently Added",
         "data": {"kodi_entry_id": "bar"},
         "description": None,
@@ -133,7 +133,7 @@ async def test_options_flow(hass):
     """Test config flow options."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        unique_id="kodi_recently_added_media",
+        unique_id="kodi_media_sensors",
         data={"kodi_entry_id": "abc"},
     )
     config_entry.add_to_hass(hass)
