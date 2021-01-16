@@ -6,10 +6,16 @@ from homeassistant.components.kodi.const import DOMAIN as KODI_DOMAIN
 from homeassistant.core import callback
 import voluptuous as vol
 
-from .const import CONF_HIDE_WATCHED, CONF_KODI_INSTANCE, DOMAIN
+from .const import (
+    OPTION_HIDE_WATCHED,
+    CONF_KODI_INSTANCE,
+    DOMAIN,
+    CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
+    CONF_SENSOR_RECENTLY_ADDED_MOVIE,
+    CONF_SENSOR_PLAYLIST,
+)
 
 _LOGGER = logging.getLogger(__name__)
-OPTIONS_SCHEMA = vol.Schema({vol.Optional(CONF_HIDE_WATCHED, default=False): bool})
 
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -24,7 +30,12 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if entry.source != "ignore"
         }
         data_schema = vol.Schema(
-            {vol.Required(CONF_KODI_INSTANCE): vol.In(list(kodi_instances.values()))}
+            {
+                vol.Required(CONF_KODI_INSTANCE): vol.In(list(kodi_instances.values())),
+                vol.Optional(CONF_SENSOR_RECENTLY_ADDED_TVSHOW, default=False): bool,
+                vol.Optional(CONF_SENSOR_RECENTLY_ADDED_MOVIE, default=False): bool,
+                vol.Optional(CONF_SENSOR_PLAYLIST, default=False): bool,
+            }
         )
 
         errors = {}
@@ -42,7 +53,17 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 return self.async_create_entry(
-                    title="Kodi Media Sensors", data={"kodi_entry_id": config_entry_id}
+                    title="Kodi Media Sensors",
+                    data={
+                        CONF_KODI_INSTANCE: config_entry_id,
+                        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: user_input[
+                            CONF_SENSOR_RECENTLY_ADDED_TVSHOW
+                        ],
+                        CONF_SENSOR_RECENTLY_ADDED_MOVIE: user_input[
+                            CONF_SENSOR_RECENTLY_ADDED_MOVIE
+                        ],
+                        CONF_SENSOR_PLAYLIST: user_input[CONF_SENSOR_PLAYLIST],
+                    },
                 )
 
         return self.async_show_form(
@@ -69,9 +90,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        hide_watched = self.config_entry.options.get(CONF_HIDE_WATCHED, False)
+        hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
+
         options_schema = vol.Schema(
-            {vol.Optional(CONF_HIDE_WATCHED, default=hide_watched): bool}
+            {vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool}
         )
         return self.async_show_form(
             step_id="init",

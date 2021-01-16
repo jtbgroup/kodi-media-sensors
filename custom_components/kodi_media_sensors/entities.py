@@ -343,7 +343,7 @@ class KodiPlaylistEntity(KodiMediaEntity):
             }
         ]
 
-        _LOGGER.info("=====> " + str(self.data))
+        _LOGGER.debug("=====> " + str(self.data))
         for item in self.data:
             #     if self.hide_watched and movie["playcount"] > 0:
             #         continue

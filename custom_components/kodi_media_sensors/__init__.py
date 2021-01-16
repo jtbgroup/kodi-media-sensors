@@ -5,7 +5,14 @@ import logging
 
 from homeassistant import config_entries, core
 
-from .const import CONF_HIDE_WATCHED, DOMAIN
+from .const import (
+    OPTION_HIDE_WATCHED,
+    DOMAIN,
+    CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
+    CONF_SENSOR_RECENTLY_ADDED_MOVIE,
+    CONF_SENSOR_PLAYLIST,
+    CONF_KODI_INSTANCE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
@@ -15,11 +22,17 @@ async def async_setup_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
 ) -> bool:
     """Set up platforms from a ConfigEntry."""
-    kodi_entry_id = entry.data["kodi_entry_id"]
+    kodi_config_entry_id = entry.data[CONF_KODI_INSTANCE]
+    sensor_recently_added_tvshow = entry.data[CONF_SENSOR_RECENTLY_ADDED_TVSHOW]
+    sensor_recently_added_movie = entry.data[CONF_SENSOR_RECENTLY_ADDED_MOVIE]
+    sensor_playlist = entry.data[CONF_SENSOR_PLAYLIST]
     unsub_options_update_listener = entry.add_update_listener(options_update_listener)
     hass.data[DOMAIN][entry.entry_id] = {
-        "hide_watched": entry.options.get(CONF_HIDE_WATCHED, False),
-        "kodi_config_entry_id": kodi_entry_id,
+        OPTION_HIDE_WATCHED: entry.options.get(OPTION_HIDE_WATCHED, False),
+        CONF_KODI_INSTANCE: kodi_config_entry_id,
+        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: sensor_recently_added_tvshow,
+        CONF_SENSOR_RECENTLY_ADDED_MOVIE: sensor_recently_added_movie,
+        CONF_SENSOR_PLAYLIST: sensor_playlist,
         "unsub_options_update_listener": unsub_options_update_listener,
     }
 

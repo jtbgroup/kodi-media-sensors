@@ -9,7 +9,15 @@ from homeassistant.const import CONF_HOST
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
-from .const import CONF_HIDE_WATCHED, DOMAIN, KODI_DOMAIN_PLATFORM
+from .const import (
+    OPTION_HIDE_WATCHED,
+    DOMAIN,
+    KODI_DOMAIN_PLATFORM,
+    CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
+    CONF_SENSOR_RECENTLY_ADDED_MOVIE,
+    CONF_SENSOR_PLAYLIST,
+    CONF_KODI_INSTANCE,
+)
 from .entities import (
     KodiRecentlyAddedMoviesEntity,
     KodiRecentlyAddedTVEntity,
@@ -24,7 +32,7 @@ PLATFORM_SCHEMA = vol.Any(
     PLATFORM_SCHEMA.extend(
         {
             vol.Required(CONF_HOST): cv.string,
-            vol.Optional(CONF_HIDE_WATCHED, default=False): bool,
+            vol.Optional(OPTION_HIDE_WATCHED, default=False): bool,
         }
     ),
 )
@@ -38,14 +46,14 @@ async def async_setup_entry(
 ):
     """Setup sensors from a config entry created in the integrations UI."""
     conf = hass.data[DOMAIN][config_entry.entry_id]
-    kodi_config_entry = find_matching_config_entry(hass, conf["kodi_config_entry_id"])
+    kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
     reg = await hass.helpers.entity_registry.async_get_registry()
     kodi_entity_id = reg.async_get_entity_id(
         KODI_DOMAIN_PLATFORM, KODI_DOMAIN, kodi_config_entry.entry_id
     )
 
     try:
-        data = hass.data[KODI_DOMAIN][conf["kodi_config_entry_id"]]
+        data = hass.data[KODI_DOMAIN][conf[CONF_KODI_INSTANCE]]
     except KeyError:
         config_entries = [
             entry.as_dict() for entry in hass.config_entries.async_entries(KODI_DOMAIN)
@@ -57,21 +65,41 @@ async def async_setup_entry(
         return
 
     kodi = data[DATA_KODI]
-    tv_entity = KodiRecentlyAddedTVEntity(
-        kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
-    )
-    movies_entity = KodiRecentlyAddedMoviesEntity(
-        kodi, kodi_config_entry.data, hide_watched=conf.get(CONF_HIDE_WATCHED, False)
-    )
-    playlist_entity = KodiPlaylistEntity(
-        kodi,
-        kodi_config_entry.data,
-        kodi_entity_id,
-        hide_watched=conf.get(CONF_HIDE_WATCHED, False),
-    )
-    async_add_entities(
-        [tv_entity, movies_entity, playlist_entity], update_before_add=True
-    )
+    sensorsList = list()
+    removeSensorList = list()
+
+    if conf.get(CONF_SENSOR_RECENTLY_ADDED_TVSHOW):
+        tv_entity = KodiRecentlyAddedTVEntity(
+            kodi,
+            kodi_config_entry.data,
+            hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
+        )
+        sensorsList.append(tv_entity)
+    else:
+        removeSensorList.append(CONF_SENSOR_RECENTLY_ADDED_TVSHOW)
+
+    if conf.get(CONF_SENSOR_RECENTLY_ADDED_MOVIE):
+        movies_entity = KodiRecentlyAddedMoviesEntity(
+            kodi,
+            kodi_config_entry.data,
+            hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
+        )
+        sensorsList.append(movies_entity)
+    else:
+        removeSensorList.append(CONF_SENSOR_RECENTLY_ADDED_MOVIE)
+
+    if conf.get(CONF_SENSOR_PLAYLIST):
+        playlist_entity = KodiPlaylistEntity(
+            kodi,
+            kodi_config_entry.data,
+            kodi_entity_id,
+            hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
+        )
+        sensorsList.append(playlist_entity)
+    else:
+        removeSensorList.append(CONF_SENSOR_PLAYLIST)
+
+    async_add_entities(sensorsList, update_before_add=True)
 
     @callback
     async def template_bsensor_state_listener(event):
@@ -116,7 +144,7 @@ async def async_setup_platform(
 ) -> None:
     """Setup sensors from yaml configuration."""
     host = config[CONF_HOST]
-    hide_watched = config[CONF_HIDE_WATCHED]
+    hide_watched = config[OPTION_HIDE_WATCHED]
     config_entry = find_matching_config_entry_for_host(hass, host)
     if config_entry is None:
         hosts = [

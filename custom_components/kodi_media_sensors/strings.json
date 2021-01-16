@@ -6,7 +6,10 @@
     "step": {
       "user": {
         "data": {
-          "kodi_entry_id": "Kodi integration"
+          "kodi_entry_id": "Kodi integration",
+          "sensor_recently_added_tvshow": "Use Sensor recently added TV Show",
+          "sensor_recently_added_movie": "Use Sensor recently added Movie",
+          "sensor_playlist": "Use Sensor playlist"
         },
         "description": "Select which Kodi integration to use.",
         "title": "Setup"
@@ -19,7 +22,7 @@
         "title": "Kodi Media Sensors Options",
         "description": "Additional settings for the component.",
         "data": {
-          "hide_watched": "Exclude recently added media that is marked as watched (movie sensors)."
+          "hide_watched": "Exclude recently added video media that is marked as watched (movie sensors)."
         }
       }
     }
