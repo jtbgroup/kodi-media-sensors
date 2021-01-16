@@ -1,6 +1,6 @@
 {
   "config_flow": true,
-  "documentation": "https://github.com/boralyl/kodi-recently-added",
+  "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
   "domains": ["sensor"],
   "homeassistant": "0.115.0",
   "iot_class": "Local Polling",
