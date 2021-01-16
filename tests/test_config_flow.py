@@ -8,7 +8,7 @@ from custom_components.kodi_media_sensors.const import (
     CONF_KODI_INSTANCE,
     DOMAIN,
 )
-from custom_components.kodi_recently_added.utils import KODI_DOMAIN
+from custom_components.kodi_media_sensors.utils import KODI_DOMAIN
 
 
 async def test_flow_init_kodi_not_configured(hass):
