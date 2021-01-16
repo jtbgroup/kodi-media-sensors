@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.kodi_recently_added.utils import (
+from custom_components.kodi_media_sensors.utils import (
     KODI_DOMAIN,
     find_matching_config_entry,
     find_matching_config_entry_for_host,

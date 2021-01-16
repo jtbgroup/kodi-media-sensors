@@ -3,8 +3,8 @@ from unittest import mock
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.kodi_recently_added.const import (
-    CONF_HIDE_WATCHED,
+from custom_components.kodi_media_sensors.const import (
+    OPTION_HIDE_WATCHED,
     CONF_KODI_INSTANCE,
     DOMAIN,
 )

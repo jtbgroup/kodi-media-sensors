@@ -1,7 +1,7 @@
 """Tests for entities.py."""
 from unittest import mock
 
-from custom_components.kodi_recently_added.entities import KodiMediaEntity
+from custom_components.kodi_media_sensors.entities import KodiMediaEntity
 
 
 def test_kodi_media_entity_init_base_web_url_https():
