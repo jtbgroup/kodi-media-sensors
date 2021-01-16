@@ -7,9 +7,9 @@
 
 Home Assistant component to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Playlist Media Card](https://github.com/jtbgroup/playlist-media-card) with data coming from Kodi.
 
-This component is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits)
+This component is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-![Kodi Recently Added Media](https://raw.githubusercontent.com/boralyl/kodi-recently-added/master/assets/example.png)
+![Kodi Recently Added Media](https://github.com/jtbgroup/kodi-media-sensors/tree/master/assets/example.png)
 
 # Table of Contents
 
