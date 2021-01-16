@@ -121,7 +121,7 @@ async def test_flow_user_setp_success(hass):
         "flow_id": mock.ANY,
         "handler": "kodi_media_sensors",
         "title": "Kodi Media Sensors",
-        "data": {"kodi_config_entry_id": "bar"},
+        "data": {"kodi_config_entry_id": "bar","sensor_playlist": False, "sensor_recently_added_movie": False, "sensor_recently_added_tvshow": False},
         "description": None,
         "description_placeholders": None,
         "result": mock.ANY,
