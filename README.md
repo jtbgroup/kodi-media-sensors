@@ -43,7 +43,7 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 ** This method is not recommended **
 
 1. In your `/config` directory, create a `custom_components` folder if one does not exist.
-2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
+2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/tree/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
 3. Restart Home Assistant.
 4. Go to [Integration Installation](#integration-installation) your sensor using the options.
 
