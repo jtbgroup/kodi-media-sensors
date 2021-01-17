@@ -17,10 +17,11 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
   - [Pre-Installation](#pre-installation)
   - [HACS Install](#hacs-install)
   - [Manual Install](#manual-install)
-  - [Integration Installation](#integration_installation)
+  - [Integration Installation](#integration-installation)
 - [Configuration](#configuration)
   - [Configuring via Integrations](#configuring-via-integrations)
   - [Card Configuration](#card-configuration)
+- [Available Sensors](#available-sensors)
 - [Upgrading from configuration.yaml to UI integration](#upgrading-from-configurationyaml-to-ui-integration)
 - [Known Issues](#known-issues)
 - [Credits](#credits)
@@ -42,15 +43,15 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 ** This method is not recommended **
 
 1. In your `/config` directory, create a `custom_components` folder if one does not exist.
-2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/tree/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
+2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
 3. Restart Home Assistant.
-4. Go to [Integration Installation](#integration_installation) your sensor using the options.
+4. Go to [Integration Installation](#integration-installation) your sensor using the options.
 
 ### Integration Installation
 
 1. After Automatic install or manual install, go to the Integration panel (under Configuration section) and search for the ne component by clicking on the button 'Add Integration'. Enter the name of the component (Kodi Media Sensors).
 2. During the installation, choose the Kodi entity previously installed.
-3. Select the sensors you want to use (see [Available Sensors](#available_sensors))
+3. Select the sensors you want to use (see [Available Sensors](#available-sensors))
 4. Click Submit
 4. You should now see new entities in Home Assistant (one for each sensor activated)
 
