@@ -5,7 +5,7 @@
 [![](https://img.shields.io/github/license/jtbgroup/kodi-media-sensors?style=for-the-badge)](LICENSE)
 [![](https://img.shields.io/github/workflow/status/jtbgroup/kodi-media-sensors/Python%20package?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors/actions)
 
-Home Assistant component to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Playlist Media Card](https://github.com/jtbgroup/playlist-media-card) with data coming from Kodi.
+Home Assistant component to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Playlist Media Card](https://github.com/jtbgroup/kodi-playlist-card) with data coming from Kodi.
 
 This component is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
@@ -33,7 +33,7 @@ This component is based on the project of Aaron Godfrey (https://github.com/bora
 ### HACS Install
 
 1. Search for `Kodi Media Sensors` under `Integrations` in the HACS Store tab.
-2. Install the card: [Playlist Media Card](https://github.com/jtbgroup) or [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) 
+2. Install the card: [Playlist Media Card](https://github.com/jtbgroup/kodi-playlist-card) or [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) 
 3. Add the code for the card to your `ui-lovelace.yaml`, or via the lovelace dashboard.
 5. **You will need to restart after installation for the component to start working.**
 6. [Configure](#configuration) your sensor using the options.
