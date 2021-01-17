@@ -5,11 +5,11 @@
 [![](https://img.shields.io/github/license/jtbgroup/kodi-media-sensors?style=for-the-badge)](LICENSE)
 [![](https://img.shields.io/github/workflow/status/jtbgroup/kodi-media-sensors/Python%20package?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors/actions)
 
-Home Assistant component to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Playlist Media Card](https://github.com/jtbgroup/kodi-playlist-card) with data coming from Kodi.
+This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-This component is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-![Kodi Recently Added Media](https://github.com/jtbgroup/kodi-media-sensors/tree/master/assets/example.png)
+
+![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/tree/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/tree/master/assets/kodi_playlist_card.png)
 
 # Table of Contents
 
@@ -33,29 +33,31 @@ This component is based on the project of Aaron Godfrey (https://github.com/bora
 ### HACS Install
 
 1. Search for `Kodi Media Sensors` under `Integrations` in the HACS Store tab.
-2. Install the card: [Playlist Media Card](https://github.com/jtbgroup/kodi-playlist-card) or [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) 
-3. Add the code for the card to your `ui-lovelace.yaml`, or via the lovelace dashboard.
-5. **You will need to restart after installation for the component to start working.**
-6. [Configure](#configuration) your sensor using the options.
+2. **You will need to restart after installation for the component to start working.**
+3. Go to [Integration Installation](#integration_installation) your sensor using the options.
 
 ### Manual Install
+
+** This method is not recommended **
 
 1. In your `/config` directory, create a `custom_components` folder if one does not exist.
 2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/tree/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
 3. Restart Home Assistant.
-4. [Configure](#configuration) your sensor using the options.
+4. Go to [Integration Installation](#integration_installation) your sensor using the options.
+
+### Integration Installation
+
+1. After Automatic install or manual install, go to the Integration panel (under Configuration section) and search for the ne component by clicking on the button 'Add Integration'. Enter the name of the component (Kodi Media Sensors).
+2. During the installation, choose the Kodi entity previously installed.
+3. Select the sensors you want to use (see [Available Sensors](#available_sensors))
+4. Click Submit
+4. You should now see new entities in Home Assistant (one for each sensor activated)
+
+It's not possible to add new sensors after installation, so if you need new ones (or if you don't need one anymore), just uninstall the integration and add it again. You will then be able to select the sensors you need.
 
 ## Configuration
 
 ### Configuring via Integrations
-
-1. Navigate to the Integrations page under the Configuration section.
-2. Click the button to add a new integration and search for `Kodi Media Sensors`.
-3. Select which instance of Kodi you would like to use and click Submit.
-4. Choose the entities you want to be created depending on the card you want to use: 
-    * `sensor.kodi_recently_added_tv` tracks your recently added tv shows 
-    * `sensor.kodi_recently_added_movies` tracks your recently added movies
-    * `sensor.kodi_playlist`tracks your playlist in Kodi (audio and video)
 
 An `Options` button will appear on the integration. Clicking this will allow you to
 toggle additional options. Currently the only option is whether or not the "recently added" should
@@ -65,24 +67,31 @@ ignore watched media or not. By default it does not.
 
 #### Sample for ui-lovelace.yaml:
 
+Depending on the sensors you added and the custom card you installed, you can use the code below to display information from Kodi. 
+
+Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card)
+
 ```yaml
 - type: custom:upcoming-media-card
   entity: sensor.kodi_recently_added_tv
   title: Recently Added Episodes
   image_style: fanart
 
-- type: custom:upcoming-media-card
-  entity: sensor.kodi_recently_added_movies
-  title: Recently Added Movies
-  image_style: fanart
+- type: custom:kodi-playlist-card
+  entity: sensor.kodi_playlist
 ```
+## Available Sensors
+
+   * `sensor.kodi_recently_added_tv` tracks your recently added tv shows 
+   * `sensor.kodi_recently_added_movies` tracks your recently added movies
+   * `sensor.kodi_playlist`tracks your playlist in Kodi (audio and video)
 
 ## Upgrading from configuration.yaml to UI Integration
 
 1. Remove any sensors in your `configuration.yaml` that reference the `kodi_media_sensors`
    platform.
 2. Restart Home Assistant.
-3. Follow the steps from the begining in the section [Configuring via Integrations](#configuring-via-integrations)
+3. Follow the steps from the begining in the section [Installation](#installation)
 
 ## Known Issues
 
