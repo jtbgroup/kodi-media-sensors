@@ -8,23 +8,27 @@
 This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
 
-
 ![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/kodi_playlist_card.png)
 
 # Table of Contents
 
-- [Installation](#installation)
-  - [Pre-Installation](#pre-installation)
-  - [HACS Install](#hacs-install)
-  - [Manual Install](#manual-install)
-  - [Integration Installation](#integration-installation)
-- [Configuration](#configuration)
-  - [Configuring via Integrations](#configuring-via-integrations)
-  - [Card Configuration](#card-configuration)
-- [Available Sensors](#available-sensors)
-- [Upgrading from configuration.yaml to UI integration](#upgrading-from-configurationyaml-to-ui-integration)
-- [Known Issues](#known-issues)
-- [Credits](#credits)
+- [Kodi Recently Added Media for Home Assistant](#kodi-recently-added-media-for-home-assistant)
+- [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Pre-Installation](#pre-installation)
+    - [HACS Install](#hacs-install)
+    - [Manual Install](#manual-install)
+    - [Integration Installation](#integration-installation)
+  - [Configuration](#configuration)
+    - [Configuring via Integrations](#configuring-via-integrations)
+    - [Card Configuration](#card-configuration)
+      - [Sample for ui-lovelace.yaml:](#sample-for-ui-lovelaceyaml)
+  - [Available Sensors](#available-sensors)
+  - [Upgrading from configuration.yaml to UI Integration](#upgrading-from-configurationyaml-to-ui-integration)
+  - [Known Issues](#known-issues)
+    - [Artwork does not load when using the upcoming-media-card](#artwork-does-not-load-when-using-the-upcoming-media-card)
+    - [Genres, ratings and studios don't show up for TV Shows](#genres-ratings-and-studios-dont-show-up-for-tv-shows)
+  - [Credits](#credits)
 
 ## Installation
 
