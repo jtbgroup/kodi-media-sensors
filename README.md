@@ -57,7 +57,7 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 2. During the installation, choose the Kodi entity previously installed.
 3. Select the sensors you want to use (see [Available Sensors](#available-sensors))
 4. Click Submit
-4. You should now see new entities in Home Assistant (one for each sensor activated)
+5. You should now see new entities in Home Assistant (one for each sensor activated)
 
 It's not possible to add new sensors after installation, so if you need new ones (or if you don't need one anymore), just uninstall the integration and add it again. You will then be able to select the sensors you need.
 
