@@ -9,7 +9,7 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 
 
 
-![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/tree/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/tree/master/assets/kodi_playlist_card.png)
+![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/kodi_playlist_card.png)
 
 # Table of Contents
 
@@ -17,6 +17,7 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
   - [Pre-Installation](#pre-installation)
   - [HACS Install](#hacs-install)
   - [Manual Install](#manual-install)
+  - [Integration Installation](#integration_installation)
 - [Configuration](#configuration)
   - [Configuring via Integrations](#configuring-via-integrations)
   - [Card Configuration](#card-configuration)
