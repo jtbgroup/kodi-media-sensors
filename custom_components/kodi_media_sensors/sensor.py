@@ -49,7 +49,7 @@ async def async_setup_entry(
     kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
     reg = await hass.helpers.entity_registry.async_get_registry()
     kodi_entity_id = reg.async_get_entity_id(
-        KODI_DOMAIN_PLATFORM, KODI_DOMAIN, kodi_config_entry.entry_id
+        KODI_DOMAIN_PLATFORM, KODI_DOMAIN, kodi_config_entry.unique_id
     )
 
     try:
