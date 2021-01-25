@@ -7,3 +7,4 @@ CONF_SENSOR_PLAYLIST = "sensor_playlist"
 CONF_KODI_INSTANCE = "kodi_config_entry_id"
 
 OPTION_HIDE_WATCHED = "hide_watched"
+OPTION_USE_AUTH_URL = "use_auth_url"

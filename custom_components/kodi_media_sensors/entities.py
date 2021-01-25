@@ -19,17 +19,26 @@ class KodiMediaEntity(Entity):
     call_args: tuple()
 
     def __init__(
-        self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
+        self,
+        kodi: Kodi,
+        config: KodiConfig,
+        hide_watched: bool = False,
+        use_auth_url: bool = False,
     ) -> None:
         super().__init__()
         self.kodi = kodi
         self.hide_watched = hide_watched
+        self.use_auth_url = use_auth_url
         self.data = []
         self._state = None
 
         protocol = "https" if config["ssl"] else "http"
         auth = ""
-        if config["username"] is not None and config["password"] is not None:
+        if (
+            use_auth_url
+            and config["username"] is not None
+            and config["password"] is not None
+        ):
             auth = f"{config['username']}:{config['password']}@"
         self.base_web_url = (
             f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
@@ -294,8 +303,9 @@ class KodiPlaylistEntity(KodiMediaEntity):
         config: KodiConfig,
         kodi_entity_id: str,
         hide_watched: bool = False,
+        use_auth_url: bool = False,
     ):
-        super().__init__(kodi, config, hide_watched)
+        super().__init__(kodi, config, hide_watched, use_auth_url)
         self.kodi_entity_id = kodi_entity_id
         self.load_args()
 
@@ -343,7 +353,6 @@ class KodiPlaylistEntity(KodiMediaEntity):
             }
         ]
 
-        _LOGGER.debug("=====> " + str(self.data))
         for item in self.data:
             #     if self.hide_watched and movie["playcount"] > 0:
             #         continue

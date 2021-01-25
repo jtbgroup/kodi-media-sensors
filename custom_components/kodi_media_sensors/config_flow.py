@@ -8,6 +8,7 @@ import voluptuous as vol
 
 from .const import (
     OPTION_HIDE_WATCHED,
+    OPTION_USE_AUTH_URL,
     CONF_KODI_INSTANCE,
     DOMAIN,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
@@ -91,9 +92,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
+        use_auth_url = self.config_entry.options.get(OPTION_USE_AUTH_URL, False)
 
         options_schema = vol.Schema(
-            {vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool}
+            {
+                vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
+                vol.Optional(OPTION_USE_AUTH_URL, default=use_auth_url): bool,
+            }
         )
         return self.async_show_form(
             step_id="init",
