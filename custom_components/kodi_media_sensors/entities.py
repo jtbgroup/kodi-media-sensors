@@ -9,11 +9,20 @@ from homeassistant.helpers.entity import Entity
 from pykodi import Kodi
 
 from .types import DeviceStateAttrs, KodiConfig
+from .entity_kodi_media_sensor import KodiMediaSensorEntity
+from .const import (
+    ENTITY_SENSOR_PLAYLIST,
+    ENTITY_SENSOR_RECENTLY_ADDED_MOVIE,
+    ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW,
+    ENTITY_NAME_SENSOR_PLAYLIST,
+    ENTITY_NAME_SENSOR_RECENTLY_ADDED_TVSHOW,
+    ENTITY_NAME_SENSOR_RECENTLY_ADDED_MOVIE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class KodiMediaEntity(Entity):
+class KodiMediaEntity(KodiMediaSensorEntity):
     result_key: str = NotImplemented
     update_method: str = NotImplemented
     call_args: tuple()
@@ -25,28 +34,28 @@ class KodiMediaEntity(Entity):
         hide_watched: bool = False,
         use_auth_url: bool = False,
     ) -> None:
-        super().__init__()
+        super().__init__(kodi, config)
         self.kodi = kodi
         self.hide_watched = hide_watched
         self.use_auth_url = use_auth_url
         self.data = []
         self._state = None
 
-        protocol = "https" if config["ssl"] else "http"
-        auth = ""
-        if (
-            use_auth_url
-            and config["username"] is not None
-            and config["password"] is not None
-        ):
-            auth = f"{config['username']}:{config['password']}@"
-        self.base_web_url = (
-            f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
-        )
+        # protocol = "https" if config["ssl"] else "http"
+        # auth = ""
+        # if (
+        #     use_auth_url
+        #     and config["username"] is not None
+        #     and config["password"] is not None
+        # ):
+        #     auth = f"{config['username']}:{config['password']}@"
+        # self.base_web_url = (
+        #     f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
+        # )
 
-    @property
-    def state(self) -> Optional[str]:
-        return self._state
+    # @property
+    # def state(self) -> Optional[str]:
+    #     return self._state
 
     async def before_update(self) -> bool:
         return True
@@ -93,24 +102,24 @@ class KodiMediaEntity(Entity):
         self.data = new_data
         self._state = STATE_ON
 
-    def get_web_url(self, path: str) -> str:
-        """Get the web URL for the provided path.
+    # def get_web_url(self, path: str) -> str:
+    #     """Get the web URL for the provided path.
 
-        This is used for fanart/poster images that are not a http url.  For
-        example the path is local to the kodi installation or a path to
-        an NFS share.
+    #     This is used for fanart/poster images that are not a http url.  For
+    #     example the path is local to the kodi installation or a path to
+    #     an NFS share.
 
-        :param path: The local/nfs/samba/etc. path.
-        :returns: The web url to access the image over http.
-        """
-        if path.lower().startswith("http"):
-            return path
-        # This looks strange, but the path needs to be quoted twice in order
-        # to work.
-        # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
-        quoted_path2 = parse.quote(parse.quote(path, safe="@"))
-        encoded = self.base_web_url + quoted_path2
-        return encoded
+    #     :param path: The local/nfs/samba/etc. path.
+    #     :returns: The web url to access the image over http.
+    #     """
+    #     if path.lower().startswith("http"):
+    #         return path
+    #     # This looks strange, but the path needs to be quoted twice in order
+    #     # to work.
+    #     # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
+    #     quoted_path2 = parse.quote(parse.quote(path, safe="@"))
+    #     encoded = self.base_web_url + quoted_path2
+    #     return encoded
 
 
 class KodiRecentlyAddedTVEntity(KodiMediaEntity):
@@ -139,11 +148,11 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
         It's important to define this, otherwise the entities created will not show up
         on the configured integration card as associated with the integration.
         """
-        return self.name
+        return ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW
 
     @property
     def name(self) -> str:
-        return "kodi_recently_added_tv"
+        return ENTITY_NAME_SENSOR_RECENTLY_ADDED_TVSHOW
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
@@ -217,11 +226,11 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
 
     @property
     def unique_id(self) -> str:
-        return self.name
+        return ENTITY_SENSOR_RECENTLY_ADDED_MOVIE
 
     @property
     def name(self) -> str:
-        return "kodi_recently_added_movies"
+        return ENTITY_NAME_SENSOR_RECENTLY_ADDED_MOVIE
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
@@ -314,11 +323,11 @@ class KodiPlaylistEntity(KodiMediaEntity):
 
     @property
     def unique_id(self) -> str:
-        return self.name
+        return ENTITY_SENSOR_PLAYLIST
 
     @property
     def name(self) -> str:
-        return "kodi_playlist"
+        return ENTITY_NAME_SENSOR_PLAYLIST
 
     async def before_update(self) -> bool:
         result = False

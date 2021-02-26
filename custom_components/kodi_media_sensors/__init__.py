@@ -12,6 +12,7 @@ from .const import (
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     CONF_SENSOR_RECENTLY_ADDED_MOVIE,
     CONF_SENSOR_PLAYLIST,
+    CONF_SENSOR_SEARCH,
     CONF_KODI_INSTANCE,
 )
 
@@ -27,6 +28,7 @@ async def async_setup_entry(
     sensor_recently_added_tvshow = entry.data[CONF_SENSOR_RECENTLY_ADDED_TVSHOW]
     sensor_recently_added_movie = entry.data[CONF_SENSOR_RECENTLY_ADDED_MOVIE]
     sensor_playlist = entry.data[CONF_SENSOR_PLAYLIST]
+    sensor_search = entry.data[CONF_SENSOR_SEARCH]
     unsub_options_update_listener = entry.add_update_listener(options_update_listener)
     hass.data[DOMAIN][entry.entry_id] = {
         OPTION_HIDE_WATCHED: entry.options.get(OPTION_HIDE_WATCHED, False),
@@ -35,6 +37,7 @@ async def async_setup_entry(
         CONF_SENSOR_RECENTLY_ADDED_TVSHOW: sensor_recently_added_tvshow,
         CONF_SENSOR_RECENTLY_ADDED_MOVIE: sensor_recently_added_movie,
         CONF_SENSOR_PLAYLIST: sensor_playlist,
+        CONF_SENSOR_SEARCH: sensor_search,
         "unsub_options_update_listener": unsub_options_update_listener,
     }
 

@@ -9,7 +9,8 @@
           "kodi_entry_id": "Kodi integration",
           "sensor_recently_added_tvshow": "Use Sensor recently added TV Show",
           "sensor_recently_added_movie": "Use Sensor recently added Movie",
-          "sensor_playlist": "Use Sensor playlist"
+          "sensor_playlist": "Use Sensor playlist",
+          "sensor_search": "Use Sensor search"
         },
         "description": "Select which Kodi integration to use.",
         "title": "Setup"

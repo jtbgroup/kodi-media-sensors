@@ -1,9 +1,10 @@
 import logging
 import time
+from datetime import timedelta
 
 from homeassistant import config_entries, core
 from homeassistant.core import callback
-from homeassistant.helpers import entity_registry
+from homeassistant.helpers import entity_registry, entity_platform
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_HOST
@@ -18,13 +19,16 @@ from .const import (
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     CONF_SENSOR_RECENTLY_ADDED_MOVIE,
     CONF_SENSOR_PLAYLIST,
+    CONF_SENSOR_SEARCH,
     CONF_KODI_INSTANCE,
+    ATTR_METHOD,
 )
 from .entities import (
     KodiRecentlyAddedMoviesEntity,
     KodiRecentlyAddedTVEntity,
     KodiPlaylistEntity,
 )
+from .entity_kodi_search import KodiSearchEntity
 from .utils import (
     find_matching_config_entry,
     find_matching_config_entry_for_host,
@@ -39,6 +43,13 @@ PLATFORM_SCHEMA = vol.Any(
         }
     ),
 )
+
+KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA = cv.make_entity_service_schema(
+    {vol.Required(ATTR_METHOD): cv.string}, extra=vol.ALLOW_EXTRA
+)
+
+
+SCAN_INTERVAL = timedelta(minutes=10)
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -102,6 +113,10 @@ async def async_setup_entry(
         )
         sensorsList.append(playlist_entity)
 
+    if conf.get(CONF_SENSOR_SEARCH):
+        search_entity = KodiSearchEntity(kodi, kodi_config_entry.data, kodi_entity_id)
+        sensorsList.append(search_entity)
+
     async_add_entities(sensorsList, update_before_add=True)
 
     # @callback
@@ -152,6 +167,20 @@ async def async_setup_entry(
     #     kodi_entity_id, template_bsensor_state_listener
     # )
 
+    platform = entity_platform.current_platform.get()
+    # async_add_entities(sensorsList, update_before_add=True)
+    # # register services
+    #     (
+    #     "call_method",
+    #     {
+    #         {vol.Required(ATTR_METHOD): cv.string}, extra=vol.ALLOW_EXTRA
+    #     },
+    #     "asyn_call_method",
+    # )
+    platform.async_register_entity_service(
+        "call_method", KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA, "async_call_method"
+    )
+
 
 async def async_setup_platform(
     hass: core.HomeAssistant, config: dict, async_add_entities, discovery_info=None
@@ -195,8 +224,11 @@ async def async_setup_platform(
     playlist_entity = KodiPlaylistEntity(
         kodi, config_entry.data, hide_watched, use_auth_url
     )
+
+    search_entity = KodiSearchEntity(kodi, kodi_entity_id)
     # Added the auto scan before adding he sensors
     async_add_entities(
         [tv_entity, movies_entity, playlist_entity],
+        search_entity,
         update_before_add=True,
     )

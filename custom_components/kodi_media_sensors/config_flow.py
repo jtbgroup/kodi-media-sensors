@@ -14,6 +14,7 @@ from .const import (
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     CONF_SENSOR_RECENTLY_ADDED_MOVIE,
     CONF_SENSOR_PLAYLIST,
+    CONF_SENSOR_SEARCH,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_SENSOR_RECENTLY_ADDED_TVSHOW, default=False): bool,
                 vol.Optional(CONF_SENSOR_RECENTLY_ADDED_MOVIE, default=False): bool,
                 vol.Optional(CONF_SENSOR_PLAYLIST, default=False): bool,
+                vol.Optional(CONF_SENSOR_SEARCH, default=False): bool,
             }
         )
 
@@ -64,6 +66,7 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_SENSOR_RECENTLY_ADDED_MOVIE
                         ],
                         CONF_SENSOR_PLAYLIST: user_input[CONF_SENSOR_PLAYLIST],
+                        CONF_SENSOR_SEARCH: user_input[CONF_SENSOR_SEARCH],
                     },
                 )
 
