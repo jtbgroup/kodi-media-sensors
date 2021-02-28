@@ -8,6 +8,8 @@ from homeassistant import config_entries, core
 from .const import (
     OPTION_HIDE_WATCHED,
     OPTION_USE_AUTH_URL,
+    OPTION_SEARCH_LIMIT,
+    OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
     DOMAIN,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     CONF_SENSOR_RECENTLY_ADDED_MOVIE,
@@ -33,6 +35,9 @@ async def async_setup_entry(
     hass.data[DOMAIN][entry.entry_id] = {
         OPTION_HIDE_WATCHED: entry.options.get(OPTION_HIDE_WATCHED, False),
         OPTION_USE_AUTH_URL: entry.options.get(OPTION_USE_AUTH_URL, False),
+        OPTION_SEARCH_LIMIT: entry.options.get(
+            OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
+        ),
         CONF_KODI_INSTANCE: kodi_config_entry_id,
         CONF_SENSOR_RECENTLY_ADDED_TVSHOW: sensor_recently_added_tvshow,
         CONF_SENSOR_RECENTLY_ADDED_MOVIE: sensor_recently_added_movie,

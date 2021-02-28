@@ -9,6 +9,9 @@ CONF_KODI_INSTANCE = "kodi_config_entry_id"
 
 OPTION_HIDE_WATCHED = "hide_watched"
 OPTION_USE_AUTH_URL = "use_auth_url"
+OPTION_SEARCH_LIMIT = "search_limit"
+
+OPTION_SEARCH_LIMIT_DEFAULT_VALUE = 15
 
 
 ATTR_METHOD = "method"
@@ -17,6 +20,7 @@ KEY_ALBUMS = "albums"
 KEY_SONGS = "songs"
 KEY_ARTISTS = "artists"
 KEY_MOVIES = "movies"
+KEY_TVSHOWS = "tvshows"
 KEY_ALBUM_DETAILS = "albumdetails"
 
 ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW = "kodi_media_sensor_recently_added_tvshow"

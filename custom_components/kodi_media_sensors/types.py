@@ -7,6 +7,11 @@ class DeviceStateAttrs(TypedDict):
     data: str
 
 
+class MediaSensorStateAttrs(TypedDict):
+    meta: str
+    data: str
+
+
 class KodiConfig(TypedDict):
     host: str
     name: Optional[str]
