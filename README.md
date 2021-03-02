@@ -77,20 +77,29 @@ Depending on the sensors you added and the custom card you installed, you can us
 
 Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card)
 
-```yaml
+```
 - type: custom:upcoming-media-card
   entity: sensor.kodi_recently_added_tv
   title: Recently Added Episodes
   image_style: fanart
 
 - type: custom:kodi-playlist-card
-  entity: sensor.kodi_playlist
+  entity: sensor.kodi_media_sensor_playlist
 ```
 ## Available Sensors
 
-   * `sensor.kodi_recently_added_tv` tracks your recently added tv shows 
-   * `sensor.kodi_recently_added_movies` tracks your recently added movies
-   * `sensor.kodi_playlist`tracks your playlist in Kodi (audio and video)
+   * `sensor.kodi_media_sensor_recently_added_tvshow` tracks your recently added tv shows 
+   * `sensor.kodi_media_sensor_recently_added_movie` tracks your recently added movies
+   * `sensor.kodi_media_sensor_playlist` tracks your playlist in Kodi (audio and video)
+   * `sensor.kodi_media_sensor_search` tracks your search results
+
+### Services available with sensors
+
+Some sensors come with services you can use. The definition of the services depend of each sensor.
+| Sensor | Method | Parameter |
+| ------ | ------ | --------- |
+| kodi_media_sensor_search | call_method | search |
+
 
 ## Upgrading from configuration.yaml to UI Integration
 
@@ -104,7 +113,7 @@ Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upc
 Below is a list of known issues that either can't be fixed by changes to the component
 itself due to external factors.
 
-### Artwork does not load when using the upcoming-media-card
+### Artwork does not load
 
 One reason this could occur is if you setup you Home Assistance instance to use SSL and
 your Kodi instance does not use SSL. When the upcoming-media-card tries to load the
