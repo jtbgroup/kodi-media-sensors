@@ -126,9 +126,9 @@ method: clear
 ### Cards to use with sensors
 
 The goal is to group all the sensors and have seperate Cards to display the sensors data. The cards that where tested are:
-- [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) 
-- [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) 
-- [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) 
+- [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) (kodi_media_sensor_recently_added_tvshow or kodi_media_sensor_recently_added_movie)
+- [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) (kodi_media_sensor_playlist)
+- [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) (kodi_media_sensor_search)
 
 ## Upgrading from configuration.yaml to UI Integration
 
