@@ -66,7 +66,15 @@ It's not possible to add new sensors after installation, so if you need new ones
 ### Configuring via Integrations
 
 An `Options` button will appear on the integration. Clicking this will allow you to
-toggle additional options. Currently the only option is whether or not the "recently added" should
+toggle additional options. 
+
+| Option | Description |
+| ------ | ----------- |
+| hide_watched | Excludes recently added video media that is marked as watched (movie sensors) when option is schecked |
+| use_auth_url | Adds the kodi username:password in the url's to access ressources from kodi (like images) |
+| search_limit | Sets the limit of the results returned by a search call. The limits applies to each media type (songs, album, movie, ...) |
+
+Currently the only option is whether or not the "recently added" should
 ignore watched media or not. By default it does not.
 
 ### Card Configuration
