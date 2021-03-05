@@ -74,9 +74,6 @@ toggle additional options.
 | use_auth_url | Adds the kodi username:password in the url's to access ressources from kodi (like images) |
 | search_limit | Sets the limit of the results returned by a search call. The limits applies to each media type (songs, album, movie, ...) |
 
-Currently the only option is whether or not the "recently added" should
-ignore watched media or not. By default it does not.
-
 ### Card Configuration
 
 #### Sample for ui-lovelace.yaml:
@@ -125,6 +122,13 @@ entity_id: sensor.kodi_media_sensor_search
 method: clear
 
 ```
+
+### Cards to use with sensors
+
+The goal is to group all the sensors and have seperate Cards to display the sensors data. The cards that where tested are:
+- [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) 
+- [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) 
+- [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) 
 
 ## Upgrading from configuration.yaml to UI Integration
 
