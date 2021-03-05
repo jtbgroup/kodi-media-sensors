@@ -98,9 +98,25 @@ Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upc
 Some sensors come with services you can use. The definition of the services depend of each sensor.
 | Sensor | Method | Parameters | Description |
 | ------ | ------ | ---------- | ----------- |
-| kodi_media_sensor_search | search | `media_type:` { all &#124; artist &#124; tvshow }<br/>`value:` { str &#124; int &#124; int} | You can search by using different type of media.  `all` will search for songs, albums, artists, movies and tv shows containing the passed string<br/>`artist`will search for albums and songs for the given artistid<br/>`tvshow` will search for all the seasons (and episodes) of the given tvshowid|
+| kodi_media_sensor_search | search | `media_type:` { all &#124; artist &#124; tvshow }<br/>`value:` { str &#124; int &#124; int} | You can search by using different type of media:<br/>`all` will search for songs, albums, artists, movies and tv shows containing the passed string<br/>`artist`will search for albums and songs for the given artistid<br/>`tvshow` will search for all the seasons (and episodes) of the given tvshowid|
+| kodi_media_sensor_search | clear | | This function clears the data of the sensor |
 
+Examples:
+```
+entity_id: sensor.kodi_media_sensor_search
+method: search
+item:
+  media_type: all
+  value: beatles
 
+```
+
+or
+```
+entity_id: sensor.kodi_media_sensor_search
+method: clear
+
+```
 
 ## Upgrading from configuration.yaml to UI Integration
 
