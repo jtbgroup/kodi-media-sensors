@@ -113,14 +113,12 @@ method: search
 item:
   media_type: all
   value: beatles
-
 ```
 
 or
 ```
 entity_id: sensor.kodi_media_sensor_search
 method: clear
-
 ```
 
 ### Cards to use with sensors
