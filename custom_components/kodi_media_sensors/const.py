@@ -25,6 +25,7 @@ KEY_TVSHOW_SEASONS = "seasons"
 KEY_TVSHOW_SEASON_DETAILS = "seasondetails"
 KEY_TVSHOW_EPISODES = "episodes"
 KEY_ALBUM_DETAILS = "albumdetails"
+KEY_ITEMS = "items"
 
 ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW = "kodi_media_sensor_recently_added_tvshow"
 ENTITY_SENSOR_RECENTLY_ADDED_MOVIE = "kodi_media_sensor_recently_added_movie"

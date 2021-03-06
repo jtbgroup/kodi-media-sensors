@@ -25,7 +25,8 @@
         "description": "Additional settings for the component.",
         "data": {
           "hide_watched": "Exclude recently added video media that is marked as watched (movie sensors).",
-          "use_auth_url": "Insert username:password in url for images."
+          "use_auth_url": "Insert username:password in url for images.",
+          "search_limit": "Limit the search result (search sensor)"
         }
       }
     }
