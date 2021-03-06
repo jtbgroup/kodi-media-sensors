@@ -100,13 +100,16 @@ Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upc
 
 ### Services available with sensors
 
-Some sensors come with services you can use. The definition of the services depend of each sensor.
-| Sensor | Method | Parameters | Description |
-| ------ | ------ | ---------- | ----------- |
-| kodi_media_sensor_search | search | `media_type:` { all &#124; artist &#124; tvshow }<br/>`value:` { str &#124; int &#124; int} | You can search by using different type of media:<br/>`all` will search for songs, albums, artists, movies and tv shows containing the passed string<br/>`artist`will search for albums and songs for the given artistid<br/>`tvshow` will search for all the seasons (and episodes) of the given tvshowid|
-| kodi_media_sensor_search | clear | | This function clears the data of the sensor |
+Some sensors come with services you can use. The definition of the services depends on each sensor. The service can be called via ***call_method***
 
-Examples:
+#### kodi_media_sensor_search
+
+1. search (media type, value)
+    Searches in the specified media type for the referenced value. The media type 'all' will return result for songs, albums, artists, movies and tv shows.
+    - `media_type:` { all &#124; artist &#124; tvshow }<br/>
+    - `value:` { str (title) &#124; int (artistid) &#124; int (tvshowid) } 
+
+Example:
 ```
 entity_id: sensor.kodi_media_sensor_search
 method: search
@@ -114,8 +117,10 @@ item:
   media_type: all
   value: beatles
 ```
+2. clear ()
+    This function clears the data of the sensor 
 
-or
+Example:
 ```
 entity_id: sensor.kodi_media_sensor_search
 method: clear
