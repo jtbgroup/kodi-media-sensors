@@ -95,7 +95,6 @@ async def async_setup_entry(
             kodi,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
-            use_auth_url=conf.get(OPTION_USE_AUTH_URL, False),
         )
         sensorsList.append(tv_entity)
 
@@ -104,7 +103,6 @@ async def async_setup_entry(
             kodi,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
-            use_auth_url=conf.get(OPTION_USE_AUTH_URL, False),
         )
         sensorsList.append(movies_entity)
 

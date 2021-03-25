@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from typing import Any, Dict, List, Optional
 from urllib import parse
 
@@ -9,41 +8,42 @@ from homeassistant.helpers.entity import Entity
 from pykodi import Kodi
 
 from .types import DeviceStateAttrs, KodiConfig
-from .entity_kodi_media_sensor import KodiMediaSensorEntity
-from .const import (
-    ENTITY_SENSOR_RECENTLY_ADDED_MOVIE,
-    ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW,
-    ENTITY_NAME_SENSOR_RECENTLY_ADDED_TVSHOW,
-    ENTITY_NAME_SENSOR_RECENTLY_ADDED_MOVIE,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class KodiMediaEntity(KodiMediaSensorEntity):
+class KodiMediaEntity(Entity):
+    properties: List[str] = NotImplemented
     result_key: str = NotImplemented
     update_method: str = NotImplemented
-    call_args: tuple()
 
     def __init__(
-        self,
-        kodi: Kodi,
-        config: KodiConfig,
-        hide_watched: bool = False,
-        use_auth_url: bool = False,
+        self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
     ) -> None:
-        super().__init__(kodi, config)
+        super().__init__()
         self.kodi = kodi
         self.hide_watched = hide_watched
-        self.use_auth_url = use_auth_url
         self.data = []
         self._state = None
+
+        protocol = "https" if config["ssl"] else "http"
+        auth = ""
+        if config["username"] is not None and config["password"] is not None:
+            auth = f"{config['username']}:{config['password']}@"
+        self.base_web_url = (
+            f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
+        )
+
+    @property
+    def state(self) -> Optional[str]:
+        return self._state
 
     async def async_update(self) -> None:
         result = None
         try:
-            # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
-            result = await self.kodi.call_method(self.update_method, **self.call_args)
+            result = await self.kodi.call_method(
+                self.update_method, properties=self.properties
+            )
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_OFF
@@ -75,6 +75,21 @@ class KodiMediaEntity(KodiMediaSensorEntity):
         self.data = new_data
         self._state = STATE_ON
 
+    def get_web_url(self, path: str) -> str:
+        """Get the web URL for the provided path.
+        This is used for fanart/poster images that are not a http url.  For
+        example the path is local to the kodi installation or a path to
+        an NFS share.
+        :param path: The local/nfs/samba/etc. path.
+        :returns: The web url to access the image over http.
+        """
+        if path.lower().startswith("http"):
+            return path
+        # This looks strange, but the path needs to be quoted twice in order
+        # to work.
+        quoted_path = parse.quote(parse.quote(path, safe=""))
+        return self.base_web_url + quoted_path
+
 
 class KodiRecentlyAddedTVEntity(KodiMediaEntity):
 
@@ -93,20 +108,18 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedEpisodes"
     result_key = "episodes"
-    call_args = {"properties": properties}
 
     @property
     def unique_id(self) -> str:
         """The unique ID of the entity.
-
         It's important to define this, otherwise the entities created will not show up
         on the configured integration card as associated with the integration.
         """
-        return ENTITY_SENSOR_RECENTLY_ADDED_TVSHOW
+        return self.name
 
     @property
     def name(self) -> str:
-        return ENTITY_NAME_SENSOR_RECENTLY_ADDED_TVSHOW
+        return "kodi_recently_added_tv"
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
@@ -176,15 +189,14 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     ]
     update_method = "VideoLibrary.GetRecentlyAddedMovies"
     result_key = "movies"
-    call_args = {"properties": properties}
 
     @property
     def unique_id(self) -> str:
-        return ENTITY_SENSOR_RECENTLY_ADDED_MOVIE
+        return self.name
 
     @property
     def name(self) -> str:
-        return ENTITY_NAME_SENSOR_RECENTLY_ADDED_MOVIE
+        return "kodi_recently_added_movies"
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
