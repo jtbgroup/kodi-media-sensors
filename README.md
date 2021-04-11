@@ -158,7 +158,7 @@ item:
   to: 5
 ```
 
-2. ***remove()***<br/>
+2. ***remove(posn, player)***<br/>
     This function removes an object from the given playlist 
 
 Example:
