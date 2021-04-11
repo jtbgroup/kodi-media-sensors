@@ -104,7 +104,7 @@ Some sensors come with services you can use. The definition of the services depe
 
 #### kodi_media_sensor_search
 
-1. ***search(media type, value)***<br/>
+1. ***search(media_type, value)***<br/>
     Searches in the specified media type for the referenced value. The media type 'all' will return result for songs, albums, artists, movies and tv shows.
     - `media_type:` { all &#124; artist &#124; tvshow }<br/>
     - `value:` { str (title) &#124; int (artistid) &#124; int (tvshowid) } 
@@ -117,6 +117,7 @@ item:
   media_type: all
   value: beatles
 ```
+
 2. ***clear()***<br/>
     This function clears the data of the sensor 
 
@@ -124,6 +125,22 @@ Example:
 ```
 entity_id: sensor.kodi_media_sensor_search
 method: clear
+```
+
+3. ***play(arg)***<br/>
+    This function plays the desired object wth the good player. The argument depends on what object has to be played. the argument can be one of songid, albumid, movieid, episodeid.
+
+Examples:
+```
+entity_id: sensor.kodi_media_sensor_search
+method: play
+songid: 1
+```
+
+```
+entity_id: sensor.kodi_media_sensor_search
+method: play
+movieid: 15
 ```
 
 ### Cards to use with sensors
