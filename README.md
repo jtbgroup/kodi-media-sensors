@@ -87,7 +87,8 @@ Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upc
   entity: sensor.kodi_recently_added_tv
   title: Recently Added Episodes
   image_style: fanart
-
+```
+```
 - type: custom:kodi-playlist-card
   entity: sensor.kodi_media_sensor_playlist
 ```
@@ -141,6 +142,32 @@ songid: 1
 entity_id: sensor.kodi_media_sensor_search
 method: play
 movieid: 15
+```
+
+#### kodi_media_sensor_playlist
+
+1. ***goto(posn, player)***<br/>
+    This function plays the object at the given position for the given player 
+
+Example:
+```
+entity_id: sensor.kodi_media_sensor_playlist
+method: goto
+item: 
+  playerid: 0
+  to: 5
+```
+
+2. ***remove()***<br/>
+    This function removes an object from the given playlist 
+
+Example:
+```
+entity_id: sensor.kodi_media_sensor_playlist
+method: remove
+item:
+  playlistid: 0
+  position: 5
 ```
 
 ### Cards to use with sensors
