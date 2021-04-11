@@ -76,7 +76,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         await self.async_update()
 
     async def async_update(self) -> None:
-        _LOGGER.debug(">>>>>>>>>>>>>>>>>> Update Playlist sensor")
+        _LOGGER.debug("> Update Playlist sensor")
 
         self.init_attrs()
         result = None

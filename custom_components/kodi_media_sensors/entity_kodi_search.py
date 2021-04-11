@@ -58,7 +58,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         return ENTITY_SENSOR_SEARCH
 
     async def async_update(self):
-        _LOGGER.debug(">>>>>>>>>>>>>>>>>> Update Search sensor")
+        _LOGGER.debug("> Update Search sensor")
         if (
             self._search_moment > 0
             and (time.perf_counter() - self._search_moment) > self._clear_timer
