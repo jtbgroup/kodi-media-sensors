@@ -1,5 +1,6 @@
 {
   "codeowners": ["@boralyl", "@Gautier Vanderslyen"],
+  "version": 2.0.0
   "config_flow": true,
   "dependencies": ["kodi"],
   "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
