@@ -149,7 +149,7 @@ async def test_options_flow(hass):
 
     # submit form with options
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={OPTION_HIDE_WATCHED: True}, user_input={OPTION_USE_AUTH_URL: False}, user_input={OPTION_SEARCH_LIMIT: 10}
+        result["flow_id"], user_input={OPTION_HIDE_WATCHED: True, OPTION_USE_AUTH_URL: False, OPTION_SEARCH_LIMIT: 10}
     )
     expected = {
         "data": {OPTION_HIDE_WATCHED: True, OPTION_USE_AUTH_URL: False, OPTION_SEARCH_LIMIT: 10},
