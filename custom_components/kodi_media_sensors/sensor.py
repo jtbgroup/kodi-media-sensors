@@ -108,18 +108,19 @@ async def async_setup_entry(
 
     if conf.get(CONF_SENSOR_PLAYLIST):
         playlist_entity = KodiPlaylistEntity(
+            hass,
             kodi,
-            kodi_config_entry.data,
             kodi_entity_id,
+            kodi_config_entry.data,
             use_auth_url=conf.get(OPTION_USE_AUTH_URL, False),
         )
         sensorsList.append(playlist_entity)
 
     if conf.get(CONF_SENSOR_SEARCH):
         search_entity = KodiSearchEntity(
+            hass,
             kodi,
             kodi_config_entry.data,
-            kodi_entity_id,
             search_limit=conf.get(
                 OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
             ),

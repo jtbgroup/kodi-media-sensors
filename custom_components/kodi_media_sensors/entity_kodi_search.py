@@ -1,4 +1,5 @@
 import logging
+import homeassistant
 import json
 import time
 from operator import itemgetter
@@ -37,15 +38,18 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     def __init__(
         self,
+        hass,
         kodi: Kodi,
         config: KodiConfig,
-        kodi_entity_id: str,
         search_limit: int,
     ):
         super().__init__(kodi, config)
+        self._hass = hass
         self._state = STATE_ON
-        self._kodi_entity_id = kodi_entity_id
         self._search_limit = search_limit
+        homeassistant.helpers.event.async_track_state_change_event(
+            hass, "media_player.kodi", self.__handle_event
+        )
 
     @property
     def name(self) -> str:
@@ -57,15 +61,41 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         """Return the unique ID of the sensor."""
         return ENTITY_SENSOR_SEARCH
 
+    async def __handle_event(self, event):
+        # old_state = str(event.data.get("old_state").state)
+        new_state = str(event.data.get("new_state").state)
+        event_id = event.context.id + " [" + new_state + "]"
+
+        new_entity_state = STATE_ON
+
+        if new_state == STATE_OFF:
+            new_entity_state = STATE_OFF
+
+        if self._state != new_entity_state:
+            self._state = new_entity_state
+            if new_entity_state == STATE_OFF:
+                await self.__switch_to_off(event_id)
+            else:
+                await self.__clear_result(False)
+
+        await self.async_update()
+
+    async def __switch_to_off(self, event_id):
+        self.purge_meta(event_id)
+        self.purge_data(event_id)
+
     async def async_update(self):
+        """Update is only used to purge the search result"""
         _LOGGER.debug("> Update Search sensor")
         if (
             self._search_moment > 0
             and (time.perf_counter() - self._search_moment) > self._clear_timer
         ):
-            await self.clear(False)
+            await self.__clear_result(False)
 
-        self.init_attrs()
+        # TODO : add a condition to update meta only when needed
+        if self._state != STATE_OFF:
+            self.init_meta("Kodi Search update event")
 
     async def async_call_method(self, method, **kwargs):
         self._search_moment = time.perf_counter()
@@ -87,7 +117,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 raise ValueError("The given media type is unsupported: " + media_type)
             await self.async_update()
         elif method == "clear":
-            await self.clear(True)
+            await self.__clear_result(True)
         elif method == "play":
             if kwargs.get("songid") is not None:
                 await self.play_song(kwargs.get("songid"))
@@ -101,12 +131,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         else:
             raise ValueError("The given method is unsupported: " + method)
 
-    async def clear(self, force_update):
+    async def __clear_result(self, force_update):
         self._search_moment = 0
-        del self._data[:]
+        self.init_meta("clear results event")
+        self.purge_data("clear results event")
         if force_update:
             await self.async_update()
-        _LOGGER.debug("Clearded !")
+        _LOGGER.debug("Kodi search result clearded")
 
     async def play_item(self, playlistid, item_name, item_value):
         _LOGGER.debug(item_value)
@@ -280,6 +311,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     "track",
                     "year",
                     "duration",
+                    "genre",
                     "thumbnail",
                 ],
                 "limits": _limits,
@@ -494,7 +526,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             }
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             result.append(card)
@@ -514,7 +547,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             }
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             result.append(card)
@@ -556,7 +590,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             result.append(card)
@@ -591,16 +626,19 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             try:
                 fanart = item["art"].get("fanart", "")
                 poster = item["art"].get("poster", "")
                 if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                    # fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                    fanart = self._kodi.thumbnail_url(thumbnail)
                 if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                    # poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                    poster = self._kodi.thumbnail_url(thumbnail)
                 card["fanart"] = fanart
                 card["poster"] = poster
             except KeyError:
@@ -628,7 +666,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             rating = round(item["rating"], 1)
@@ -656,10 +695,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.add_attribute("songid", item, "songid", card)
             self.add_attribute("track", item, "track", card)
             self.add_attribute("duration", item, "duration", card)
+            self.add_attribute("genre", item, "genre", card)
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             result.append(card)
