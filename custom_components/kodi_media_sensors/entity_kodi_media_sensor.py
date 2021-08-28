@@ -75,7 +75,7 @@ class KodiMediaSensorEntity(Entity):
         if error:
             _LOGGER.error(
                 "Error while fetching %s: [%d] %s"
-                % (self.result_key, error.get("code"), error.get("message"))
+                % (result_key, error.get("code"), error.get("message"))
             )
             self._state = STATE_PROBLEM
             return
