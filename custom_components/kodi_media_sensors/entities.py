@@ -65,7 +65,7 @@ class KodiMediaEntity(Entity):
 
         new_data: List[Dict[str, Any]] = result.get(self.result_key, [])
         if not new_data:
-            _LOGGER.warning(
+            _LOGGER.info(
                 "No %s found after requesting data from Kodi, assuming empty."
                 % self.result_key
             )

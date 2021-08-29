@@ -115,7 +115,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.search_tvshow(item.get("value"))
             else:
                 raise ValueError("The given media type is unsupported: " + media_type)
-            await self.async_update()
+            # await self.async_update()
         elif method == "clear":
             await self.__clear_result(True)
         elif method == "play":
