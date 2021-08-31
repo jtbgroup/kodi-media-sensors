@@ -66,6 +66,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
         if result:
             data = self.__handle_result(result, result_key)
+            self._state = STATE_ON
         else:
             self._state = STATE_OFF
 
@@ -75,6 +76,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         try:
             # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
             await self._kodi.call_method(method, **args)
+            self._state = STATE_ON
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_PROBLEM
@@ -126,23 +128,13 @@ class KodiMediaSensorEntity(Entity, ABC):
 
     @property
     def device_state_attributes(self) -> DeviceStateAttrs:
+        self.build_attrs()
+        return self._attrs
+
+    def build_attrs(self):
         self._attrs.clear
         self._attrs["meta"] = json.dumps(self._meta)
         self._attrs["data"] = json.dumps(self._data)
-        return self._attrs
-
-    # def init_attrs(self):
-    #     self._meta = [
-    #         {
-    #             "sensor_entity_id": self.entity_id,
-    #             "service_domain": DOMAIN,
-    #             # "kodi_entity_id": self._kodi_entity_id,
-    #         }
-    #     ]
-
-    def purge_meta(self, event_id):
-        self._meta = [{}]
-        _LOGGER.debug("Purged metadata (event " + event_id + ")")
 
     def init_meta(self, event_id):
         ds = datetime.now().strftime(UPDATE_FORMAT)
@@ -151,6 +143,10 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._meta[0]["sensor_entity_id"] = self.entity_id
         self._meta[0]["service_domain"] = DOMAIN
         _LOGGER.debug("Init metadata (event " + event_id + ")")
+
+    def purge_meta(self, event_id):
+        self._meta = [{}]
+        _LOGGER.debug("Purged metadata (event " + event_id + ")")
 
     def add_meta(self, key, value):
         if len(self._meta[0]) == 0:

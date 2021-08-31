@@ -93,8 +93,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         ):
             await self.__clear_result(False)
 
-        # TODO : add a condition to update meta only when needed
-        if self._state != STATE_OFF:
+        if self._state != STATE_OFF and len(self._meta) == 0:
             self.init_meta("Kodi Search update event")
 
     async def async_call_method(self, method, **kwargs):

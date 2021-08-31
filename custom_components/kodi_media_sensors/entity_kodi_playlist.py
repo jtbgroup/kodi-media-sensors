@@ -7,10 +7,12 @@ import asyncio
 # import datetime
 from typing import Optional, Dict, List, Any
 from homeassistant.helpers.entity import Entity
+from homeassistant import core
 from urllib import parse
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from pykodi import Kodi
 from homeassistant.const import (
+    EVENT_STATE_CHANGED,
     STATE_OFF,
     STATE_ON,
     STATE_IDLE,
@@ -52,7 +54,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     _playlistid = int(-1)
     _events = {}
     _watch_start = None
-    _eventid = ""
+    _event_context_id = None
 
     def __init__(
         self,
@@ -80,45 +82,62 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         return ENTITY_SENSOR_PLAYLIST
 
     async def __handle_event(self, event):
-        old_state = str(event.data.get("old_state").state)
-        old_media_title = str(event.data.get("old_state").attributes.get("media_title"))
-        new_state = str(event.data.get("new_state").state)
-        new_media_title = str(event.data.get("new_state").attributes.get("media_title"))
+        old_kodi_event_state = (
+            str(event.data.get("old_state").state)
+            if event.data.get("old_state") != None
+            else STATE_OFF
+        )
+        old_kodi_event_media_title = str(
+            event.data.get("old_state").attributes.get("media_title")
+        )
+        new_kodi_event_state = str(event.data.get("new_state").state)
+        new_kodi_event_media_title = str(
+            event.data.get("new_state").attributes.get("media_title")
+        )
+
+        old_core_state = core.State(self.entity_id, "off")
+        old_core_state.attributes = self._attrs.copy()
 
         sensor_action = ACTION_DO_NOTHING
         new_entity_state = STATE_ON
 
-        if old_state == new_state:
-            if old_media_title == new_media_title:
+        if old_kodi_event_state == new_kodi_event_state:
+            if old_kodi_event_media_title == new_kodi_event_media_title:
                 sensor_action = ACTION_DO_NOTHING
             else:
                 sensor_action = ACTION_REFRESH_ALL
-        elif old_state == STATE_OFF:
+        elif old_kodi_event_state == STATE_OFF:
             sensor_action = ACTION_REFRESH_ALL
-        elif new_state == STATE_OFF:
+        elif new_kodi_event_state == STATE_OFF:
             sensor_action = ACTION_CLEAR
             new_entity_state = STATE_OFF
-        elif old_state == STATE_IDLE and new_state == STATE_PLAYING:
+        elif (
+            old_kodi_event_state == STATE_IDLE and new_kodi_event_state == STATE_PLAYING
+        ):
             sensor_action = ACTION_REFRESH_ALL
-        elif (old_state == STATE_PAUSED and new_state == STATE_PLAYING) or (
-            old_state == STATE_PLAYING and new_state == STATE_PAUSED
+        elif (
+            old_kodi_event_state == STATE_PAUSED
+            and new_kodi_event_state == STATE_PLAYING
+        ) or (
+            old_kodi_event_state == STATE_PLAYING
+            and new_kodi_event_state == STATE_PAUSED
         ):
             sensor_action = ACTION_REFRESH_META
-        elif new_state == STATE_IDLE:
+        elif new_kodi_event_state == STATE_IDLE:
             sensor_action = ACTION_REFRESH_META
 
         time = event.time_fired
-        id = event.context.id + " [" + new_state + "]"
+        id = event.context.id + " [" + new_kodi_event_state + "]"
         _LOGGER.debug(
             "Event received:"
             + "\r\n\tState (old >>> new): "
-            + old_state
+            + old_kodi_event_state
             + " >>> "
-            + new_state
+            + new_kodi_event_state
             + "\r\n\tTitle (old >>> new): "
-            + old_media_title
+            + old_kodi_event_media_title
             + " >>> "
-            + new_media_title
+            + new_kodi_event_media_title
             + "\r\n\tExpected action : "
             + sensor_action
             + "\r\n\tTime fired : "
@@ -128,37 +147,25 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         )
 
         self._state = new_entity_state
-
         if sensor_action == ACTION_REFRESH_ALL or sensor_action == ACTION_REFRESH_META:
             await self.__update_meta(id)
             await self.__update_data(id)
         elif sensor_action == ACTION_CLEAR:
             await self.__clear_playlist_data(id)
 
-        # self.hass.services.call(
-        #     "homeassistant",
-        #     "update_entity",
-        #     {"entity_id": self.entity_id},
-        #     blocking=True,
-        # )
+        self.build_attrs()
 
-        # self._hass.services.call(
-        #     "homeassistant",
-        #     "update_entity",
-        #     {"entity_id": self.entity_id},
-        # )
+        new_core_state = core.State(self.entity_id, "on")
+        new_core_state.attributes = self._attrs.copy()
+        _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
 
-        # event_data = {
-        #     "entity_id": self.entity_id,
-        #     # "result": result,
-        #     # "result_ok": result_ok,
-        #     # "input": {"method": method, "params": kwargs},
-        # }
-        # self._hass.bus.async_fire(
-        #     EVENT_KODI_SENSOR_PLAYLIST_UPDATE, event_data=event_data
-        # )
+        event_data = {
+            "entity_id": self.entity_id,
+            "old_state": old_core_state,
+            "new_state": new_core_state,
+        }
 
-        # await self.async_update()
+        self._hass.bus.async_fire(EVENT_STATE_CHANGED, event_data)
 
     async def async_call_method(self, method, **kwargs):
         _LOGGER.debug("************************************calling method")
@@ -179,30 +186,24 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             await self.__remove(playlistid, position)
 
     async def __remove(self, playlistid, position):
-        self.call_method_kodi_no_result(
+        await self.call_method_kodi_no_result(
             "Playlist.Remove", {"playlistid": playlistid, "position": position}
         )
-        # await self.__update_data("remove event")
+        await self.__update_meta("remove event")
+        await self.__update_data("remove event")
 
     async def __goto(self, playerid, to):
-        self.call_method_kodi_no_result("Player.GoTo", {"playerid": playerid, "to": to})
-        # await self.__update_data("goto event")
+        await self.call_method_kodi_no_result(
+            "Player.GoTo", {"playerid": playerid, "to": to}
+        )
 
     async def async_update(self) -> None:
         """This update is ony used to trigger events so the frontend can be updated. But nothing will happen with this method as no polling is required, but every data change occur when kodi sends events."""
-        _LOGGER.debug("Updating Playlist sensor")
+        _LOGGER.debug("> Update Playlist sensor")
 
     async def __clear_playlist_data(self, event_id):
         self.purge_meta(event_id)
         self.purge_data(event_id)
-
-    # async def __update_playlist_data(self, event_id, sensor_action):
-    #     await self.__update_meta(event_id)
-    #     # if sensor_action == ACTION_REFRESH_ALL:
-    #     # this is necessary because the player is not instantly ready when a json rpc GoTo function is called ???
-    #     # time.sleep(0.5)
-    #     await self.__update_data(event_id)
-    #     # await self.fire_kodi_sensor_update_event()
 
     async def __update_meta(self, event_id):
         self.init_meta(event_id)
@@ -224,7 +225,10 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
                 player, []
             )
 
-            self.add_meta("currently_playing", props_item_playing["id"])
+            if props_item_playing.get("id") != None:
+                self.add_meta("currently_playing", props_item_playing["id"])
+            else:
+                _LOGGER.info("No id defined for this item")
         self._playlistid = player_id
         _LOGGER.debug("Metadata updated (event " + event_id + ")")
 
