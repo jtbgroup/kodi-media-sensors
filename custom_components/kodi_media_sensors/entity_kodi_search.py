@@ -378,15 +378,18 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
-    async def kodi_search_channels(self, value, unlimited: bool = False):
+    async def kodi_search_channels(self, value):
         limits = {"start": 0}
-        if not unlimited:
-            limits["end"] = self._search_limit
-        return await self.call_method_kodi(
+        allChannels = await self.call_method_kodi(
             KEY_CHANNELS,
             "PVR.GetChannels",
             {"properties": ["uniqueid",], "limits": limits, "channelgroupid": "alltv",},
         )
+        filteredChannels = []
+        for channel in allChannels:
+            if value in channel["label"]:
+                filteredChannels.append(channel)
+        return filteredChannels
 
     async def kodi_search_tvshows(self, value, unlimited: bool = False):
         limits = {"start": 0}
@@ -426,7 +429,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             artists = await self.kodi_search_artists(value)
             movies = await self.kodi_search_movies(value)
             tvshows = await self.kodi_search_tvshows(value)
-            channels = await self.kodi_search_channels(value, True)
+            channels = await self.kodi_search_channels(value)
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_OFF
