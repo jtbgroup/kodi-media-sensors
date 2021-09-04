@@ -16,7 +16,7 @@ from .const import DOMAIN
 from abc import ABC, abstractmethod
 
 _LOGGER = logging.getLogger(__name__)
-UPDATE_FORMAT = "%H:%M:%S"
+UPDATE_FORMAT = "%Y%m%d%H%M%S%f"
 
 
 class KodiMediaSensorEntity(Entity, ABC):
@@ -135,7 +135,6 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._attrs.clear
         self._attrs["meta"] = json.dumps(self._meta)
         self._attrs["data"] = json.dumps(self._data)
-
 
     def init_meta(self, event_id):
         ds = datetime.now().strftime(UPDATE_FORMAT)

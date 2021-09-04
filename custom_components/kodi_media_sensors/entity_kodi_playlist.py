@@ -95,8 +95,10 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             event.data.get("new_state").attributes.get("media_title")
         )
 
-        old_core_state = core.State(self.entity_id, "off")
-        old_core_state.attributes = self._attrs.copy()
+        old_core_state = "off"
+        if self.entity_id != None:
+            old_core_state = core.State(self.entity_id, "off")
+            old_core_state.attributes = self._attrs.copy()
 
         sensor_action = ACTION_DO_NOTHING
         new_entity_state = STATE_ON
@@ -155,7 +157,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
 
         self.build_attrs()
 
-        new_core_state = core.State(self.entity_id, "on")
+        new_core_state = core.State(self.entity_id, self._state)
         new_core_state.attributes = self._attrs.copy()
         _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
 
@@ -200,6 +202,9 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     async def async_update(self) -> None:
         """This update is ony used to trigger events so the frontend can be updated. But nothing will happen with this method as no polling is required, but every data change occur when kodi sends events."""
         _LOGGER.debug("> Update Playlist sensor")
+        if len(self._meta) == 0:
+            await self.__update_meta("initialized by update")
+            await self.__update_data("initialized by update")
 
     async def __clear_playlist_data(self, event_id):
         self.purge_meta(event_id)
