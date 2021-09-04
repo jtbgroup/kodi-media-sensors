@@ -306,7 +306,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     "album",
                     "albumid",
                     "artist",
-                    "genre",
                     "artistid",
                     "track",
                     "year",
@@ -696,7 +695,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.add_attribute("track", item, "track", card)
             self.add_attribute("genre", item, "genre", card)
             self.add_attribute("duration", item, "duration", card)
-            self.add_attribute("genre", item, "genre", card)
 
             thumbnail = item["thumbnail"]
             if thumbnail:
