@@ -97,6 +97,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
 
         old_core_state = "off"
         if self.entity_id != None:
+            # check if off is OK?
             old_core_state = core.State(self.entity_id, "off")
             old_core_state.attributes = self._attrs.copy()
 
@@ -153,16 +154,16 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             await self.__update_meta(id)
             await self.__update_data(id)
         elif sensor_action == ACTION_CLEAR:
-            await self.__clear_playlist_data(id)
+            await self.__clear_all_data(id)
 
         self.build_attrs()
 
-        new_core_state = core.State(self.entity_id, self._state)
+        new_core_state = core.State(self.domain_unique_id, self._state)
         new_core_state.attributes = self._attrs.copy()
         _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
 
         event_data = {
-            "entity_id": self.entity_id,
+            "entity_id": self.domain_unique_id,
             "old_state": old_core_state,
             "new_state": new_core_state,
         }
@@ -206,7 +207,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             await self.__update_meta("initialized by update")
             await self.__update_data("initialized by update")
 
-    async def __clear_playlist_data(self, event_id):
+    async def __clear_all_data(self, event_id):
         self.purge_meta(event_id)
         self.purge_data(event_id)
 

@@ -3,11 +3,12 @@ import homeassistant
 import json
 import time
 from operator import itemgetter
+from homeassistant import core
 from typing import Optional, Dict, List, Any
 from homeassistant.helpers.entity import Entity
 from urllib import parse
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON, EVENT_STATE_CHANGED
 from pykodi import Kodi
 from .const import (
     KEY_ALBUMS,
@@ -27,6 +28,9 @@ from .types import DeviceStateAttrs, KodiConfig
 
 
 _LOGGER = logging.getLogger(__name__)
+ACTION_DO_NOTHING = "nothing"
+ACTION_CLEAR = "clear"
+ACTION_REFRESH_META = "refresh_meta"
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
@@ -62,39 +66,93 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         return ENTITY_SENSOR_SEARCH
 
     async def __handle_event(self, event):
-        # old_state = str(event.data.get("old_state").state)
-        new_state = str(event.data.get("new_state").state)
-        event_id = event.context.id + " [" + new_state + "]"
+        new_kodi_event_state = str(event.data.get("new_state").state)
 
+        old_core_state = None
+        if self.entity_id != None:
+            old_core_state = core.State(self.domain_unique_id, self._state)
+            old_core_state.attributes = self._attrs.copy()
+        else:
+            old_core_state = core.State(self.domain_unique_id, "off")
+
+        action = ACTION_DO_NOTHING
         new_entity_state = STATE_ON
 
-        if new_state == STATE_OFF:
+        if new_kodi_event_state == STATE_OFF and self._state != STATE_OFF:
+            action = ACTION_CLEAR
             new_entity_state = STATE_OFF
+        elif new_kodi_event_state != STATE_OFF and self._state != STATE_ON:
+            action = ACTION_REFRESH_META
 
-        if self._state != new_entity_state:
-            self._state = new_entity_state
-            if new_entity_state == STATE_OFF:
-                await self.__switch_to_off(event_id)
-            else:
-                await self.__clear_result(False)
+        self._state = new_entity_state
 
-        await self.async_update()
+        id = event.context.id + " [" + new_kodi_event_state + "]"
+        if action == ACTION_CLEAR:
+            self.__clear_all_data(id)
+        if action == ACTION_REFRESH_META:
+            self.purge_data(id)
+            self.init_meta(id)
 
-    async def __switch_to_off(self, event_id):
-        self.purge_meta(event_id)
-        self.purge_data(event_id)
+        if action != ACTION_DO_NOTHING:
+            new_core_state = core.State(self.domain_unique_id, self._state)
+            new_core_state.attributes = self._attrs.copy()
+
+            event_data = {
+                "entity_id": self.domain_unique_id,
+                "old_state": old_core_state,
+                "new_state": new_core_state,
+            }
+            self._hass.bus.async_fire(EVENT_STATE_CHANGED, event_data)
+
+        # old_core_state = STATE_OFF
+        # if self.entity_id != None:
+        #     old_core_state = core.State(self.entity_id, "off")
+        #     old_core_state.attributes = self._attrs.copy()
+
+        # # event_id = event.context.id + " [" + new_state + "]"
+
+        # new_entity_state = STATE_ON
+
+        # if new_kodi_event_state == STATE_OFF:
+        #     new_entity_state = STATE_OFF
+
+        # # if self._state != new_entity_state:
+        # self._state = new_entity_state
+        # if new_entity_state == STATE_OFF:
+        #     await self.__switch_to_off(event_id)
+        # else:
+        #     await self.__clear_all_data(False)
+
+        # # await self.async_update()
+
+        # new_core_state = core.State(self.entity_id, self._state)
+        # new_core_state.attributes = self._attrs.copy()
+        # _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
+
+        # event_data = {
+        #     "entity_id": self.entity_id,
+        #     "old_state": old_core_state,
+        #     "new_state": new_core_state,
+        # }
+
+        # self._hass.bus.async_fire(EVENT_STATE_CHANGED, event_data)
+
+    # async def __switch_to_off(self, event_id):
+    #     self.purge_meta(event_id)
+    #     self.purge_data(event_id)
 
     async def async_update(self):
         """Update is only used to purge the search result"""
         _LOGGER.debug("> Update Search sensor")
+
+        if self._state != STATE_OFF and len(self._meta) == 0:
+            self.init_meta("Kodi Search update event")
+
         if (
             self._search_moment > 0
             and (time.perf_counter() - self._search_moment) > self._clear_timer
         ):
             await self.__clear_result(False)
-
-        if self._state != STATE_OFF and len(self._meta) == 0:
-            self.init_meta("Kodi Search update event")
 
     async def async_call_method(self, method, **kwargs):
         self._search_moment = time.perf_counter()
@@ -114,7 +172,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.search_tvshow(item.get("value"))
             else:
                 raise ValueError("The given media type is unsupported: " + media_type)
-            # await self.async_update()
+            self.init_meta("search method called")
+            await self.async_update()
         elif method == "clear":
             await self.__clear_result(True)
         elif method == "play":
@@ -134,8 +193,14 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self._search_moment = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
+        # send en event?
         if force_update:
             await self.async_update()
+        _LOGGER.debug("Kodi search result clearded")
+
+    def __clear_all_data(self, event_id):
+        self.purge_meta(event_id)
+        self.purge_data(event_id)
         _LOGGER.debug("Kodi search result clearded")
 
     async def play_item(self, playlistid, item_name, item_value):
@@ -221,7 +286,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
-            self._state = STATE_OFF
+            # self._state = STATE_OFF
 
         if songs_resultset is not None and len(songs_resultset) > 0:
             album_id_set = set()
@@ -262,7 +327,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             self._data.clear
             self._data = card_json
-            self._state = STATE_ON
+            # self._state = STATE_ON
 
     async def kodi_search_albumdetails(self, value):
         return await self.call_method_kodi(
@@ -486,7 +551,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
-            self._state = STATE_OFF
+            # self._state = STATE_OFF
 
         card_json = []
         self.add_result(self.format_songs(songs), card_json)
@@ -497,7 +562,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         self._data.clear
         self._data = card_json
-        self._state = STATE_ON
+        # self._state = STATE_ON
 
     def add_result(self, data, target):
         if data is not None and len(data) > 0:

@@ -140,7 +140,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         ds = datetime.now().strftime(UPDATE_FORMAT)
         self.purge_meta(event_id)
         self._meta[0]["update_time"] = ds
-        self._meta[0]["sensor_entity_id"] = self.entity_id
+        self._meta[0]["sensor_entity_id"] = self.domain_unique_id
         self._meta[0]["service_domain"] = DOMAIN
         _LOGGER.debug("Init metadata (event " + event_id + ")")
 
@@ -159,3 +159,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
     def add_data(self, data):
         self._data.append(data)
+
+    @property
+    def domain_unique_id(self) -> str:
+        return "sensor." + self.unique_id

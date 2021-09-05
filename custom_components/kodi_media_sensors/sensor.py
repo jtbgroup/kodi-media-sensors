@@ -54,7 +54,7 @@ KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA = cv.make_entity_service_schema(
 )
 
 
-SCAN_INTERVAL = timedelta(minutes=3)
+SCAN_INTERVAL = timedelta(minutes=5)
 _LOGGER = logging.getLogger(__name__)
 
 
