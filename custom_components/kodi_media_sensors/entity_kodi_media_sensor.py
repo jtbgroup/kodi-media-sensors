@@ -65,7 +65,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             self._state = STATE_PROBLEM
 
         if result:
-            data = self.__handle_result(result, result_key)
+            data = self._handle_result(result, result_key)
             self._state = STATE_ON
         else:
             self._state = STATE_OFF
@@ -81,7 +81,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_PROBLEM
 
-    def __handle_result(self, result, result_key) -> List:
+    def _handle_result(self, result, result_key) -> List:
         error = result.get("error")
         if error:
             _LOGGER.error(
@@ -127,9 +127,51 @@ class KodiMediaSensorEntity(Entity, ABC):
     #     return encoded
 
     @property
+    def domain_unique_id(self) -> str:
+        return "sensor." + self.unique_id
+
+    @property
     def device_state_attributes(self) -> DeviceStateAttrs:
         self.build_attrs()
         return self._attrs
+
+    def format_songs(self, values):
+        if values is None:
+            return None
+
+        result = []
+        for item in values:
+            card = {
+                "object_type": "song",
+            }
+            self.add_attribute("artist", item, "artist", card)
+            self.add_attribute("artistid", item, "artistid", card)
+            self.add_attribute("title", item, "title", card)
+            self.add_attribute("album", item, "album", card)
+            self.add_attribute("year", item, "year", card)
+            self.add_attribute("songid", item, "songid", card)
+            self.add_attribute("track", item, "track", card)
+            self.add_attribute("genre", item, "genre", card)
+            self.add_attribute("duration", item, "duration", card)
+            self.add_attribute("id", item, "id", card)
+            self.add_attribute("type", item, "object_type", card)
+            self.add_attribute("albumid", item, "albumid", card)
+            self.add_attribute("label", item, "label", card)
+            self.add_attribute("episode", item, "episode", card)
+            self.add_attribute("season", item, "season", card)
+
+            thumbnail = item["thumbnail"]
+            if thumbnail:
+                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                thumbnail = self._kodi.thumbnail_url(thumbnail)
+                card["thumbnail"] = thumbnail
+
+            result.append(card)
+        return result
+
+    def add_attribute(self, attribute_name, data, target_attribute_name, target):
+        if attribute_name in data:
+            target[target_attribute_name] = data[attribute_name]
 
     def build_attrs(self):
         self._attrs.clear
@@ -142,6 +184,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._meta[0]["update_time"] = ds
         self._meta[0]["sensor_entity_id"] = self.domain_unique_id
         self._meta[0]["service_domain"] = DOMAIN
+        self.build_attrs()
         _LOGGER.debug("Init metadata (event " + event_id + ")")
 
     def purge_meta(self, event_id):
@@ -156,10 +199,3 @@ class KodiMediaSensorEntity(Entity, ABC):
     def purge_data(self, event_id):
         self._data = []
         _LOGGER.debug("Purged data (event " + event_id + ")")
-
-    def add_data(self, data):
-        self._data.append(data)
-
-    @property
-    def domain_unique_id(self) -> str:
-        return "sensor." + self.unique_id

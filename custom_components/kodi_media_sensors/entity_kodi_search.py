@@ -68,13 +68,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     async def __handle_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
 
-        old_core_state = None
-        if self.entity_id != None:
-            old_core_state = core.State(self.domain_unique_id, self._state)
-            old_core_state.attributes = self._attrs.copy()
-        else:
-            old_core_state = core.State(self.domain_unique_id, "off")
-
         action = ACTION_DO_NOTHING
         new_entity_state = STATE_ON
 
@@ -94,52 +87,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta(id)
 
         if action != ACTION_DO_NOTHING:
-            new_core_state = core.State(self.domain_unique_id, self._state)
-            new_core_state.attributes = self._attrs.copy()
-
-            event_data = {
-                "entity_id": self.domain_unique_id,
-                "old_state": old_core_state,
-                "new_state": new_core_state,
-            }
-            self._hass.bus.async_fire(EVENT_STATE_CHANGED, event_data)
-
-        # old_core_state = STATE_OFF
-        # if self.entity_id != None:
-        #     old_core_state = core.State(self.entity_id, "off")
-        #     old_core_state.attributes = self._attrs.copy()
-
-        # # event_id = event.context.id + " [" + new_state + "]"
-
-        # new_entity_state = STATE_ON
-
-        # if new_kodi_event_state == STATE_OFF:
-        #     new_entity_state = STATE_OFF
-
-        # # if self._state != new_entity_state:
-        # self._state = new_entity_state
-        # if new_entity_state == STATE_OFF:
-        #     await self.__switch_to_off(event_id)
-        # else:
-        #     await self.__clear_all_data(False)
-
-        # # await self.async_update()
-
-        # new_core_state = core.State(self.entity_id, self._state)
-        # new_core_state.attributes = self._attrs.copy()
-        # _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
-
-        # event_data = {
-        #     "entity_id": self.entity_id,
-        #     "old_state": old_core_state,
-        #     "new_state": new_core_state,
-        # }
-
-        # self._hass.bus.async_fire(EVENT_STATE_CHANGED, event_data)
-
-    # async def __switch_to_off(self, event_id):
-    #     self.purge_meta(event_id)
-    #     self.purge_data(event_id)
+            self.schedule_update_ha_state()
 
     async def async_update(self):
         """Update is only used to purge the search result"""
@@ -152,7 +100,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self._search_moment > 0
             and (time.perf_counter() - self._search_moment) > self._clear_timer
         ):
-            await self.__clear_result(False)
+            await self.__clear_result()
 
     async def async_call_method(self, method, **kwargs):
         self._search_moment = time.perf_counter()
@@ -173,9 +121,11 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             else:
                 raise ValueError("The given media type is unsupported: " + media_type)
             self.init_meta("search method called")
-            await self.async_update()
+            # await self.async_update()
+            self.schedule_update_ha_state()
         elif method == "clear":
-            await self.__clear_result(True)
+            await self.__clear_result()
+            self.schedule_update_ha_state()
         elif method == "play":
             if kwargs.get("songid") is not None:
                 await self.play_song(kwargs.get("songid"))
@@ -189,13 +139,11 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         else:
             raise ValueError("The given method is unsupported: " + method)
 
-    async def __clear_result(self, force_update):
+    async def __clear_result(self):
         self._search_moment = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
         # send en event?
-        if force_update:
-            await self.async_update()
         _LOGGER.debug("Kodi search result clearded")
 
     def __clear_all_data(self, event_id):
@@ -266,7 +214,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     }
 
                     tvshow_season_data.append(season)
-            self.add_result(
+            self._add_result(
                 self.format_tvshow_season_details(tvshow_season_data), card_json
             )
 
@@ -322,8 +270,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 albums_data.append(album)
 
             card_json = []
-            self.add_result(self.format_songs(songs_data), card_json)
-            self.add_result(self.format_album_details(albums_data), card_json)
+            self._add_result(self.format_songs(songs_data), card_json)
+            self._add_result(self.format_album_details(albums_data), card_json)
 
             self._data.clear
             self._data = card_json
@@ -554,17 +502,17 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             # self._state = STATE_OFF
 
         card_json = []
-        self.add_result(self.format_songs(songs), card_json)
-        self.add_result(self.format_albums(albums), card_json)
-        self.add_result(self.format_artists(artists), card_json)
-        self.add_result(self.format_movies(movies), card_json)
-        self.add_result(self.format_tvshows(tvshows), card_json)
+        self._add_result(self.format_songs(songs), card_json)
+        self._add_result(self.format_albums(albums), card_json)
+        self._add_result(self.format_artists(artists), card_json)
+        self._add_result(self.format_movies(movies), card_json)
+        self._add_result(self.format_tvshows(tvshows), card_json)
 
         self._data.clear
         self._data = card_json
         # self._state = STATE_ON
 
-    def add_result(self, data, target):
+    def _add_result(self, data, target):
         if data is not None and len(data) > 0:
             for row in data:
                 target.append(row)
@@ -741,35 +689,3 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             result.append(card)
         return result
-
-    def format_songs(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "song",
-                "artist": ", ".join(item["artist"]),
-                "artistid": item["artistid"][0],
-            }
-            self.add_attribute("title", item, "title", card)
-            self.add_attribute("album", item, "album", card)
-            self.add_attribute("year", item, "year", card)
-            self.add_attribute("songid", item, "songid", card)
-            self.add_attribute("track", item, "track", card)
-            self.add_attribute("genre", item, "genre", card)
-            self.add_attribute("duration", item, "duration", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            result.append(card)
-        return result
-
-    def add_attribute(self, attribute_name, data, target_attribute_name, target):
-        if attribute_name in data:
-            target[target_attribute_name] = data[attribute_name]
