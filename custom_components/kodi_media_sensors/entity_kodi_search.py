@@ -44,16 +44,22 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self,
         hass,
         kodi: Kodi,
+        kodi_entity_id,
         config: KodiConfig,
         search_limit: int,
     ):
         super().__init__(kodi, config)
         self._hass = hass
-        self._state = STATE_ON
         self._search_limit = search_limit
         homeassistant.helpers.event.async_track_state_change_event(
-            hass, "media_player.kodi", self.__handle_event
+            hass, kodi_entity_id, self.__handle_event
         )
+
+        kodi_state = self._hass.states.get(kodi_entity_id)
+        if kodi_state is None or kodi_state == STATE_OFF:
+            self._state = STATE_OFF
+        else:
+            self._state = STATE_ON
 
     @property
     def name(self) -> str:
