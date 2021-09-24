@@ -120,6 +120,7 @@ async def async_setup_entry(
         search_entity = KodiSearchEntity(
             hass,
             kodi,
+            kodi_entity_id,
             kodi_config_entry.data,
             search_limit=conf.get(
                 OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
