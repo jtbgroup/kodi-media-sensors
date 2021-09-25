@@ -31,24 +31,19 @@ class KodiMediaSensorEntity(Entity, ABC):
         kodi: Kodi,
         config: KodiConfig,
         hide_watched: bool = False,
-        use_auth_url: bool = False,
     ) -> None:
         super().__init__()
         self._kodi = kodi
-        self.__define_base_url(config, use_auth_url)
+        # self._define_base_url(config)
 
-    def __define_base_url(self, config, use_auth_url):
-        protocol = "https" if config["ssl"] else "http"
-        auth = ""
-        if (
-            use_auth_url
-            and config["username"] is not None
-            and config["password"] is not None
-        ):
-            auth = f"{config['username']}:{config['password']}@"
-        self._base_web_url = (
-            f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
-        )
+    # def _define_base_url(self, config):
+    #     protocol = "https" if config["ssl"] else "http"
+    #     auth = ""
+    #     if config["username"] is not None and config["password"] is not None:
+    #         auth = f"{config['username']}:{config['password']}@"
+    #     self._base_web_url = (
+    #         f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
+    #     )
 
     @abstractmethod
     async def async_call_method(self, method, **kwargs):

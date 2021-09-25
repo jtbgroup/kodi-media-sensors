@@ -8,7 +8,6 @@ import voluptuous as vol
 
 from .const import (
     OPTION_HIDE_WATCHED,
-    OPTION_USE_AUTH_URL,
     OPTION_SEARCH_LIMIT,
     OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
     CONF_KODI_INSTANCE,
@@ -97,7 +96,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
-        use_auth_url = self.config_entry.options.get(OPTION_USE_AUTH_URL, False)
         search_limit = self.config_entry.options.get(
             OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
         )
@@ -105,7 +103,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         options_schema = vol.Schema(
             {
                 vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
-                vol.Optional(OPTION_USE_AUTH_URL, default=use_auth_url): bool,
                 vol.Optional(OPTION_SEARCH_LIMIT, default=search_limit): int,
             }
         )
