@@ -7,7 +7,6 @@ from homeassistant import config_entries, core
 
 from .const import (
     OPTION_HIDE_WATCHED,
-    OPTION_USE_AUTH_URL,
     OPTION_SEARCH_LIMIT,
     OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
     DOMAIN,
@@ -34,7 +33,6 @@ async def async_setup_entry(
     unsub_options_update_listener = entry.add_update_listener(options_update_listener)
     hass.data[DOMAIN][entry.entry_id] = {
         OPTION_HIDE_WATCHED: entry.options.get(OPTION_HIDE_WATCHED, False),
-        OPTION_USE_AUTH_URL: entry.options.get(OPTION_USE_AUTH_URL, False),
         OPTION_SEARCH_LIMIT: entry.options.get(
             OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
         ),

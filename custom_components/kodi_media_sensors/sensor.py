@@ -13,7 +13,6 @@ import voluptuous as vol
 
 from .const import (
     OPTION_HIDE_WATCHED,
-    OPTION_USE_AUTH_URL,
     OPTION_SEARCH_LIMIT,
     OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
     DOMAIN,
@@ -41,7 +40,6 @@ PLATFORM_SCHEMA = vol.Any(
         {
             vol.Required(CONF_HOST): cv.string,
             vol.Optional(OPTION_HIDE_WATCHED, default=False): bool,
-            vol.Optional(OPTION_USE_AUTH_URL, default=False): bool,
             vol.Optional(
                 OPTION_SEARCH_LIMIT, default=OPTION_SEARCH_LIMIT_DEFAULT_VALUE
             ): int,
@@ -64,7 +62,7 @@ async def async_setup_entry(
     async_add_entities,
 ):
     """Setup sensors from a config entry created in the integrations UI."""
-    _hass = hass
+    # _hass = hass
     conf = hass.data[DOMAIN][config_entry.entry_id]
     kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
     reg = await hass.helpers.entity_registry.async_get_registry()
@@ -112,7 +110,6 @@ async def async_setup_entry(
             kodi,
             kodi_entity_id,
             kodi_config_entry.data,
-            use_auth_url=conf.get(OPTION_USE_AUTH_URL, False),
         )
         sensorsList.append(playlist_entity)
 
@@ -120,6 +117,7 @@ async def async_setup_entry(
         search_entity = KodiSearchEntity(
             hass,
             kodi,
+            kodi_entity_id,
             kodi_config_entry.data,
             search_limit=conf.get(
                 OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE

@@ -26,11 +26,60 @@ from .const import (
 )
 from .types import DeviceStateAttrs, KodiConfig
 
-
 _LOGGER = logging.getLogger(__name__)
 ACTION_DO_NOTHING = "nothing"
 ACTION_CLEAR = "clear"
 ACTION_REFRESH_META = "refresh_meta"
+
+METHOD_SEARCH = "search"
+METHOD_CLEAR = "clear"
+METHOD_PLAY = "play"
+SEARCH_MEDIA_TYPE_ALL = "all"
+SEARCH_MEDIA_TYPE_RECENT = "recent"
+SEARCH_MEDIA_TYPE_ARTIST = "artist"
+SEARCH_MEDIA_TYPE_TVSHOW = "tvshow"
+PLAY_ATTR_SONGID = "songid"
+PLAY_ATTR_ALBUMID = "albumid"
+PLAY_ATTR_MOVIEID = "movieid"
+PLAY_ATTR_EPISODEID = "episodeid"
+
+PROPS_TVSHOW = [
+    "title",
+    "thumbnail",
+    "playcount",
+    "dateadded",
+    "episode",
+    "rating",
+    "year",
+    "season",
+    "genre",
+]
+
+PROPS_SONG = [
+    "title",
+    "album",
+    "albumid",
+    "artist",
+    "artistid",
+    "track",
+    "year",
+    "duration",
+    "genre",
+    "thumbnail",
+]
+
+PROPS_MOVIE = ["thumbnail", "title", "year", "art", "genre"]
+PROPS_ALBUM = ["thumbnail", "title", "year", "art", "genre", "artist", "artistid"]
+PROPS_ARTIST = ["thumbnail", "mood", "genre", "style"]
+PROPS_ALBUM_DETAIL = [
+    "albumlabel",
+    "artist",
+    "year",
+    "artistid",
+    "thumbnail",
+    "style",
+    "genre",
+]
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
@@ -44,16 +93,22 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self,
         hass,
         kodi: Kodi,
+        kodi_entity_id,
         config: KodiConfig,
         search_limit: int,
     ):
         super().__init__(kodi, config)
         self._hass = hass
-        self._state = STATE_ON
         self._search_limit = search_limit
         homeassistant.helpers.event.async_track_state_change_event(
-            hass, "media_player.kodi", self.__handle_event
+            hass, kodi_entity_id, self.__handle_event
         )
+
+        kodi_state = self._hass.states.get(kodi_entity_id)
+        if kodi_state is None or kodi_state == STATE_OFF:
+            self._state = STATE_OFF
+        else:
+            self._state = STATE_ON
 
     @property
     def name(self) -> str:
@@ -81,7 +136,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         id = event.context.id + " [" + new_kodi_event_state + "]"
         if action == ACTION_CLEAR:
-            self.__clear_all_data(id)
+            self._clear_all_data(id)
         if action == ACTION_REFRESH_META:
             self.purge_data(id)
             self.init_meta(id)
@@ -100,7 +155,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self._search_moment > 0
             and (time.perf_counter() - self._search_moment) > self._clear_timer
         ):
-            await self.__clear_result()
+            await self._clear_result()
 
     async def async_call_method(self, method, **kwargs):
         self._search_moment = time.perf_counter()
@@ -109,44 +164,49 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self._meta[0]["method"] = method
         self._meta[0]["args"] = args
 
-        if method == "search":
+        if method == METHOD_SEARCH:
             item = kwargs.get("item")
             media_type = item.get("media_type")
-            if media_type == "all":
-                await self.search(item.get("value"))
-            elif media_type == "artist":
-                await self.search_artist(item.get("value"))
-            elif media_type == "tvshow":
-                await self.search_tvshow(item.get("value"))
+            search_value = item.get("value")
+            if media_type == SEARCH_MEDIA_TYPE_ALL:
+                await self.search(search_value)
+            elif media_type == SEARCH_MEDIA_TYPE_RECENT:
+                await self.search_recent()
+            elif media_type == SEARCH_MEDIA_TYPE_ARTIST:
+                await self.search_artist(search_value)
+            elif media_type == SEARCH_MEDIA_TYPE_TVSHOW:
+                await self.search_tvshow(search_value)
             else:
                 raise ValueError("The given media type is unsupported: " + media_type)
+
             self.init_meta("search method called")
-            # await self.async_update()
+            if media_type == SEARCH_MEDIA_TYPE_RECENT or search_value is not None:
+                self.add_meta("search", "true")
             self.schedule_update_ha_state()
-        elif method == "clear":
-            await self.__clear_result()
+
+        elif method == METHOD_CLEAR:
+            await self._clear_result()
             self.schedule_update_ha_state()
-        elif method == "play":
+        elif method == METHOD_PLAY:
             if kwargs.get("songid") is not None:
-                await self.play_song(kwargs.get("songid"))
+                await self.play_song(kwargs.get(PLAY_ATTR_SONGID))
             if kwargs.get("albumid") is not None:
-                await self.play_album(kwargs.get("albumid"))
+                await self.play_album(kwargs.get(PLAY_ATTR_ALBUMID))
             if kwargs.get("movieid") is not None:
-                await self.play_movie(kwargs.get("movieid"))
+                await self.play_movie(kwargs.get(PLAY_ATTR_MOVIEID))
             if kwargs.get("episodeid") is not None:
-                await self.play_episode(kwargs.get("episodeid"))
+                await self.play_episode(kwargs.get(PLAY_ATTR_EPISODEID))
 
         else:
             raise ValueError("The given method is unsupported: " + method)
 
-    async def __clear_result(self):
+    async def _clear_result(self):
         self._search_moment = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
-        # send en event?
         _LOGGER.debug("Kodi search result clearded")
 
-    def __clear_all_data(self, event_id):
+    def _clear_all_data(self, event_id):
         self.purge_meta(event_id)
         self.purge_data(event_id)
         _LOGGER.debug("Kodi search result clearded")
@@ -282,15 +342,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_ALBUM_DETAILS,
             "AudioLibrary.GetAlbumDetails",
             {
-                "properties": [
-                    "albumlabel",
-                    "artist",
-                    "year",
-                    "artistid",
-                    "thumbnail",
-                    "style",
-                    "genre",
-                ],
+                "properties": PROPS_ALBUM_DETAIL,
                 "albumid": value,
             },
         )
@@ -314,18 +366,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_SONGS,
             "AudioLibrary.GetSongs",
             {
-                "properties": [
-                    "title",
-                    "album",
-                    "albumid",
-                    "artist",
-                    "artistid",
-                    "track",
-                    "year",
-                    "duration",
-                    "genre",
-                    "thumbnail",
-                ],
+                "properties": PROPS_SONG,
                 "limits": _limits,
                 "sort": {
                     "method": "track",
@@ -390,7 +431,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_ALBUMS,
             "AudioLibrary.GetAlbums",
             {
-                "properties": ["title", "artist", "year", "thumbnail", "artistid"],
+                "properties": PROPS_ALBUM,
                 "limits": limits,
                 "sort": {
                     "method": "title",
@@ -405,6 +446,63 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
+    async def kodi_search_recent_albums(self, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+        return await self.call_method_kodi(
+            KEY_ALBUMS,
+            "AudioLibrary.GetRecentlyAddedAlbums",
+            {
+                "properties": PROPS_ALBUM,
+                "limits": limits,
+            },
+        )
+
+    async def kodi_search_recent_songs(self, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+        return await self.call_method_kodi(
+            KEY_SONGS,
+            "AudioLibrary.GetRecentlyAddedSongs",
+            {
+                "properties": PROPS_SONG,
+                "limits": limits,
+            },
+        )
+
+    async def kodi_search_recent_movies(self, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+        return await self.call_method_kodi(
+            KEY_MOVIES,
+            "VideoLibrary.GetRecentlyAddedMovies",
+            {
+                "properties": PROPS_MOVIE,
+                "limits": limits,
+            },
+        )
+
+    async def kodi_search_recent_tvshow_episodes(self, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+        return await self.call_method_kodi(
+            KEY_TVSHOW_EPISODES,
+            "VideoLibrary.GetRecentlyAddedEpisodes",
+            {
+                "properties": [
+                    "title",
+                    "rating",
+                    "episode",
+                    "season",
+                ],
+                "limits": limits,
+            },
+        )
+
     async def kodi_search_artists(self, value, unlimited: bool = False):
         limits = {"start": 0}
         if not unlimited:
@@ -413,7 +511,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_ARTISTS,
             "AudioLibrary.GetArtists",
             {
-                "properties": ["thumbnail", "mood", "genre", "style"],
+                "properties": PROPS_ARTIST,
                 "limits": limits,
                 "sort": {
                     "method": "title",
@@ -436,7 +534,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_MOVIES,
             "VideoLibrary.GetMovies",
             {
-                "properties": ["thumbnail", "title", "year", "art", "genre"],
+                "properties": PROPS_MOVIE,
                 "limits": limits,
                 "sort": {
                     "method": "title",
@@ -459,17 +557,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             KEY_TVSHOWS,
             "VideoLibrary.GetTVShows",
             {
-                "properties": [
-                    "title",
-                    "thumbnail",
-                    "playcount",
-                    "dateadded",
-                    "episode",
-                    "rating",
-                    "year",
-                    "season",
-                    "genre",
-                ],
+                "properties": PROPS_TVSHOW,
                 "limits": limits,
                 "sort": {
                     "method": "title",
@@ -482,6 +570,25 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 },
             },
         )
+
+    async def search_recent(self):
+        _LOGGER.debug("Searching recents")
+        try:
+            songs = await self.kodi_search_recent_songs()
+            albums = await self.kodi_search_recent_albums()
+            movies = await self.kodi_search_recent_movies()
+            episodes = await self.kodi_search_recent_tvshow_episodes()
+        except Exception:
+            _LOGGER.exception("Error updating sensor, is kodi running?")
+
+        card_json = []
+        self._add_result(self.format_songs(songs), card_json)
+        self._add_result(self.format_albums(albums), card_json)
+        self._add_result(self.format_movies(movies), card_json)
+        self._add_result(self.format_tvshow_episode_details(episodes), card_json)
+
+        self._data.clear
+        self._data = card_json
 
     async def search(self, value):
         if value is None or value == "":
@@ -520,8 +627,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def format_album_details(self, values):
         if values is None:
             return None
-
-        # values.sort(key=lambda tup: tup["year"], reverse=True)
 
         values.sort(key=itemgetter("year"), reverse=True)
 

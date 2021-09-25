@@ -15,5 +15,5 @@ call_method:
       # Example value that can be passed for this field
       example: "search"
     item:
-      description: this param depends on the method you call; it might contain many other parameters
-      example: { media_type: all, value: dryad }
+      description: "this param depends on the method you call; it might contain many other parameters"
+      example: "{ media_type: all, value: dryad }"

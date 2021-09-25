@@ -8,11 +8,9 @@ CONF_SENSOR_SEARCH = "sensor_search"
 CONF_KODI_INSTANCE = "kodi_config_entry_id"
 
 OPTION_HIDE_WATCHED = "hide_watched"
-OPTION_USE_AUTH_URL = "use_auth_url"
 OPTION_SEARCH_LIMIT = "search_limit"
 
 OPTION_SEARCH_LIMIT_DEFAULT_VALUE = 15
-
 
 ATTR_METHOD = "method"
 

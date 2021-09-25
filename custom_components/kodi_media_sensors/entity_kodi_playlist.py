@@ -43,8 +43,6 @@ ACTION_DO_NOTHING = "nothing"
 ACTION_REFRESH_ALL = "refresh_all"
 ACTION_REFRESH_META = "refresh_meta"
 ACTION_CLEAR = "clear"
-EVENT_KODI_SENSOR_PLAYLIST_UPDATE = "kodi.sensor.playlist.update"
-
 
 # https://raw.githubusercontent.com/custom-components/sensor.kodi_recently_added/master/custom_components/kodi_recently_added/sensor.py
 
@@ -55,6 +53,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     _events = {}
     _watch_start = None
     _event_context_id = None
+    _initialized = False
 
     def __init__(
         self,
@@ -62,16 +61,20 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         kodi: Kodi,
         kodi_entity_id,
         config: KodiConfig,
-        use_auth_url: bool = False,
     ):
-        super().__init__(kodi, config, use_auth_url)
+        super().__init__(kodi, config)
         self._hass = hass
-        self._state = STATE_OFF
-        self._kodi_entity_id = kodi_entity_id
 
         homeassistant.helpers.event.async_track_state_change_event(
-            hass, "media_player.kodi", self.__handle_event
+            hass, kodi_entity_id, self.__handle_event
         )
+
+        # TODO: populate immediately the data if kodi is running
+        kodi_state = self._hass.states.get(kodi_entity_id)
+        if kodi_state is None or kodi_state == STATE_OFF:
+            self._state = STATE_OFF
+        else:
+            self._state = STATE_ON
 
     @property
     def name(self) -> str:
@@ -157,10 +160,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         elif sensor_action == ACTION_CLEAR:
             await self._clear_all_data(id)
 
-        # self.build_attrs()
-
         _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
-
         self.schedule_update_ha_state()
 
     async def async_call_method(self, method, **kwargs):
@@ -199,8 +199,12 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         """This update is ony used to trigger events so the frontend can be updated. But nothing will happen with this method as no polling is required, but every data change occur when kodi sends events."""
         _LOGGER.debug("> Update Playlist sensor")
 
+        # this piece of code is used to initialize the meta and data when the sensor starts for the first time and kodi is not off (and thus the sensor neither as the state is set in the constructor based on the state of kodi)
         if self._state != STATE_OFF and len(self._meta) == 0:
             self.init_meta("Kodi Playlist update event")
+            await self._update_meta("Kodi Playlist update event")
+            await self._update_data("Kodi Playlist update event")
+            self._initialized = True
 
     async def _clear_all_data(self, event_id):
         self.purge_meta(event_id)
