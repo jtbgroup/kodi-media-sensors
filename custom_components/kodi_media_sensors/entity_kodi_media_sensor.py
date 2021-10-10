@@ -34,16 +34,16 @@ class KodiMediaSensorEntity(Entity, ABC):
     ) -> None:
         super().__init__()
         self._kodi = kodi
-        # self._define_base_url(config)
+        self._define_base_url(config)
 
-    # def _define_base_url(self, config):
-    #     protocol = "https" if config["ssl"] else "http"
-    #     auth = ""
-    #     if config["username"] is not None and config["password"] is not None:
-    #         auth = f"{config['username']}:{config['password']}@"
-    #     self._base_web_url = (
-    #         f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
-    #     )
+    def _define_base_url(self, config):
+        protocol = "https" if config["ssl"] else "http"
+        auth = ""
+        if config["username"] is not None and config["password"] is not None:
+            auth = f"{config['username']}:{config['password']}@"
+        self._base_web_url = (
+            f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
+        )
 
     @abstractmethod
     async def async_call_method(self, method, **kwargs):
@@ -102,24 +102,24 @@ class KodiMediaSensorEntity(Entity, ABC):
     def state(self) -> Optional[str]:
         return self._state
 
-    # def get_web_url(self, path: str) -> str:
-    #     """Get the web URL for the provided path.
+    def get_web_url(self, path: str) -> str:
+        """Get the web URL for the provided path.
 
-    #     This is used for fanart/poster images that are not a http url.  For
-    #     example the path is local to the kodi installation or a path to
-    #     an NFS share.
+        This is used for fanart/poster images that are not a http url.  For
+        example the path is local to the kodi installation or a path to
+        an NFS share.
 
-    #     :param path: The local/nfs/samba/etc. path.
-    #     :returns: The web url to access the image over http.
-    #     """
-    #     if path.lower().startswith("http"):
-    #         return path
-    #     # This looks strange, but the path needs to be quoted twice in order
-    #     # to work.
-    #     # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
-    #     quoted_path2 = parse.quote(parse.quote(path, safe="@"))
-    #     encoded = self._base_web_url + quoted_path2
-    #     return encoded
+        :param path: The local/nfs/samba/etc. path.
+        :returns: The web url to access the image over http.
+        """
+        if path.lower().startswith("http"):
+            return path
+        # This looks strange, but the path needs to be quoted twice in order
+        # to work.
+        # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
+        quoted_path2 = parse.quote(parse.quote(path, safe="@"))
+        encoded = self._base_web_url + quoted_path2
+        return encoded
 
     @property
     def domain_unique_id(self) -> str:
@@ -130,7 +130,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         self.build_attrs()
         return self._attrs
 
-    def format_songs(self, values):
+    def format_items(self, values):
         if values is None:
             return None
 
@@ -157,9 +157,27 @@ class KodiMediaSensorEntity(Entity, ABC):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
+            try:
+                fanart_tag = "tvshow.fanart"
+                poster_tag = "tvshow.poster"
+                if item["type"] == "movie":
+                    fanart_tag = "fanart"
+                    poster_tag = "poster"
+
+                fanart = item["art"].get(fanart_tag, "")
+                poster = item["art"].get(poster_tag, "")
+                if fanart:
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                if poster:
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                card["fanart"] = fanart
+                card["poster"] = poster
+            except KeyError:
+                _LOGGER.warning("Error parsing key from movie blob: %s", item)
+                # continue
 
             result.append(card)
         return result

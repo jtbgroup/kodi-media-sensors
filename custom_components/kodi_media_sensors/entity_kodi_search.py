@@ -16,6 +16,7 @@ from .const import (
     KEY_ARTISTS,
     KEY_MOVIES,
     KEY_ALBUM_DETAILS,
+    KEY_TVSHOWDETAIL,
     KEY_TVSHOWS,
     KEY_TVSHOW_SEASONS,
     KEY_TVSHOW_SEASON_DETAILS,
@@ -53,6 +54,7 @@ PROPS_TVSHOW = [
     "year",
     "season",
     "genre",
+    "art",
 ]
 
 PROPS_SONG = [
@@ -69,6 +71,17 @@ PROPS_SONG = [
 ]
 
 PROPS_MOVIE = ["thumbnail", "title", "year", "art", "genre"]
+PROPS_RECENT_EPISODES = [
+    "title",
+    "rating",
+    "episode",
+    "season",
+    "seasonid",
+    "tvshowid",
+    "thumbnail",
+    "art",
+]
+
 PROPS_ALBUM = ["thumbnail", "title", "year", "art", "genre", "artist", "artistid"]
 PROPS_ARTIST = ["thumbnail", "mood", "genre", "style"]
 PROPS_ALBUM_DETAIL = [
@@ -486,22 +499,23 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         )
 
     async def kodi_search_recent_tvshow_episodes(self, unlimited: bool = False):
+        # http://192.168.1.12:8080/jsonrpc?request={"jsonrpc":"2.0","method":"VideoLibrary.GetRecentlyAddedEpisodes","id":"1611465047410","params":{"properties":["title","rating","episode","season"],"limits":{"start":0,"end":21}}}
         limits = {"start": 0}
         if not unlimited:
             limits["end"] = self._search_limit
-        return await self.call_method_kodi(
+        result = await self.call_method_kodi(
             KEY_TVSHOW_EPISODES,
             "VideoLibrary.GetRecentlyAddedEpisodes",
             {
-                "properties": [
-                    "title",
-                    "rating",
-                    "episode",
-                    "season",
-                ],
+                "properties": PROPS_RECENT_EPISODES,
                 "limits": limits,
             },
         )
+        for episode in result:
+            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+            episode["tvshowtitle"] = tvshow["title"]
+            episode["genre"] = tvshow["genre"]
+        return result
 
     async def kodi_search_artists(self, value, unlimited: bool = False):
         limits = {"start": 0}
@@ -571,6 +585,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
+    async def kodi_search_tvshow_details(self, tvshowid):
+        return await self.call_method_kodi(
+            KEY_TVSHOWDETAIL,
+            "VideoLibrary.GetTVShowDetails",
+            {"properties": PROPS_TVSHOW, "tvshowid": tvshowid},
+        )
+
     async def search_recent(self):
         _LOGGER.debug("Searching recents")
         try:
@@ -582,7 +603,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
         card_json = []
-        self._add_result(self.format_songs(songs), card_json)
+        self._add_result(self.format_items(songs), card_json)
         self._add_result(self.format_albums(albums), card_json)
         self._add_result(self.format_movies(movies), card_json)
         self._add_result(self.format_tvshow_episode_details(episodes), card_json)
@@ -664,9 +685,22 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             }
             thumbnail = item["thumbnail"]
             if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
+
+            try:
+                fanart = item["art"].get("fanart", "")
+                poster = item["art"].get("poster", "")
+                if fanart:
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                if poster:
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                card["fanart"] = fanart
+                card["poster"] = poster
+            except KeyError:
+                _LOGGER.warning("Error parsing key from movie blob: %s", item)
+                continue
 
             result.append(card)
         return result
@@ -685,6 +719,29 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "episodeid": item["episodeid"],
                 "label": item["label"],
             }
+            self.add_attribute("genre", item, "genre", card)
+            self.add_attribute("tvshowtitle", item, "tvshowtitle", card)
+
+            thumbnail = item["thumbnail"]
+            if thumbnail:
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self._kodi.thumbnail_url(thumbnail)
+                card["thumbnail"] = thumbnail
+
+            try:
+                fanart = item["art"].get("tvshow.fanart", "")
+                poster = item["art"].get("tvshow.poster", "")
+                # thumbnail = item["art"].get("thumb", "")
+                if fanart:
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                if poster:
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                card["fanart"] = fanart
+                card["poster"] = poster
+            except KeyError:
+                _LOGGER.warning("Error parsing key from movie blob: %s", item)
+                continue
+
             result.append(card)
         return result
 
@@ -743,19 +800,19 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
 
             try:
                 fanart = item["art"].get("fanart", "")
                 poster = item["art"].get("poster", "")
                 if fanart:
-                    # fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                    fanart = self._kodi.thumbnail_url(thumbnail)
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                    # fanart = self._kodi.thumbnail_url(thumbnail)
                 if poster:
-                    # poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                    poster = self._kodi.thumbnail_url(thumbnail)
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                    # poster = self._kodi.thumbnail_url(thumbnail)
                 card["fanart"] = fanart
                 card["poster"] = poster
             except KeyError:
@@ -783,9 +840,22 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
             thumbnail = item["thumbnail"]
             if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
+                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
+                # thumbnail = self._kodi.thumbnail_url(thumbnail)
                 card["thumbnail"] = thumbnail
+
+            try:
+                fanart = item["art"].get("fanart", "")
+                poster = item["art"].get("poster", "")
+                if fanart:
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                if poster:
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                card["fanart"] = fanart
+                card["poster"] = poster
+            except KeyError:
+                _LOGGER.warning("Error parsing key from movie blob: %s", item)
+                # continue
 
             rating = round(item["rating"], 1)
             if rating:
