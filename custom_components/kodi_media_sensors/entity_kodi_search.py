@@ -603,7 +603,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
         card_json = []
-        self._add_result(self.format_items(songs), card_json)
+        self._add_result(self.format_songs(songs), card_json)
         self._add_result(self.format_albums(albums), card_json)
         self._add_result(self.format_movies(movies), card_json)
         self._add_result(self.format_tvshow_episode_details(episodes), card_json)

@@ -130,7 +130,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         self.build_attrs()
         return self._attrs
 
-    def format_items(self, values):
+    def format_songs(self, values):
         if values is None:
             return None
 

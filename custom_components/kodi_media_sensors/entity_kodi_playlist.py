@@ -249,7 +249,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
         card_json = []
-        self.add_result(self.format_items(songs), card_json)
+        self.add_result(self.format_songs(songs), card_json)
         self._data.clear
         self._data = card_json
 
