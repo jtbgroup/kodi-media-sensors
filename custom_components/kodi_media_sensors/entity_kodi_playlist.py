@@ -1,39 +1,25 @@
 import homeassistant
 import logging
-import json
-import time as timer
-import asyncio
-
-# import datetime
-from typing import Optional, Dict, List, Any
-from homeassistant.helpers.entity import Entity
-from homeassistant import core
-from urllib import parse
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from pykodi import Kodi
 from homeassistant.const import (
-    EVENT_STATE_CHANGED,
+    # EVENT_STATE_CHANGED,
     STATE_OFF,
     STATE_ON,
     STATE_IDLE,
     STATE_PAUSED,
     STATE_PLAYING,
-    STATE_PROBLEM,
+    # STATE_PROBLEM,
 )
 from .const import (
-    KEY_ALBUMS,
-    KEY_SONGS,
-    KEY_ARTISTS,
-    KEY_MOVIES,
-    KEY_ALBUM_DETAILS,
     KEY_ITEMS,
     ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
-    DOMAIN,
+    PROPS_ITEM,
 )
-from homeassistant.components.kodi.media_player import EVENT_KODI_CALL_METHOD_RESULT
 
-from .types import DeviceStateAttrs, KodiConfig
+
+from .types import KodiConfig
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -132,7 +118,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             sensor_action = ACTION_REFRESH_META
 
         time = event.time_fired
-        id = (
+        evt_id = (
             event.context.id
             + " "
             + str(event.time_fired)
@@ -155,15 +141,15 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             + "\r\n\tTime fired : "
             + str(time)
             + "\r\n\tEvent id : "
-            + id
+            + evt_id
         )
 
         self._state = new_entity_state
         if sensor_action == ACTION_REFRESH_ALL or sensor_action == ACTION_REFRESH_META:
-            await self._update_meta(id)
-            await self._update_data(id)
+            await self._update_meta(evt_id)
+            await self._update_data(evt_id)
         elif sensor_action == ACTION_CLEAR:
-            await self._clear_all_data(id)
+            await self._clear_all_data(evt_id)
 
         _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
         self.schedule_update_ha_state()
@@ -227,33 +213,33 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             props_item_playing = await self._kodi.get_playing_item_properties(
                 player, []
             )
-            if props_item_playing.get("id") != None:
+            if props_item_playing.get("id") is not None:
                 self.add_meta("currently_playing", props_item_playing["id"])
-                _LOGGER.debug("Currently playing " + str(props_item_playing["id"]))
+                _LOGGER.debug("Currently playing %s", str(props_item_playing["id"]))
             else:
                 _LOGGER.info("No id defined for this item")
             self._playlistid = player_id
         else:
             self._playlistid = -1
 
-        _LOGGER.debug("Metadata updated (event " + event_id + ")")
+        _LOGGER.debug("Metadata updated (event %s)", event_id)
 
     async def _update_data(self, event_id):
-        songs = None
+        items = None
         try:
             # TODO : is this condition really necessary?
             if self._playlistid > -1:
-                songs = await self.kodi_get_playlist()
+                items = await self.kodi_get_playlist()
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
         card_json = []
-        self.add_result(self.format_songs(songs), card_json)
+        self.add_result(items, card_json)
         self._data.clear
         self._data = card_json
 
-        _LOGGER.debug("Data updated (event " + event_id + ")")
+        _LOGGER.debug("Data updated (event %s)", event_id)
 
     def add_result(self, data, target):
         if data is not None and len(data) > 0:
@@ -263,24 +249,9 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     async def kodi_get_playlist(self):
         limits = {"start": 0}
         return await self.call_method_kodi(
-            KEY_ITEMS,
             "Playlist.GetItems",
             {
-                "properties": [
-                    "album",
-                    "albumid",
-                    "artist",
-                    "artistid",
-                    "duration",
-                    "genre",
-                    "thumbnail",
-                    "title",
-                    "track",
-                    "year",
-                    "episode",
-                    "season",
-                    "art",
-                ],
+                "properties": PROPS_ITEM,
                 "playlistid": self._playlistid,
                 "limits": limits,
             },

@@ -8,11 +8,17 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
-    STATE_UNKNOWN,
     STATE_PROBLEM,
 )
 from .types import DeviceStateAttrs, KodiConfig
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    KEYS,
+    MAP_KEY_MEDIA_TYPE,
+    MEDIA_TYPE_ALBUM_DETAIL,
+    MEDIA_TYPE_SEASON_DETAIL,
+    MEDIA_TYPE_TVSHOW_DETAIL,
+)
 from abc import ABC, abstractmethod
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,6 +41,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         super().__init__()
         self._kodi = kodi
         self._define_base_url(config)
+        self._state = STATE_OFF
 
     def _define_base_url(self, config):
         protocol = "https" if config["ssl"] else "http"
@@ -49,7 +56,7 @@ class KodiMediaSensorEntity(Entity, ABC):
     async def async_call_method(self, method, **kwargs):
         _LOGGER.warning("This method is not implemented for the entity")
 
-    async def call_method_kodi(self, result_key, method, args) -> List:
+    async def call_method_kodi(self, method, args) -> List:
         result = None
         data = None
         try:
@@ -60,7 +67,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             self._state = STATE_PROBLEM
 
         if result:
-            data = self._handle_result(result, result_key)
+            data = self._handle_result(result)
             self._state = STATE_ON
         else:
             self._state = STATE_OFF
@@ -76,27 +83,77 @@ class KodiMediaSensorEntity(Entity, ABC):
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_PROBLEM
 
-    def _handle_result(self, result, result_key) -> List:
+    def _handle_result(self, result) -> List:
+        new_data = []
         error = result.get("error")
         if error:
             _LOGGER.error(
-                "Error while fetching %s: [%d] %s"
-                % (result_key, error.get("code"), error.get("message"))
+                "Error while fetching data: %s",
+                [error.get("code"), error.get("message")],
             )
             self._state = STATE_PROBLEM
             return
 
-        new_data: List[Dict[str, Any]] = result.get(result_key, [])
-        if not new_data:
-            _LOGGER.info(
-                "No %s found after requesting data from Kodi, assuming empty."
-                % result_key
-            )
-            self._state = STATE_UNKNOWN
-            return
+        for entry in result:
+            if entry in KEYS:
+                new_data: List[Dict[str, Any]] = result.get(entry, [])
+                default_type = MAP_KEY_MEDIA_TYPE.get(entry)
 
-        self._state = STATE_ON
+                if self._hasLeaf(default_type):
+                    for item in new_data:
+                        self._format_item(item, default_type)
+                else:
+                    self._format_item(new_data, default_type)
+
         return new_data
+
+    def _hasLeaf(self, default_type):
+        if (
+            default_type == MEDIA_TYPE_ALBUM_DETAIL
+            or default_type == MEDIA_TYPE_TVSHOW_DETAIL
+        ):
+            return False
+        return True
+
+    def _format_item(self, item, default_type):
+        if not "type" in item:
+            item["type"] = default_type
+
+        if "genre" in item:
+            item["genre"] = ", ".join(item["genre"])
+
+        if "thumbnail" in item:
+            thumbnail = self._kodi.thumbnail_url(item["thumbnail"])
+            item["thumbnail"] = thumbnail
+
+        if "art" in item:
+            fanart_ref = "fanart"
+            poster_ref = "poster"
+
+            try:
+                if default_type == MEDIA_TYPE_SEASON_DETAIL:
+                    fanart_ref = "tvshow.fanart"
+
+                fanart = item["art"].get(fanart_ref, "")
+                poster = item["art"].get(poster_ref, "")
+                if fanart:
+                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
+                if poster:
+                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
+                if fanart != "":
+                    item["fanart"] = fanart
+                if poster != "":
+                    item["poster"] = poster
+            except KeyError:
+                _LOGGER.warning("Error parsing key from movie blob: %s", item)
+
+            del item["art"]
+
+        if "rating" in item:
+            rating = round(item["rating"], 1)
+            if rating:
+                rating = f"\N{BLACK STAR} {rating}"
+            item["rating"] = rating
 
     @property
     def state(self) -> Optional[str]:
@@ -130,58 +187,6 @@ class KodiMediaSensorEntity(Entity, ABC):
         self.build_attrs()
         return self._attrs
 
-    def format_songs(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "song",
-            }
-            self.add_attribute("artist", item, "artist", card)
-            self.add_attribute("artistid", item, "artistid", card)
-            self.add_attribute("title", item, "title", card)
-            self.add_attribute("album", item, "album", card)
-            self.add_attribute("year", item, "year", card)
-            self.add_attribute("songid", item, "songid", card)
-            self.add_attribute("track", item, "track", card)
-            self.add_attribute("genre", item, "genre", card)
-            self.add_attribute("duration", item, "duration", card)
-            self.add_attribute("id", item, "id", card)
-            self.add_attribute("type", item, "object_type", card)
-            self.add_attribute("albumid", item, "albumid", card)
-            self.add_attribute("label", item, "label", card)
-            self.add_attribute("episode", item, "episode", card)
-            self.add_attribute("season", item, "season", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                # thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-            try:
-                fanart_tag = "tvshow.fanart"
-                poster_tag = "tvshow.poster"
-                if item["type"] == "movie":
-                    fanart_tag = "fanart"
-                    poster_tag = "poster"
-
-                fanart = item["art"].get(fanart_tag, "")
-                poster = item["art"].get(poster_tag, "")
-                if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                card["fanart"] = fanart
-                card["poster"] = poster
-            except KeyError:
-                _LOGGER.warning("Error parsing key from movie blob: %s", item)
-                # continue
-
-            result.append(card)
-        return result
-
     def add_attribute(self, attribute_name, data, target_attribute_name, target):
         if attribute_name in data:
             target[target_attribute_name] = data[attribute_name]
@@ -198,17 +203,17 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._meta[0]["sensor_entity_id"] = self.domain_unique_id
         self._meta[0]["service_domain"] = DOMAIN
         self.build_attrs()
-        _LOGGER.debug("Init metadata (event " + event_id + ")")
+        _LOGGER.debug("Init metadata (event %s)", event_id)
 
     def purge_meta(self, event_id):
         self._meta = [{}]
-        _LOGGER.debug("Purged metadata (event " + event_id + ")")
+        _LOGGER.debug("Purged metadata (event %s)", event_id)
 
     def add_meta(self, key, value):
         if len(self._meta[0]) == 0:
-            self.init_meta
+            self.init_meta("Init because no meta during add")
         self._meta[0][key] = value
 
     def purge_data(self, event_id):
         self._data = []
-        _LOGGER.debug("Purged data (event " + event_id + ")")
+        _LOGGER.debug("Purged data (event %s)", event_id)

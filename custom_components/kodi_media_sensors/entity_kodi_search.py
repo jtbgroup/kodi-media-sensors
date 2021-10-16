@@ -1,31 +1,26 @@
 import logging
 import homeassistant
-import json
 import time
-from operator import itemgetter
-from homeassistant import core
-from typing import Optional, Dict, List, Any
-from homeassistant.helpers.entity import Entity
-from urllib import parse
+from typing import Dict, List, Any
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
-from homeassistant.const import STATE_OFF, STATE_ON, EVENT_STATE_CHANGED
+from homeassistant.const import STATE_OFF, STATE_ON
 from pykodi import Kodi
 from .const import (
-    KEY_ALBUMS,
-    KEY_SONGS,
-    KEY_ARTISTS,
-    KEY_MOVIES,
-    KEY_ALBUM_DETAILS,
-    KEY_TVSHOWDETAIL,
-    KEY_TVSHOWS,
-    KEY_TVSHOW_SEASONS,
-    KEY_TVSHOW_SEASON_DETAILS,
-    KEY_TVSHOW_EPISODES,
     ENTITY_SENSOR_SEARCH,
     ENTITY_NAME_SENSOR_SEARCH,
+    MEDIA_TYPE_SEASON_DETAIL,
     OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
+    PROPS_SEASON,
+    PROPS_RECENT_EPISODES,
+    PROPS_ALBUM,
+    PROPS_ALBUM_DETAIL,
+    PROPS_ARTIST,
+    PROPS_EPISODE,
+    PROPS_MOVIE,
+    PROPS_SONG,
+    PROPS_TVSHOW,
 )
-from .types import DeviceStateAttrs, KodiConfig
+from .types import KodiConfig
 
 _LOGGER = logging.getLogger(__name__)
 ACTION_DO_NOTHING = "nothing"
@@ -43,56 +38,6 @@ PLAY_ATTR_SONGID = "songid"
 PLAY_ATTR_ALBUMID = "albumid"
 PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_EPISODEID = "episodeid"
-
-PROPS_TVSHOW = [
-    "title",
-    "thumbnail",
-    "playcount",
-    "dateadded",
-    "episode",
-    "rating",
-    "year",
-    "season",
-    "genre",
-    "art",
-]
-
-PROPS_SONG = [
-    "title",
-    "album",
-    "albumid",
-    "artist",
-    "artistid",
-    "track",
-    "year",
-    "duration",
-    "genre",
-    "thumbnail",
-]
-
-PROPS_MOVIE = ["thumbnail", "title", "year", "art", "genre"]
-PROPS_RECENT_EPISODES = [
-    "title",
-    "rating",
-    "episode",
-    "season",
-    "seasonid",
-    "tvshowid",
-    "thumbnail",
-    "art",
-]
-
-PROPS_ALBUM = ["thumbnail", "title", "year", "art", "genre", "artist", "artistid"]
-PROPS_ARTIST = ["thumbnail", "mood", "genre", "style"]
-PROPS_ALBUM_DETAIL = [
-    "albumlabel",
-    "artist",
-    "year",
-    "artistid",
-    "thumbnail",
-    "style",
-    "genre",
-]
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
@@ -147,12 +92,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         self._state = new_entity_state
 
-        id = event.context.id + " [" + new_kodi_event_state + "]"
+        ctxt_id = event.context.id + " [" + new_kodi_event_state + "]"
         if action == ACTION_CLEAR:
-            self._clear_all_data(id)
+            self._clear_all_data(ctxt_id)
         if action == ACTION_REFRESH_META:
-            self.purge_data(id)
-            self.init_meta(id)
+            self.purge_data(ctxt_id)
+            self.init_meta(ctxt_id)
 
         if action != ACTION_DO_NOTHING:
             self.schedule_update_ha_state()
@@ -173,7 +118,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     async def async_call_method(self, method, **kwargs):
         self._search_moment = time.perf_counter()
         args = ", ".join(f"{key}={value}" for key, value in kwargs.items())
-        _LOGGER.debug("calling method " + method + " with arguments " + args)
+        _LOGGER.debug("calling method %s with arguments %s", method, args)
         self._meta[0]["method"] = method
         self._meta[0]["args"] = args
 
@@ -188,7 +133,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             elif media_type == SEARCH_MEDIA_TYPE_ARTIST:
                 await self.search_artist(search_value)
             elif media_type == SEARCH_MEDIA_TYPE_TVSHOW:
-                await self.search_tvshow(search_value)
+                await self.search_tvshow_detail(search_value)
             else:
                 raise ValueError("The given media type is unsupported: " + media_type)
 
@@ -259,37 +204,30 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     async def play_episode(self, episodeid):
         await self.play_item(1, "episodeid", episodeid)
 
-    async def search_tvshow(self, value):
+    async def search_tvshow_detail(self, tvshowid):
         card_json = []
         self._data.clear
 
-        if value is None or value == "":
+        if tvshowid is None or tvshowid == "":
             _LOGGER.warning("The argument 'value' passed is empty")
             return
         try:
-            tvshow_season_resultset = await self.kodi_search_tvshow_seasons(value)
-            tvshow_season_data: List[Dict[str, Any]] = list()
+            season_resultset = await self.kodi_search_tvshow_seasons(tvshowid)
+            season_data: List[Dict[str, Any]] = list()
 
-            if tvshow_season_resultset is not None and len(tvshow_season_resultset) > 0:
-                for tvshow_season in tvshow_season_resultset:
+            if season_resultset is not None and len(season_resultset) > 0:
+                for tvshow_season in season_resultset:
                     season_number = tvshow_season["season"]
 
-                    tvshow_episodes_resultset = await self.kodi_search_tvshow_episodes(
-                        value, season_number
+                    episodes_resultset = await self.kodi_search_episodes_by_season(
+                        tvshowid, season_number
                     )
 
-                    season = {
-                        "title": tvshow_season["label"],
-                        "seasonid": tvshow_season["seasonid"],
-                        "season": tvshow_season["season"],
-                        "thumbnail": tvshow_season["thumbnail"],
-                        "episodes": tvshow_episodes_resultset,
-                    }
+                    tvshow_season["type"] = MEDIA_TYPE_SEASON_DETAIL
+                    tvshow_season["episodes"] = episodes_resultset
 
-                    tvshow_season_data.append(season)
-            self._add_result(
-                self.format_tvshow_season_details(tvshow_season_data), card_json
-            )
+                    season_data.append(tvshow_season)
+            self._add_result(season_data, card_json)
 
             self._state = STATE_ON
         except Exception:
@@ -307,7 +245,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
-            # self._state = STATE_OFF
 
         if songs_resultset is not None and len(songs_resultset) > 0:
             album_id_set = set()
@@ -324,6 +261,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     album_id_set.add(song["albumid"])
 
             for album_id in album_id_set:
+                _LOGGER.debug("start album id %s", album_id)
                 album_resultset = await self.kodi_search_albumdetails(album_id)
 
                 album_songs = list(
@@ -331,28 +269,23 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 )
 
                 if album_resultset["label"] is None:
-                    _LOGGER.exception("?????????????" + album_id)
+                    _LOGGER.exception("????????????? %s", album_id)
 
-                album = {
-                    "albumid": album_id,
-                    "title": album_resultset["label"],
-                    "year": album_resultset["year"],
-                    "thumbnail": album_resultset["thumbnail"],
-                    "songs": album_songs,
-                }
-                albums_data.append(album)
+                album_resultset["albumid"] = album_id
+                album_resultset["songs"] = album_songs
+
+                albums_data.append(album_resultset)
+                _LOGGER.debug("ok for album id %s", album_id)
 
             card_json = []
-            self._add_result(self.format_songs(songs_data), card_json)
-            self._add_result(self.format_album_details(albums_data), card_json)
+            self._add_result(songs_data, card_json)
+            self._add_result(albums_data, card_json)
 
             self._data.clear
             self._data = card_json
-            # self._state = STATE_ON
 
     async def kodi_search_albumdetails(self, value):
         return await self.call_method_kodi(
-            KEY_ALBUM_DETAILS,
             "AudioLibrary.GetAlbumDetails",
             {
                 "properties": PROPS_ALBUM_DETAIL,
@@ -376,7 +309,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             _filter["artistid"] = value
 
         return await self.call_method_kodi(
-            KEY_SONGS,
             "AudioLibrary.GetSongs",
             {
                 "properties": PROPS_SONG,
@@ -390,19 +322,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
-    async def kodi_search_tvshow_episodes(self, tvshowid, season):
+    async def kodi_search_episodes_by_season(self, tvshowid, season_number):
         _limits = {"start": 0}
 
         return await self.call_method_kodi(
-            KEY_TVSHOW_EPISODES,
             "VideoLibrary.GetEpisodes",
             {
-                "properties": [
-                    "title",
-                    "rating",
-                    "episode",
-                    "season",
-                ],
+                "properties": PROPS_EPISODE,
                 "limits": _limits,
                 "sort": {
                     "method": "episode",
@@ -410,7 +336,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     "ignorearticle": True,
                 },
                 "tvshowid": tvshowid,
-                "season": season,
+                "season": season_number,
             },
         )
 
@@ -418,14 +344,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         _limits = {"start": 0}
 
         return await self.call_method_kodi(
-            KEY_TVSHOW_SEASONS,
             "VideoLibrary.GetSeasons",
             {
-                "properties": [
-                    "season",
-                    "showtitle",
-                    "thumbnail",
-                ],
+                "properties": PROPS_SEASON,
                 "limits": _limits,
                 "sort": {
                     "method": "season",
@@ -441,7 +362,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_ALBUMS,
             "AudioLibrary.GetAlbums",
             {
                 "properties": PROPS_ALBUM,
@@ -464,7 +384,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_ALBUMS,
             "AudioLibrary.GetRecentlyAddedAlbums",
             {
                 "properties": PROPS_ALBUM,
@@ -477,7 +396,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_SONGS,
             "AudioLibrary.GetRecentlyAddedSongs",
             {
                 "properties": PROPS_SONG,
@@ -490,7 +408,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_MOVIES,
             "VideoLibrary.GetRecentlyAddedMovies",
             {
                 "properties": PROPS_MOVIE,
@@ -498,13 +415,11 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
-    async def kodi_search_recent_tvshow_episodes(self, unlimited: bool = False):
-        # http://192.168.1.12:8080/jsonrpc?request={"jsonrpc":"2.0","method":"VideoLibrary.GetRecentlyAddedEpisodes","id":"1611465047410","params":{"properties":["title","rating","episode","season"],"limits":{"start":0,"end":21}}}
+    async def kodi_search_recent_episodes(self, unlimited: bool = False):
         limits = {"start": 0}
         if not unlimited:
             limits["end"] = self._search_limit
         result = await self.call_method_kodi(
-            KEY_TVSHOW_EPISODES,
             "VideoLibrary.GetRecentlyAddedEpisodes",
             {
                 "properties": PROPS_RECENT_EPISODES,
@@ -522,7 +437,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_ARTISTS,
             "AudioLibrary.GetArtists",
             {
                 "properties": PROPS_ARTIST,
@@ -545,7 +459,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_MOVIES,
             "VideoLibrary.GetMovies",
             {
                 "properties": PROPS_MOVIE,
@@ -568,7 +481,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
         return await self.call_method_kodi(
-            KEY_TVSHOWS,
             "VideoLibrary.GetTVShows",
             {
                 "properties": PROPS_TVSHOW,
@@ -585,9 +497,34 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
+    async def kodi_search_episodes(self, value, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+        result = await self.call_method_kodi(
+            "VideoLibrary.GetEpisodes",
+            {
+                "properties": PROPS_EPISODE,
+                "limits": limits,
+                "sort": {
+                    "method": "title",
+                    "order": "ascending",
+                },
+                "filter": {
+                    "field": "title",
+                    "operator": "contains",
+                    "value": value,
+                },
+            },
+        )
+        for episode in result:
+            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+            episode["tvshowtitle"] = tvshow["title"]
+            episode["genre"] = tvshow["genre"]
+        return result
+
     async def kodi_search_tvshow_details(self, tvshowid):
         return await self.call_method_kodi(
-            KEY_TVSHOWDETAIL,
             "VideoLibrary.GetTVShowDetails",
             {"properties": PROPS_TVSHOW, "tvshowid": tvshowid},
         )
@@ -598,15 +535,15 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             songs = await self.kodi_search_recent_songs()
             albums = await self.kodi_search_recent_albums()
             movies = await self.kodi_search_recent_movies()
-            episodes = await self.kodi_search_recent_tvshow_episodes()
+            episodes = await self.kodi_search_recent_episodes()
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
         card_json = []
-        self._add_result(self.format_songs(songs), card_json)
-        self._add_result(self.format_albums(albums), card_json)
-        self._add_result(self.format_movies(movies), card_json)
-        self._add_result(self.format_tvshow_episode_details(episodes), card_json)
+        self._add_result(songs, card_json)
+        self._add_result(albums, card_json)
+        self._add_result(movies, card_json)
+        self._add_result(episodes, card_json)
 
         self._data.clear
         self._data = card_json
@@ -616,7 +553,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             _LOGGER.warning("The argument 'value' passed is empty")
             return
 
-        _LOGGER.debug("Searching for '" + value + "'")
+        _LOGGER.debug("Searching for '%s'", value)
 
         try:
             songs = await self.kodi_search_songs(value)
@@ -624,17 +561,19 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             artists = await self.kodi_search_artists(value)
             movies = await self.kodi_search_movies(value)
             tvshows = await self.kodi_search_tvshows(value)
+            episodes = await self.kodi_search_episodes(value)
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             # self._state = STATE_OFF
 
         card_json = []
-        self._add_result(self.format_songs(songs), card_json)
-        self._add_result(self.format_albums(albums), card_json)
-        self._add_result(self.format_artists(artists), card_json)
-        self._add_result(self.format_movies(movies), card_json)
-        self._add_result(self.format_tvshows(tvshows), card_json)
+        self._add_result(songs, card_json)
+        self._add_result(albums, card_json)
+        self._add_result(artists, card_json)
+        self._add_result(movies, card_json)
+        self._add_result(tvshows, card_json)
+        self._add_result(episodes, card_json)
 
         self._data.clear
         self._data = card_json
@@ -644,223 +583,3 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if data is not None and len(data) > 0:
             for row in data:
                 target.append(row)
-
-    def format_album_details(self, values):
-        if values is None:
-            return None
-
-        values.sort(key=itemgetter("year"), reverse=True)
-
-        result = []
-        for item in values:
-            albumid = item["albumid"]
-            card = {
-                "object_type": "albumdetail",
-                "title": item["title"],
-                "year": item["year"],
-                "albumid": albumid,
-                "songs_count": len(item["songs"]),
-                "songs": self.format_songs(item["songs"]),
-            }
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            result.append(card)
-        return result
-
-    def format_tvshow_season_details(self, values):
-        if values is None:
-            return None
-        result = []
-        for item in values:
-            card = {
-                "object_type": "seasondetail",
-                "title": item["title"],
-                "season": item["season"],
-                "seasonid": item["seasonid"],
-                "episodes": self.format_tvshow_episode_details(item["episodes"]),
-            }
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                # thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            try:
-                fanart = item["art"].get("fanart", "")
-                poster = item["art"].get("poster", "")
-                if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                card["fanart"] = fanart
-                card["poster"] = poster
-            except KeyError:
-                _LOGGER.warning("Error parsing key from movie blob: %s", item)
-                continue
-
-            result.append(card)
-        return result
-
-    def format_tvshow_episode_details(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "episodedetail",
-                "title": item["title"],
-                "season": item["season"],
-                "episode": item["episode"],
-                "episodeid": item["episodeid"],
-                "label": item["label"],
-            }
-            self.add_attribute("genre", item, "genre", card)
-            self.add_attribute("tvshowtitle", item, "tvshowtitle", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                # thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            try:
-                fanart = item["art"].get("tvshow.fanart", "")
-                poster = item["art"].get("tvshow.poster", "")
-                # thumbnail = item["art"].get("thumb", "")
-                if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                card["fanart"] = fanart
-                card["poster"] = poster
-            except KeyError:
-                _LOGGER.warning("Error parsing key from movie blob: %s", item)
-                continue
-
-            result.append(card)
-        return result
-
-    def format_albums(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "album",
-                "artist": ",".join(item["artist"]),
-                "albumid": item["albumid"],
-                "artistid": item["artistid"][0],
-            }
-
-            self.add_attribute("title", item, "title", card)
-            self.add_attribute("year", item, "year", card)
-            self.add_attribute("albumid", item, "albumid", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                # thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            result.append(card)
-        return result
-
-    def format_artists(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {"object_type": "artist"}
-            self.add_attribute("artist", item, "artist", card)
-            self.add_attribute("artistid", item, "artistid", card)
-            result.append(card)
-        return result
-
-    def format_movies(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "movie",
-                "genre": ", ".join(item["genre"]),
-            }
-
-            self.add_attribute("movieid", item, "movieid", card)
-            self.add_attribute("title", item, "title", card)
-            self.add_attribute("year", item, "year", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                # thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            try:
-                fanart = item["art"].get("fanart", "")
-                poster = item["art"].get("poster", "")
-                if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                    # fanart = self._kodi.thumbnail_url(thumbnail)
-                if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                    # poster = self._kodi.thumbnail_url(thumbnail)
-                card["fanart"] = fanart
-                card["poster"] = poster
-            except KeyError:
-                _LOGGER.warning("Error parsing key from movie blob: %s", item)
-                continue
-
-            result.append(card)
-        return result
-
-    def format_tvshows(self, values):
-        if values is None:
-            return None
-
-        result = []
-        for item in values:
-            card = {
-                "object_type": "tvshow",
-                "genre": ", ".join(item["genre"]),
-                "number": "S{:0>2}E{:0>2}".format(item["season"], item["episode"]),
-            }
-
-            self.add_attribute("tvshowid", item, "tvshowid", card)
-            self.add_attribute("title", item, "title", card)
-            self.add_attribute("year", item, "year", card)
-
-            thumbnail = item["thumbnail"]
-            if thumbnail:
-                thumbnail = self.get_web_url(parse.unquote(thumbnail)[8:].strip("/"))
-                # thumbnail = self._kodi.thumbnail_url(thumbnail)
-                card["thumbnail"] = thumbnail
-
-            try:
-                fanart = item["art"].get("fanart", "")
-                poster = item["art"].get("poster", "")
-                if fanart:
-                    fanart = self.get_web_url(parse.unquote(fanart)[8:].strip("/"))
-                if poster:
-                    poster = self.get_web_url(parse.unquote(poster)[8:].strip("/"))
-                card["fanart"] = fanart
-                card["poster"] = poster
-            except KeyError:
-                _LOGGER.warning("Error parsing key from movie blob: %s", item)
-                # continue
-
-            rating = round(item["rating"], 1)
-            if rating:
-                rating = f"\N{BLACK STAR} {rating}"
-            card["rating"] = rating
-
-            result.append(card)
-        return result
