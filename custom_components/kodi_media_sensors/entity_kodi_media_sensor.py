@@ -123,8 +123,12 @@ class KodiMediaSensorEntity(Entity, ABC):
             item["genre"] = ", ".join(item["genre"])
 
         if "thumbnail" in item:
-            thumbnail = self._kodi.thumbnail_url(item["thumbnail"])
-            item["thumbnail"] = thumbnail
+            th = item["thumbnail"]
+            if th is None or th == "":
+                del item["thumbnail"]
+            else:
+                thumbnail = self._kodi.thumbnail_url(item["thumbnail"])
+                item["thumbnail"] = thumbnail
 
         if "art" in item:
             fanart_ref = "fanart"
