@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.1.0
+## 3.1.5
 
 * code refactoring
 * search enhanced with 'recently added' items
