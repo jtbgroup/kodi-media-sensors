@@ -1,4 +1,8 @@
-# Changelog
+# KODI MEDIA SENSOR - Changelog
+
+## 3.2.0
+
+* Added Search PVR Channels functionnality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is desactivated. 
 
 ## 3.1.5
 
@@ -7,7 +11,6 @@
 * playlist sensor initialized directly after installation
 * added art tags from kodi
 * includes 'episode' in the search result (based on the title of the episode)
-
 
 ## 3.0.2
 
