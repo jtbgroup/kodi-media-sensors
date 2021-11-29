@@ -62,15 +62,18 @@ class KodiMediaSensorEntity(Entity, ABC):
         try:
             # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
             result = await self._kodi.call_method(method, **args)
-        except Exception:
-            _LOGGER.exception("Error updating sensor, is kodi running?")
-            self._state = STATE_PROBLEM
-
-        if result:
             data = self._handle_result(result)
             self._state = STATE_ON
-        else:
-            self._state = STATE_OFF
+        except Exception as exception:
+            _LOGGER.exception(
+                "Error updating sensor, is kodi running? : %s", str(exception)
+            )
+            self._state = STATE_PROBLEM
+
+        # if result:
+        # else:
+        #     _LOGGER.warning("result is null state set to off")
+        #     self._state = STATE_OFF
 
         return data
 
@@ -79,8 +82,10 @@ class KodiMediaSensorEntity(Entity, ABC):
             # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
             await self._kodi.call_method(method, **args)
             self._state = STATE_ON
-        except Exception:
-            _LOGGER.exception("Error updating sensor, is kodi running?")
+        except Exception as exception:
+            _LOGGER.exception(
+                "Error updating sensor, is kodi running? : %s", str(exception)
+            )
             self._state = STATE_PROBLEM
 
     def _handle_result(self, result) -> List:
@@ -187,7 +192,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         return "sensor." + self.unique_id
 
     @property
-    def device_state_attributes(self) -> DeviceStateAttrs:
+    def extra_state_attributes(self) -> DeviceStateAttrs:
         self.build_attrs()
         return self._attrs
 

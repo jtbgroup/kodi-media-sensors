@@ -28,9 +28,11 @@ ENTITY_NAME_SENSOR_SEARCH = "Kodi Media Sensor Search"
 ATTR_METHOD = "method"
 
 # Kodi keys returned in the aswer
+KEY_ADDONS = "addons"
 KEY_ALBUMS = "albums"
 KEY_ALBUM_DETAILS = "albumdetails"
 KEY_ARTISTS = "artists"
+KEY_CHANNELS = "channels"
 KEY_EPISODES = "episodes"
 KEY_MOVIES = "movies"
 KEY_SEASONS = "seasons"
@@ -40,9 +42,11 @@ KEY_TVSHOWS = "tvshows"
 KEY_TVSHOW_DETAILS = "tvshowdetails"
 KEY_ITEMS = "items"
 KEYS = {
+    KEY_ADDONS,
     KEY_ALBUMS,
     KEY_ALBUM_DETAILS,
     KEY_ARTISTS,
+    KEY_CHANNELS,
     KEY_EPISODES,
     KEY_MOVIES,
     KEY_SEASONS,
@@ -55,9 +59,11 @@ KEYS = {
 
 # Kodi types of items
 # https://github.com/xbmc/xbmc/blob/master/xbmc/media/MediaType.h
+MEDIA_TYPE_ADDON = "addon"
 MEDIA_TYPE_ALBUM = "album"
 MEDIA_TYPE_ALBUM_DETAIL = "albumdetail"
 MEDIA_TYPE_ARTIST = "artist"
+MEDIA_TYPE_CHANNEL = "channel"
 MEDIA_TYPE_EPISODE = "episode"
 MEDIA_TYPE_MOVIE = "movie"
 MEDIA_TYPE_SEASON = "season"
@@ -68,9 +74,11 @@ MEDIA_TYPE_TVSHOW_DETAIL = "tvshowdetail"
 # MEDIA_TYPE_ITEM = "item"
 
 MAP_KEY_MEDIA_TYPE = {
+    KEY_ADDONS: MEDIA_TYPE_ADDON,
     KEY_ALBUMS: MEDIA_TYPE_ALBUM,
     KEY_ALBUM_DETAILS: MEDIA_TYPE_ALBUM_DETAIL,
     KEY_ARTISTS: MEDIA_TYPE_ARTIST,
+    KEY_CHANNELS: MEDIA_TYPE_CHANNEL,
     KEY_EPISODES: MEDIA_TYPE_EPISODE,
     KEY_MOVIES: MEDIA_TYPE_MOVIE,
     KEY_SEASONS: MEDIA_TYPE_SEASON,
@@ -161,3 +169,5 @@ PROPS_ITEM = [
     "season",
     "art",
 ]
+
+PROPS_ADDONS = ["enabled"]

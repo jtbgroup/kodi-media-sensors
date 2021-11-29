@@ -19,6 +19,7 @@ from .const import (
     PROPS_MOVIE,
     PROPS_SONG,
     PROPS_TVSHOW,
+    PROPS_ADDONS,
 )
 from .types import KodiConfig
 
@@ -38,6 +39,7 @@ PLAY_ATTR_SONGID = "songid"
 PLAY_ATTR_ALBUMID = "albumid"
 PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_EPISODEID = "episodeid"
+PLAY_ATTR_CHANNELID = "channelid"
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
@@ -46,6 +48,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_limit = OPTION_SEARCH_LIMIT_DEFAULT_VALUE
     _search_moment = 0
     _clear_timer = 300
+    pvr_tested = False
+    can_search_pvr = False
 
     def __init__(
         self,
@@ -154,6 +158,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.play_movie(kwargs.get(PLAY_ATTR_MOVIEID))
             if kwargs.get("episodeid") is not None:
                 await self.play_episode(kwargs.get(PLAY_ATTR_EPISODEID))
+            if kwargs.get("channelid") is not None:
+                await self.play_channel(kwargs.get(PLAY_ATTR_CHANNELID))
 
         else:
             raise ValueError("The given method is unsupported: " + method)
@@ -200,6 +206,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def play_movie(self, movieid):
         await self.play_item(1, "movieid", movieid)
+
+    async def play_channel(self, channelid):
+        # await self.play_item(1, "channelid", channelid)
+        await self.call_method_kodi_no_result(
+            "Player.Open",
+            {"item": {"channelid": channelid}},
+        )
 
     async def play_episode(self, episodeid):
         await self.play_item(1, "episodeid", episodeid)
@@ -497,6 +510,26 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
+    async def kodi_search_channels(self, value, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_limit
+
+        result = await self.call_method_kodi(
+            "PVR.GetChannels",
+            {
+                "properties": ["uniqueid", "thumbnail"],
+                "limits": limits,
+                "channelgroupid": "alltv",
+            },
+        )
+        filtered_result = []
+        if not result is None:
+            for channel in result:
+                if value.lower() in channel["label"].lower():
+                    filtered_result.append(channel)
+        return filtered_result
+
     async def kodi_search_episodes(self, value, unlimited: bool = False):
         limits = {"start": 0}
         if not unlimited:
@@ -555,29 +588,64 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         _LOGGER.debug("Searching for '%s'", value)
 
-        try:
-            songs = await self.kodi_search_songs(value)
-            albums = await self.kodi_search_albums(value)
-            artists = await self.kodi_search_artists(value)
-            movies = await self.kodi_search_movies(value)
-            tvshows = await self.kodi_search_tvshows(value)
-            episodes = await self.kodi_search_episodes(value)
-
-        except Exception:
-            _LOGGER.exception("Error updating sensor, is kodi running?")
-            # self._state = STATE_OFF
-
         card_json = []
+        # try:
+        songs = await self.kodi_search_songs(value)
         self._add_result(songs, card_json)
+
+        albums = await self.kodi_search_albums(value)
         self._add_result(albums, card_json)
+
+        artists = await self.kodi_search_artists(value)
         self._add_result(artists, card_json)
+
+        movies = await self.kodi_search_movies(value)
         self._add_result(movies, card_json)
+
+        tvshows = await self.kodi_search_tvshows(value)
         self._add_result(tvshows, card_json)
+
+        # except Exception:
+        #     _LOGGER.error("Error updating sensor, is kodi running??????")
+        #     # self._state = STATE_OFF
+
+        episodes = await self.kodi_search_episodes(value)
         self._add_result(episodes, card_json)
+
+        if not self.pvr_tested:
+            await self.init_pvr()
+
+        if self.can_search_pvr:
+            channels = await self.kodi_search_channels(value)
+            self._add_result(channels, card_json)
 
         self._data.clear
         self._data = card_json
         # self._state = STATE_ON
+
+    async def init_pvr(self):
+        addons = await self.call_method_kodi(
+            "Addons.GetAddons", {"type": "kodi.pvrclient", "properties": PROPS_ADDONS}
+        )
+
+        self.pvr_tested = True
+
+        pvr_addons = list(
+            filter(
+                lambda d: d["enabled"] is True,
+                addons,
+            )
+        )
+
+        if len(pvr_addons) > 0:
+            _LOGGER.info(
+                "PVR Addons found. The search will be done on PVR channels too"
+            )
+            self.can_search_pvr = True
+        else:
+            _LOGGER.info(
+                "No PVR Addon found. The search ensor will not search results in the PVR channels"
+            )
 
     def _add_result(self, data, target):
         if data is not None and len(data) > 0:
