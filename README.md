@@ -7,7 +7,6 @@
 
 This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card), [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-
 ![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/kodi_playlist_card.png)
 
 # Table of Contents
