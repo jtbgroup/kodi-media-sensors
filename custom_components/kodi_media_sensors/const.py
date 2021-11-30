@@ -171,3 +171,11 @@ PROPS_ITEM = [
 ]
 
 PROPS_ADDONS = ["enabled"]
+
+PROPS_CHANNEL = [
+    "uniqueid",
+    "thumbnail",
+    "channeltype",
+    "channel",
+    "channelnumber",
+]

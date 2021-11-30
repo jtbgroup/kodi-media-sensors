@@ -20,6 +20,7 @@ from .const import (
     PROPS_SONG,
     PROPS_TVSHOW,
     PROPS_ADDONS,
+    PROPS_CHANNEL,
 )
 from .types import KodiConfig
 
@@ -31,6 +32,7 @@ ACTION_REFRESH_META = "refresh_meta"
 METHOD_SEARCH = "search"
 METHOD_CLEAR = "clear"
 METHOD_PLAY = "play"
+METHOD_RESET_ADDONS = "reset_addons"
 SEARCH_MEDIA_TYPE_ALL = "all"
 SEARCH_MEDIA_TYPE_RECENT = "recent"
 SEARCH_MEDIA_TYPE_ARTIST = "artist"
@@ -48,7 +50,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_limit = OPTION_SEARCH_LIMIT_DEFAULT_VALUE
     _search_moment = 0
     _clear_timer = 300
-    pvr_tested = False
+    addons_initialized = False
     can_search_pvr = False
 
     def __init__(
@@ -149,6 +151,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         elif method == METHOD_CLEAR:
             await self._clear_result()
             self.schedule_update_ha_state()
+        elif method == METHOD_RESET_ADDONS:
+            await self._reset_addons()
         elif method == METHOD_PLAY:
             if kwargs.get("songid") is not None:
                 await self.play_song(kwargs.get(PLAY_ATTR_SONGID))
@@ -163,6 +167,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         else:
             raise ValueError("The given method is unsupported: " + method)
+
+    async def _reset_addons(self):
+        self.addons_initialized = False
+        await self.init_addons()
 
     async def _clear_result(self):
         self._search_moment = 0
@@ -381,7 +389,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "limits": limits,
                 "sort": {
                     "method": "title",
-                    "order": "ascending",
+                    "order": "descending",
                     "ignorearticle": True,
                 },
                 "filter": {
@@ -515,19 +523,43 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited:
             limits["end"] = self._search_limit
 
-        result = await self.call_method_kodi(
+        resultTV = await self.call_method_kodi(
             "PVR.GetChannels",
             {
-                "properties": ["uniqueid", "thumbnail"],
+                "properties": PROPS_CHANNEL,
                 "limits": limits,
                 "channelgroupid": "alltv",
             },
         )
+
+        resultRadio = await self.call_method_kodi(
+            "PVR.GetChannels",
+            {
+                "properties": PROPS_CHANNEL,
+                "limits": limits,
+                "channelgroupid": "allradio",
+            },
+        )
+
         filtered_result = []
-        if not result is None:
-            for channel in result:
-                if value.lower() in channel["label"].lower():
-                    filtered_result.append(channel)
+
+        if not resultTV is None:
+            tv_result = list(
+                filter(
+                    lambda d: value.lower() in d["label"].lower(),
+                    resultTV,
+                )
+            )
+            filtered_result.extend(tv_result)
+
+        if not resultRadio is None:
+            radio_result = list(
+                filter(
+                    lambda d: value.lower() in d["label"].lower(),
+                    resultRadio,
+                )
+            )
+            filtered_result.extend(radio_result)
         return filtered_result
 
     async def kodi_search_episodes(self, value, unlimited: bool = False):
@@ -582,6 +614,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self._data = card_json
 
     async def search(self, value):
+        # Initialize the addons during the first search
+        if not self.addons_initialized:
+            await self.init_addons()
+
         if value is None or value == "":
             _LOGGER.warning("The argument 'value' passed is empty")
             return
@@ -589,7 +625,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         _LOGGER.debug("Searching for '%s'", value)
 
         card_json = []
-        # try:
         songs = await self.kodi_search_songs(value)
         self._add_result(songs, card_json)
 
@@ -605,15 +640,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         tvshows = await self.kodi_search_tvshows(value)
         self._add_result(tvshows, card_json)
 
-        # except Exception:
-        #     _LOGGER.error("Error updating sensor, is kodi running??????")
-        #     # self._state = STATE_OFF
-
         episodes = await self.kodi_search_episodes(value)
         self._add_result(episodes, card_json)
-
-        if not self.pvr_tested:
-            await self.init_pvr()
 
         if self.can_search_pvr:
             channels = await self.kodi_search_channels(value)
@@ -621,14 +649,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         self._data.clear
         self._data = card_json
-        # self._state = STATE_ON
 
-    async def init_pvr(self):
+    async def init_addons(self):
         addons = await self.call_method_kodi(
             "Addons.GetAddons", {"type": "kodi.pvrclient", "properties": PROPS_ADDONS}
         )
 
-        self.pvr_tested = True
+        self.addons_initialized = True
 
         pvr_addons = list(
             filter(
@@ -643,8 +670,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             )
             self.can_search_pvr = True
         else:
+            self.can_search_pvr = False
             _LOGGER.info(
-                "No PVR Addon found. The search ensor will not search results in the PVR channels"
+                "No PVR Addon found. The search sensor will not search results in the PVR channels"
             )
 
     def _add_result(self, data, target):
