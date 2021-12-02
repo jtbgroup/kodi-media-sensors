@@ -151,7 +151,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         elif sensor_action == ACTION_CLEAR:
             await self._clear_all_data(evt_id)
 
-        _LOGGER.debug("number of items in playlist : " + str(len(self._data)))
+        _LOGGER.debug("number of items in playlist : %s", str(len(self._data)))
         self.schedule_update_ha_state()
 
     async def async_call_method(self, method, **kwargs):

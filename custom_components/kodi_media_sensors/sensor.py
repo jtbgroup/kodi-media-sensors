@@ -1,10 +1,12 @@
 import logging
-import time
+
+# import time
 from datetime import timedelta
 
 from homeassistant import config_entries, core
-from homeassistant.core import callback
-from homeassistant.helpers import entity_registry, entity_platform
+
+# from homeassistant.core import callback
+from homeassistant.helpers import entity_platform
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_HOST
@@ -12,9 +14,37 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 
 from .const import (
+    DEFAULT_OPTION_SEARCH_EPISODES,
+    DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
     OPTION_HIDE_WATCHED,
-    OPTION_SEARCH_LIMIT,
-    OPTION_SEARCH_LIMIT_DEFAULT_VALUE,
+    OPTION_SEARCH_EPISODES,
+    OPTION_SEARCH_EPISODES_LIMIT,
+    OPTION_SEARCH_RECENT_LIMIT,
+    OPTION_SEARCH_SONGS,
+    OPTION_SEARCH_SONGS_LIMIT,
+    OPTION_SEARCH_ALBUMS,
+    OPTION_SEARCH_ALBUMS_LIMIT,
+    OPTION_SEARCH_ARTISTS,
+    OPTION_SEARCH_ARTISTS_LIMIT,
+    OPTION_SEARCH_MOVIES,
+    OPTION_SEARCH_MOVIES_LIMIT,
+    OPTION_SEARCH_TVSHOWS,
+    OPTION_SEARCH_TVSHOWS_LIMIT,
+    OPTION_SEARCH_CHANNELS,
+    OPTION_SEARCH_CHANNELS_LIMIT,
+    DEFAULT_OPTION_SEARCH_SONGS,
+    DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
+    DEFAULT_OPTION_SEARCH_ALBUMS,
+    DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
+    DEFAULT_OPTION_SEARCH_ARTISTS,
+    DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS,
+    DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
+    DEFAULT_OPTION_SEARCH_MOVIES,
+    DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
+    DEFAULT_OPTION_SEARCH_TVSHOWS,
+    DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
     DOMAIN,
     KODI_DOMAIN_PLATFORM,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
@@ -32,7 +62,6 @@ from .entity_kodi_search import KodiSearchEntity
 from .entity_kodi_playlist import KodiPlaylistEntity
 from .utils import (
     find_matching_config_entry,
-    find_matching_config_entry_for_host,
 )
 
 PLATFORM_SCHEMA = vol.Any(
@@ -40,9 +69,6 @@ PLATFORM_SCHEMA = vol.Any(
         {
             vol.Required(CONF_HOST): cv.string,
             vol.Optional(OPTION_HIDE_WATCHED, default=False): bool,
-            vol.Optional(
-                OPTION_SEARCH_LIMIT, default=OPTION_SEARCH_LIMIT_DEFAULT_VALUE
-            ): int,
         }
     ),
 )
@@ -119,9 +145,57 @@ async def async_setup_entry(
             kodi,
             kodi_entity_id,
             kodi_config_entry.data,
-            search_limit=conf.get(
-                OPTION_SEARCH_LIMIT, OPTION_SEARCH_LIMIT_DEFAULT_VALUE
-            ),
+        )
+        search_entity.set_search_songs(
+            conf.get(OPTION_SEARCH_SONGS, DEFAULT_OPTION_SEARCH_SONGS)
+        )
+        search_entity.set_search_songs_limit(
+            conf.get(OPTION_SEARCH_SONGS_LIMIT, DEFAULT_OPTION_SEARCH_SONGS_LIMIT)
+        )
+        search_entity.set_search_albums(
+            conf.get(OPTION_SEARCH_ALBUMS, DEFAULT_OPTION_SEARCH_ALBUMS)
+        )
+        search_entity.set_search_albums_limit(
+            conf.get(OPTION_SEARCH_ALBUMS_LIMIT, DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT)
+        )
+
+        search_entity.set_search_artists(
+            conf.get(OPTION_SEARCH_ARTISTS, DEFAULT_OPTION_SEARCH_ARTISTS)
+        )
+        search_entity.set_search_artists_limit(
+            conf.get(OPTION_SEARCH_ARTISTS_LIMIT, DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT)
+        )
+
+        search_entity.set_search_movies(
+            conf.get(OPTION_SEARCH_MOVIES, DEFAULT_OPTION_SEARCH_MOVIES)
+        )
+        search_entity.set_search_movies_limit(
+            conf.get(OPTION_SEARCH_MOVIES_LIMIT, DEFAULT_OPTION_SEARCH_MOVIES_LIMIT)
+        )
+
+        search_entity.set_search_tvshows(
+            conf.get(OPTION_SEARCH_TVSHOWS, DEFAULT_OPTION_SEARCH_TVSHOWS)
+        )
+        search_entity.set_search_tvshows_limit(
+            conf.get(OPTION_SEARCH_TVSHOWS_LIMIT, DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT)
+        )
+
+        search_entity.set_search_episodes(
+            conf.get(OPTION_SEARCH_EPISODES, DEFAULT_OPTION_SEARCH_EPISODES)
+        )
+        search_entity.set_search_episodes_limit(
+            conf.get(OPTION_SEARCH_EPISODES_LIMIT, DEFAULT_OPTION_SEARCH_EPISODES_LIMIT)
+        )
+
+        search_entity.set_search_channels(
+            conf.get(OPTION_SEARCH_CHANNELS, DEFAULT_OPTION_SEARCH_CHANNELS)
+        )
+        search_entity.set_search_channels_limit(
+            conf.get(OPTION_SEARCH_CHANNELS_LIMIT, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT)
+        )
+
+        search_entity.set_search_recent_limit(
+            conf.get(OPTION_SEARCH_RECENT_LIMIT, DEFAULT_OPTION_SEARCH_RECENT_LIMIT)
         )
         sensorsList.append(search_entity)
 
