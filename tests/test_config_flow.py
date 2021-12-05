@@ -5,7 +5,6 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.kodi_media_sensors.const import (
     OPTION_HIDE_WATCHED,
-    OPTION_SEARCH_LIMIT,
     CONF_KODI_INSTANCE,
     DOMAIN,
 )
@@ -148,10 +147,10 @@ async def test_options_flow(hass):
 
     # submit form with options
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input={OPTION_HIDE_WATCHED: True, OPTION_SEARCH_LIMIT: 10}
+        result["flow_id"], user_input={OPTION_HIDE_WATCHED: True}
     )
     expected = {
-        "data": {OPTION_HIDE_WATCHED: True, OPTION_SEARCH_LIMIT: 10},
+        "data": {OPTION_HIDE_WATCHED: True},
         "description": None,
         "description_placeholders": None,
         "flow_id": mock.ANY,
