@@ -2,7 +2,8 @@
 
 ## 3.2.0
 
-* Added Search PVR Channels functionnality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is desactivated. 
+* Added Search PVR Channels functionnality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is desactivated.
+* New properties in the configuration to (de)activate item types in the search and setlimits per item types.
 
 ## 3.1.5
 

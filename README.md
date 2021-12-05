@@ -7,7 +7,7 @@
 
 This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card), [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-![Upcoming Media Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/upcoming_media_card.png) ![Kodi Playlist Card](https://raw.githubusercontent.com/jtbgroup/kodi-media-sensors/master/assets/kodi_playlist_card.png)
+![Upcoming Media Card](./assets/upcoming_media_card.png) ![Kodi Playlist Card](./assets/playlist_audio_dark_3_3_0.png)
 
 # Table of Contents
 
@@ -64,45 +64,47 @@ It's not possible to add new sensors after installation, so if you need new ones
 
 ### Configuring via Integrations
 
-An `Options` button will appear on the integration. Clicking this will allow you to
-toggle additional options. 
+An `Configure` button will appear on the integration. Clicking this will allow you to
+toggle additional options.
 
 | Option | Description |
 | ------ | ----------- |
 | hide_watched | Excludes recently added video media that is marked as watched (movie sensors) when option is schecked |
-| use_auth_url | Adds the kodi username:password in the url's to access ressources from kodi (like images) |
-| search_limit | Sets the limit of the results returned by a search call. The limits applies to each media type (songs, album, movie, ...) |
+| search_* | Those properties must be true if you want to include those item type in the search result (ex: search_songs, search_movies, ...) |
+| search_*_limit | Sets the limit of the results returned by a search call for a specific item type (ex: search_songs_limit, search_movies_limit) |
 
 ### Card Configuration
 
-#### Sample for ui-lovelace.yaml:
+**Samples** for ui-lovelace.yaml
 
 Depending on the sensors you added and the custom card you installed, you can use the code below to display information from Kodi. 
 
 Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card)
 
-```
+``` yaml
 - type: custom:upcoming-media-card
   entity: sensor.kodi_recently_added_tv
   title: Recently Added Episodes
   image_style: fanart
 ```
-```
+
+``` yaml
 - type: custom:kodi-playlist-card
   entity: sensor.kodi_media_sensor_playlist
 ```
+
 ## Available Sensors
 
-   * `sensor.kodi_media_sensor_recently_added_tvshow` tracks your recently added tv shows 
-   * `sensor.kodi_media_sensor_recently_added_movie` tracks your recently added movies
-   * `sensor.kodi_media_sensor_playlist` tracks your playlist in Kodi (audio and video)
-   * `sensor.kodi_media_sensor_search` tracks your search results
+- `sensor.kodi_media_sensor_recently_added_tvshow` tracks your recently added tv shows 
+- `sensor.kodi_media_sensor_recently_added_movie` tracks your recently added movies
+- `sensor.kodi_media_sensor_playlist` tracks your playlist in Kodi (audio and video)
+- `sensor.kodi_media_sensor_search` tracks your search results
 
 ### Services available with sensors
 
 Some sensors come with services you can use. The definition of the services depends on each sensor. The service can be called via ***call_method***
 
-#### kodi_media_sensor_search
+#### **kodi_media_sensor_search**
 
 1. ***search(media_type, value)***<br/>
     Searches in the specified media type for the referenced value. The media type 'all' will return result for songs, albums, artists, movies and tv shows.
@@ -110,7 +112,7 @@ Some sensors come with services you can use. The definition of the services depe
     - `value:` { str (title) &#124; int (artistid) &#124; int (tvshowid) } 
 
 Example:
-```
+``` yaml
 entity_id: sensor.kodi_media_sensor_search
 method: search
 item:
@@ -122,7 +124,7 @@ item:
     This function clears the data of the sensor 
 
 Example:
-```
+``` yaml
 entity_id: sensor.kodi_media_sensor_search
 method: clear
 ```
@@ -131,17 +133,30 @@ method: clear
     This function plays the desired object wth the good player. The argument depends on what object has to be played. the argument can be one of songid, albumid, movieid, episodeid.
 
 Examples:
-```
+``` yaml
 entity_id: sensor.kodi_media_sensor_search
 method: play
 songid: 1
 ```
 
-```
+``` yaml
 entity_id: sensor.kodi_media_sensor_search
 method: play
 movieid: 15
 ```
+
+4. ***reset_addons()***<br/>
+  This method resets the presence (and active status) of the addons. This is to call for example if you activate a PVR client addon and you want to include the search results of the channels in your resultset.
+  ... another option would be to reboot HA!
+
+Example:
+
+``` yaml
+service: kodi_media_sensors.call_method
+data:
+  entity_id: sensor.kodi_media_sensor_search
+  method: reset_addons
+  ```
 
 #### kodi_media_sensor_playlist
 
@@ -149,7 +164,8 @@ movieid: 15
     This function plays the object at the given position for the given player 
 
 Example:
-```
+
+``` yaml
 entity_id: sensor.kodi_media_sensor_playlist
 method: goto
 item: 
@@ -161,7 +177,8 @@ item:
     This function removes an object from the given playlist 
 
 Example:
-```
+
+``` yaml
 entity_id: sensor.kodi_media_sensor_playlist
 method: remove
 item:
