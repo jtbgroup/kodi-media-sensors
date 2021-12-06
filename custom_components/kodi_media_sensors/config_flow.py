@@ -135,11 +135,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         schema_limits = {}
         schema_options_status = {}
-
-        a = self.config_entry.data
-        for key in a.keys():
-            _LOGGER.warning(key + " - " + str(a[key]))
-
         sensor_search_active = str(self.config_entry.data[CONF_SENSOR_SEARCH])
 
         if sensor_search_active == "True":
