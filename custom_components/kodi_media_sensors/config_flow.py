@@ -135,7 +135,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         schema_limits = {}
         schema_options_status = {}
-        sensor_search_active = self.config_entry.data[CONF_SENSOR_SEARCH]
+        sensor_search_active = self.config_entry.data.get(CONF_SENSOR_SEARCH)
 
         if sensor_search_active is not None and str(sensor_search_active) == "True":
             # SEARCH SONGS
