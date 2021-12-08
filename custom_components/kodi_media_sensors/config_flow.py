@@ -7,6 +7,7 @@ from homeassistant.core import callback
 
 # from homeassistant.helpers import entity_registry, entity_platform
 import voluptuous as vol
+from voluptuous import Required, All, Length, Range
 
 from .const import (
     OPTION_HIDE_WATCHED,
@@ -20,8 +21,10 @@ from .const import (
     OPTION_SEARCH_MOVIES_LIMIT,
     OPTION_SEARCH_TVSHOWS,
     OPTION_SEARCH_TVSHOWS_LIMIT,
-    OPTION_SEARCH_CHANNELS,
-    OPTION_SEARCH_CHANNELS_LIMIT,
+    OPTION_SEARCH_CHANNELS_TV,
+    OPTION_SEARCH_CHANNELS_TV_LIMIT,
+    OPTION_SEARCH_CHANNELS_RADIO,
+    OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
     OPTION_SEARCH_EPISODES,
     OPTION_SEARCH_EPISODES_LIMIT,
     OPTION_SEARCH_RECENT_LIMIT,
@@ -31,8 +34,10 @@ from .const import (
     DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_ARTISTS,
     DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS,
-    DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_TV,
+    DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
+    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
     DEFAULT_OPTION_SEARCH_MOVIES,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_TVSHOWS,
@@ -127,6 +132,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
 
+        # schema_base = {
+        #     vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
+        # }
+
         schema_full = vol.Schema(
             {
                 vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
@@ -145,7 +154,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 bool,
                 schema_options_status,
             )
-
             schema_limits = self.add_to_schema(
                 OPTION_SEARCH_SONGS_LIMIT,
                 DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
@@ -223,16 +231,30 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 schema_limits,
             )
 
-            # SEARCH CHANNELS
+            # SEARCH CHANNELS TV
             schema_options_status = self.add_to_schema(
-                OPTION_SEARCH_CHANNELS,
-                DEFAULT_OPTION_SEARCH_CHANNELS,
+                OPTION_SEARCH_CHANNELS_TV,
+                DEFAULT_OPTION_SEARCH_CHANNELS_TV,
                 bool,
                 schema_options_status,
             )
             schema_limits = self.add_to_schema(
-                OPTION_SEARCH_CHANNELS_LIMIT,
-                DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
+                OPTION_SEARCH_CHANNELS_TV_LIMIT,
+                DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
+                int,
+                schema_limits,
+            )
+
+            # SEARCH CHANNELS RADIO
+            schema_options_status = self.add_to_schema(
+                OPTION_SEARCH_CHANNELS_RADIO,
+                DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
+                bool,
+                schema_options_status,
+            )
+            schema_limits = self.add_to_schema(
+                OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
+                DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
                 int,
                 schema_limits,
             )
@@ -245,6 +267,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 schema_limits,
             )
 
+        # schema_full = vol.Schema(schema_base)
         schema_full = schema_full.extend(schema_options_status)
         schema_full = schema_full.extend(schema_limits)
         return self.async_show_form(

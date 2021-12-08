@@ -10,8 +10,10 @@ from .const import (
     DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_ARTISTS,
     DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS,
-    DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
+    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_TV,
+    DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
     DEFAULT_OPTION_SEARCH_MOVIES,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
@@ -75,8 +77,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_movies_limit = DEFAULT_OPTION_SEARCH_MOVIES_LIMIT
     _search_tvshows = DEFAULT_OPTION_SEARCH_TVSHOWS
     _search_tvshows_limit = DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT
-    _search_channels = DEFAULT_OPTION_SEARCH_CHANNELS
-    _search_channels_limit = DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT
+    _search_channels_tv = DEFAULT_OPTION_SEARCH_CHANNELS_TV
+    _search_channels_tv_limit = DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT
+    _search_channels_radio = DEFAULT_OPTION_SEARCH_CHANNELS_RADIO
+    _search_channels_radio_limit = DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT
     _search_episodes = DEFAULT_OPTION_SEARCH_EPISODES
     _search_episodes_limit = DEFAULT_OPTION_SEARCH_EPISODES_LIMIT
     _search_recent_limit = DEFAULT_OPTION_SEARCH_RECENT_LIMIT
@@ -140,11 +144,17 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def set_search_tvshows_limit(self, limit: int):
         self._search_tvshows_limit = limit
 
-    def set_search_channels(self, value: bool):
-        self._search_channels = value
+    def set_search_channels_tv(self, value: bool):
+        self._search_channels_tv = value
 
-    def set_search_channels_limit(self, limit: int):
-        self._search_channels_limit = limit
+    def set_search_channels_tv_limit(self, limit: int):
+        self._search_channels_tv_limit = limit
+
+    def set_search_channels_radio(self, value: bool):
+        self._search_channels_radio = value
+
+    def set_search_channels_radio_limit(self, limit: int):
+        self._search_channels_radio_limit = limit
 
     def set_search_episodes(self, value: bool):
         self._search_episodes = value
@@ -388,9 +398,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     async def kodi_search_songs(
         self, value, unlimited: bool = False, filter_field: str = "title"
     ):
-        _limits = {"start": 0}
-        if not unlimited:
-            _limits["end"] = self._search_songs_limit
+        limits = {"start": 0}
+        if not unlimited or self._search_songs_limit == 0:
+            limits["end"] = self._search_songs_limit
 
         _filter = {}
         if filter_field == "title":
@@ -404,7 +414,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             "AudioLibrary.GetSongs",
             {
                 "properties": PROPS_SONG,
-                "limits": _limits,
+                "limits": limits,
                 "sort": {
                     "method": "track",
                     "order": "ascending",
@@ -451,7 +461,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_albums(self, value, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_albums_limit == 0:
             limits["end"] = self._search_albums_limit
         return await self.call_method_kodi(
             "AudioLibrary.GetAlbums",
@@ -460,7 +470,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "limits": limits,
                 "sort": {
                     "method": "title",
-                    "order": "descending",
+                    "order": "ascending",
                     "ignorearticle": True,
                 },
                 "filter": {
@@ -473,7 +483,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_recent_albums(self, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_recent_limit == 0:
             limits["end"] = self._search_recent_limit
         return await self.call_method_kodi(
             "AudioLibrary.GetRecentlyAddedAlbums",
@@ -485,7 +495,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_recent_songs(self, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_recent_limit == 0:
             limits["end"] = self._search_recent_limit
         return await self.call_method_kodi(
             "AudioLibrary.GetRecentlyAddedSongs",
@@ -497,7 +507,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_recent_movies(self, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_recent_limit == 0:
             limits["end"] = self._search_recent_limit
         return await self.call_method_kodi(
             "VideoLibrary.GetRecentlyAddedMovies",
@@ -509,7 +519,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_recent_episodes(self, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_recent_limit == 0:
             limits["end"] = self._search_recent_limit
         result = await self.call_method_kodi(
             "VideoLibrary.GetRecentlyAddedEpisodes",
@@ -526,7 +536,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_artists(self, value, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_artists_limit == 0:
             limits["end"] = self._search_artists_limit
         return await self.call_method_kodi(
             "AudioLibrary.GetArtists",
@@ -548,7 +558,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_movies(self, value, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_movies_limit == 0:
             limits["end"] = self._search_movies_limit
         return await self.call_method_kodi(
             "VideoLibrary.GetMovies",
@@ -570,7 +580,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def kodi_search_tvshows(self, value, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_tvshows_limit == 0:
             limits["end"] = self._search_tvshows_limit
         return await self.call_method_kodi(
             "VideoLibrary.GetTVShows",
@@ -589,53 +599,68 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
-    async def kodi_search_channels(self, value, unlimited: bool = False):
-        limits = {"start": 0}
-        if not unlimited:
-            limits["end"] = self._search_channels_limit
-
+    async def kodi_search_channels_tv(self, value, unlimited: bool = False):
         result_tv = await self.call_method_kodi(
             "PVR.GetChannels",
             {
                 "properties": PROPS_CHANNEL,
-                "limits": limits,
                 "channelgroupid": "alltv",
-            },
-        )
-
-        result_radio = await self.call_method_kodi(
-            "PVR.GetChannels",
-            {
-                "properties": PROPS_CHANNEL,
-                "limits": limits,
-                "channelgroupid": "allradio",
             },
         )
 
         filtered_result = []
 
         if not result_tv is None:
-            tv_result = list(
+            sub_result = list(
                 filter(
                     lambda d: value.lower() in d["label"].lower(),
                     result_tv,
                 )
             )
-            filtered_result.extend(tv_result)
+            if not unlimited or self._search_channels_tv_limit == 0:
+                idx = 0
+                for value in sub_result:
+                    filtered_result.append(value)
+                    if idx < self._search_channels_tv_limit - 1:
+                        idx += 1
+                    else:
+                        break
+            else:
+                filtered_result.extend(sub_result)
+
+        return filtered_result
+
+    async def kodi_search_channels_radio(self, value, unlimited: bool = False):
+        result_radio = await self.call_method_kodi(
+            "PVR.GetChannels",
+            {
+                "properties": PROPS_CHANNEL,
+                "channelgroupid": "allradio",
+            },
+        )
+
+        filtered_result = []
 
         if not result_radio is None:
-            radio_result = list(
+            sub_result = list(
                 filter(
                     lambda d: value.lower() in d["label"].lower(),
                     result_radio,
                 )
             )
-            filtered_result.extend(radio_result)
+            idx = 0
+            for value in sub_result:
+                filtered_result.append(value)
+                if idx < self._search_channels_radio_limit - 1:
+                    idx += 1
+                else:
+                    break
+
         return filtered_result
 
     async def kodi_search_episodes(self, value, unlimited: bool = False):
         limits = {"start": 0}
-        if not unlimited:
+        if not unlimited or self._search_episodes_limit == 0:
             limits["end"] = self._search_episodes_limit
         result = await self.call_method_kodi(
             "VideoLibrary.GetEpisodes",
@@ -720,8 +745,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             episodes = await self.kodi_search_episodes(value)
             self._add_result(episodes, card_json)
 
-        if self.can_search_pvr and self._search_channels is True:
-            channels = await self.kodi_search_channels(value)
+        if self.can_search_pvr and self._search_channels_tv is True:
+            channels = await self.kodi_search_channels_tv(value)
+            self._add_result(channels, card_json)
+
+        if self.can_search_pvr and self._search_channels_radio is True:
+            channels = await self.kodi_search_channels_radio(value)
             self._add_result(channels, card_json)
 
         self._data.clear
