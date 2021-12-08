@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.2.1
+
+* No search limit when the configuration option **x_limit** is 0
+
 ## 3.2.0
 
 * Added Search PVR Channels functionnality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is desactivated.
