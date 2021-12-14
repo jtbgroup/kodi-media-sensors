@@ -23,6 +23,10 @@ from .const import (
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
     DEFAULT_OPTION_SEARCH_EPISODES,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENT_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
+    DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
     ENTITY_SENSOR_SEARCH,
     ENTITY_NAME_SENSOR_SEARCH,
     MEDIA_TYPE_SEASON_DETAIL,
@@ -84,6 +88,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_episodes = DEFAULT_OPTION_SEARCH_EPISODES
     _search_episodes_limit = DEFAULT_OPTION_SEARCH_EPISODES_LIMIT
     _search_recent_limit = DEFAULT_OPTION_SEARCH_RECENT_LIMIT
+    _search_recent_songs = DEFAULT_OPTION_SEARCH_RECENT_SONGS
+    _search_recent_albums = DEFAULT_OPTION_SEARCH_RECENT_ALBUMS
+    _search_recent_movies = DEFAULT_OPTION_SEARCH_RECENT_MOVIES
+    _search_recent_episodes = DEFAULT_OPTION_SEARCH_RECENT_EPISODES
 
     def __init__(
         self,
@@ -164,6 +172,18 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     def set_search_recent_limit(self, limit: int):
         self._search_recent_limit = limit
+
+    def set_search_recent_songs(self, value: bool):
+        self._search_recent_songs = value
+
+    def set_search_recent_albums(self, value: bool):
+        self._search_recent_albums = value
+
+    def set_search_recent_movies(self, value: bool):
+        self._search_recent_movies = value
+
+    def set_search_recent_episodes(self, value: bool):
+        self._search_recent_episodes = value
 
     async def __handle_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
@@ -692,19 +712,22 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def search_recent(self):
         _LOGGER.debug("Searching recents")
-        try:
-            songs = await self.kodi_search_recent_songs()
-            albums = await self.kodi_search_recent_albums()
-            movies = await self.kodi_search_recent_movies()
-            episodes = await self.kodi_search_recent_episodes()
-        except Exception:
-            _LOGGER.exception("Error updating sensor, is kodi running?")
-
         card_json = []
-        self._add_result(songs, card_json)
-        self._add_result(albums, card_json)
-        self._add_result(movies, card_json)
-        self._add_result(episodes, card_json)
+        if self._search_recent_songs is True:
+            songs = await self.kodi_search_recent_songs()
+            self._add_result(songs, card_json)
+
+        if self._search_recent_albums is True:
+            albums = await self.kodi_search_recent_albums()
+            self._add_result(albums, card_json)
+
+        if self._search_recent_movies is True:
+            movies = await self.kodi_search_recent_movies()
+            self._add_result(movies, card_json)
+
+        if self._search_recent_episodes is True:
+            episodes = await self.kodi_search_recent_episodes()
+            self._add_result(episodes, card_json)
 
         self._data.clear
         self._data = card_json

@@ -7,7 +7,6 @@ from homeassistant.core import callback
 
 # from homeassistant.helpers import entity_registry, entity_platform
 import voluptuous as vol
-from voluptuous import Required, All, Length, Range
 
 from .const import (
     OPTION_HIDE_WATCHED,
@@ -28,6 +27,11 @@ from .const import (
     OPTION_SEARCH_EPISODES,
     OPTION_SEARCH_EPISODES_LIMIT,
     OPTION_SEARCH_RECENT_LIMIT,
+    OPTION_SEARCH_RECENT_SONGS,
+    OPTION_SEARCH_RECENT_ALBUMS,
+    OPTION_SEARCH_RECENT_MOVIES,
+    OPTION_SEARCH_RECENT_EPISODES,
+    DEFAULT_OPTION_HIDE_WATCHED,
     DEFAULT_OPTION_SEARCH_SONGS,
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
     DEFAULT_OPTION_SEARCH_ALBUMS,
@@ -45,6 +49,10 @@ from .const import (
     DEFAULT_OPTION_SEARCH_EPISODES,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENT_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
+    DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
     CONF_KODI_INSTANCE,
     DOMAIN,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
@@ -130,146 +138,193 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
+        schema_base = {}
+
+        sensor_recent_movie_active = self.config_entry.data.get(
+            CONF_SENSOR_RECENTLY_ADDED_MOVIE
+        )
+        sensor_recent_tvshow_active = self.config_entry.data.get(
+            CONF_SENSOR_RECENTLY_ADDED_TVSHOW
+        )
+        sensor_search_active = self.config_entry.data.get(CONF_SENSOR_SEARCH)
+
+        if (
+            sensor_recent_movie_active is not None
+            and str(sensor_recent_movie_active) == "True"
+        ) or (
+            sensor_recent_tvshow_active is not None
+            and str(sensor_recent_tvshow_active) == "True"
+        ):
+            schema_base = self.add_to_schema(
+                OPTION_HIDE_WATCHED,
+                DEFAULT_OPTION_HIDE_WATCHED,
+                bool,
+                schema_base,
+            )
+        # hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
 
         # schema_base = {
-        #     vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
+        # vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
         # }
 
-        schema_full = vol.Schema(
-            {
-                vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
-            }
-        )
+        # schema_full = vol.Schema(
+        #     {
+        #         vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
+        #     }
+        # )
 
         schema_limits = {}
         schema_options_status = {}
-        sensor_search_active = self.config_entry.data.get(CONF_SENSOR_SEARCH)
 
         if sensor_search_active is not None and str(sensor_search_active) == "True":
             # SEARCH SONGS
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_SONGS,
                 DEFAULT_OPTION_SEARCH_SONGS,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_SONGS_LIMIT,
                 DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH ALBUMS
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_ALBUMS,
                 DEFAULT_OPTION_SEARCH_ALBUMS,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_ALBUMS_LIMIT,
                 DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH ARTISTS
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_ARTISTS,
                 DEFAULT_OPTION_SEARCH_ARTISTS,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_ARTISTS_LIMIT,
                 DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH MOVIES
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_MOVIES,
                 DEFAULT_OPTION_SEARCH_MOVIES,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_MOVIES_LIMIT,
                 DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH TVSHOWS
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_TVSHOWS,
                 DEFAULT_OPTION_SEARCH_TVSHOWS,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_TVSHOWS_LIMIT,
                 DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH EPISODES
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_EPISODES,
                 DEFAULT_OPTION_SEARCH_EPISODES,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_EPISODES_LIMIT,
                 DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH CHANNELS TV
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_CHANNELS_TV,
                 DEFAULT_OPTION_SEARCH_CHANNELS_TV,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_CHANNELS_TV_LIMIT,
                 DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH CHANNELS RADIO
-            schema_options_status = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_CHANNELS_RADIO,
                 DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
                 bool,
-                schema_options_status,
+                schema_base,
             )
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
                 DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
             # SEARCH RECENTS
-            schema_limits = self.add_to_schema(
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENT_SONGS,
+                DEFAULT_OPTION_SEARCH_RECENT_SONGS,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENT_ALBUMS,
+                DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENT_MOVIES,
+                DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENT_EPISODES,
+                DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
+                bool,
+                schema_base,
+            )
+
+            schema_base = self.add_to_schema(
                 OPTION_SEARCH_RECENT_LIMIT,
                 DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
                 int,
-                schema_limits,
+                schema_base,
             )
 
-        # schema_full = vol.Schema(schema_base)
-        schema_full = schema_full.extend(schema_options_status)
-        schema_full = schema_full.extend(schema_limits)
+        schema_full = vol.Schema(schema_base)
+        # schema_full = schema_full.extend(schema_options_status)
+        # schema_full = schema_full.extend(schema_limits)
         return self.async_show_form(
             step_id="init",
             data_schema=schema_full,

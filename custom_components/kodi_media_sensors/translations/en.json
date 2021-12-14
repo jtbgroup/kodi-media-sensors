@@ -24,7 +24,7 @@
         "title": "Kodi Media Sensors Options",
         "description": "Additional settings for the component.",
         "data": {
-          "hide_watched": "Exclude recently added video media that is marked as watched (movie sensors).",
+          "hide_watched": "RECENTLY ADDED MOVIE / TVSHOW Sensor : Exclude recently added video media that is marked as watched (movie sensors)",
           "search_songs": "SEARCH Sensor : include SONGS search result",
           "search_albums": "SEARCH Sensor : include ALBUMS search result",
           "search_artists": "SEARCH Sensor : include ARTISTS search result",
@@ -41,6 +41,10 @@
           "search_episodes_limit": "SEARCH Sensor : limits the number of EPISODES in the search result",
           "search_channels_tv_limit": "SEARCH Sensor : limits the number of TV CHANNELS in the search result",
           "search_channels_radio_limit": "SEARCH Sensor : limits the number of RADIO CHANNELS in the search result",
+          "search_recent_songs": "SEARCH Sensor : include SONGS search result of RECENTLY ADDED items",
+          "search_recent_albums": "SEARCH Sensor : include ALBUMS search result of RECENTLY ADDED items",
+          "search_recent_movies": "SEARCH Sensor : include MOVIES search result of RECENTLY ADDED items",
+          "search_recent_episodes": "SEARCH Sensor : include EPISODES search result of RECENTLY ADDED items",
           "search_recent_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY ADDED items"
         }
       }
