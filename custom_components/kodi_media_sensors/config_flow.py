@@ -161,20 +161,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 bool,
                 schema_base,
             )
-        # hide_watched = self.config_entry.options.get(OPTION_HIDE_WATCHED, False)
-
-        # schema_base = {
-        # vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
-        # }
-
-        # schema_full = vol.Schema(
-        #     {
-        #         vol.Optional(OPTION_HIDE_WATCHED, default=hide_watched): bool,
-        #     }
-        # )
-
-        schema_limits = {}
-        schema_options_status = {}
 
         if sensor_search_active is not None and str(sensor_search_active) == "True":
             # SEARCH SONGS
@@ -323,8 +309,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
 
         schema_full = vol.Schema(schema_base)
-        # schema_full = schema_full.extend(schema_options_status)
-        # schema_full = schema_full.extend(schema_limits)
         return self.async_show_form(
             step_id="init",
             data_schema=schema_full,
