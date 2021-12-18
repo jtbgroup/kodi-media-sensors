@@ -31,6 +31,7 @@ from .const import (
     OPTION_SEARCH_RECENT_ALBUMS,
     OPTION_SEARCH_RECENT_MOVIES,
     OPTION_SEARCH_RECENT_EPISODES,
+    OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DEFAULT_OPTION_HIDE_WATCHED,
     DEFAULT_OPTION_SEARCH_SONGS,
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
@@ -53,6 +54,7 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
     DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
     DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
+    DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     CONF_KODI_INSTANCE,
     DOMAIN,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
@@ -304,6 +306,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             schema_base = self.add_to_schema(
                 OPTION_SEARCH_RECENT_LIMIT,
                 DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
+                int,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_KEEP_ALIVE_TIMER,
+                DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
                 int,
                 schema_base,
             )

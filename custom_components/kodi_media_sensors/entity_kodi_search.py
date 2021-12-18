@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
     DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
     DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
+    DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     ENTITY_SENSOR_SEARCH,
     ENTITY_NAME_SENSOR_SEARCH,
     MEDIA_TYPE_SEASON_DETAIL,
@@ -67,8 +68,8 @@ PLAY_ATTR_CHANNELID = "channelid"
 class KodiSearchEntity(KodiMediaSensorEntity):
     """This sensor is dedicated to the search functionality of Kodi"""
 
-    _search_moment = 0
-    _clear_timer = 300
+    _search_start_time = 0
+    # _keep_alive_timer = 300
     addons_initialized = False
     can_search_pvr = False
     _search_songs = DEFAULT_OPTION_SEARCH_SONGS
@@ -92,6 +93,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_recent_albums = DEFAULT_OPTION_SEARCH_RECENT_ALBUMS
     _search_recent_movies = DEFAULT_OPTION_SEARCH_RECENT_MOVIES
     _search_recent_episodes = DEFAULT_OPTION_SEARCH_RECENT_EPISODES
+    _search_keep_alive_timer = DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER
 
     def __init__(
         self,
@@ -185,6 +187,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def set_search_recent_episodes(self, value: bool):
         self._search_recent_episodes = value
 
+    def set_search_keep_alive_timer(self, value: bool):
+        self._search_keep_alive_timer = value
+
     async def __handle_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
 
@@ -217,17 +222,27 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta("Kodi Search update event")
 
         if (
-            self._search_moment > 0
-            and (time.perf_counter() - self._search_moment) > self._clear_timer
+            self._search_keep_alive_timer == 0
+            and "method" in self._meta[0]
+            and self._meta[0]["method"] == METHOD_SEARCH
+        ):
+            method = self._meta[0]["method"]
+            kwargs = self._meta[0]["kwargs"]
+            _LOGGER.debug(
+                "Search result must be reprocessed. The query is reprocessed."
+            )
+            await self.async_call_method(method, **kwargs)
+        elif (
+            self._search_start_time > 0
+            and (time.perf_counter() - self._search_start_time)
+            > self._search_keep_alive_timer
         ):
             await self._clear_result()
 
     async def async_call_method(self, method, **kwargs):
-        self._search_moment = time.perf_counter()
+        self._search_start_time = time.perf_counter()
         args = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         _LOGGER.debug("calling method %s with arguments %s", method, args)
-        self._meta[0]["method"] = method
-        self._meta[0]["args"] = args
 
         if method == METHOD_SEARCH:
             item = kwargs.get("item")
@@ -269,12 +284,15 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         else:
             raise ValueError("The given method is unsupported: " + method)
 
+        self._meta[0]["method"] = method
+        self._meta[0]["kwargs"] = kwargs
+
     async def _reset_addons(self):
         self.addons_initialized = False
         await self.init_addons()
 
     async def _clear_result(self):
-        self._search_moment = 0
+        self._search_start_time = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
         _LOGGER.debug("Kodi search result clearded")

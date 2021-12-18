@@ -45,7 +45,8 @@
           "search_recent_albums": "SEARCH Sensor : include ALBUMS search result of RECENTLY ADDED items",
           "search_recent_movies": "SEARCH Sensor : include MOVIES search result of RECENTLY ADDED items",
           "search_recent_episodes": "SEARCH Sensor : include EPISODES search result of RECENTLY ADDED items",
-          "search_recent_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY ADDED items"
+          "search_recent_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY ADDED items",
+          "search_keep_alive_timer": "SEARCH Sensor : lifetime (in sec) of the result. '0' will auto reproces the search"
         }
       }
     }

@@ -70,11 +70,6 @@ class KodiMediaSensorEntity(Entity, ABC):
             )
             self._state = STATE_PROBLEM
 
-        # if result:
-        # else:
-        #     _LOGGER.warning("result is null state set to off")
-        #     self._state = STATE_OFF
-
         return data
 
     async def call_method_kodi_no_result(self, method, args):
