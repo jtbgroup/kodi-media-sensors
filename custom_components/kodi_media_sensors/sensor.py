@@ -5,6 +5,8 @@ from datetime import timedelta
 from homeassistant import config_entries, core
 from homeassistant.helpers import entity_platform
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
+from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.const import CONF_HOST
 
 from .const import (
     OPTION_HIDE_WATCHED,
