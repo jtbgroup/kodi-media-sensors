@@ -71,6 +71,15 @@ from .utils import (
     find_matching_config_entry,
 )
 
+PLATFORM_SCHEMA = vol.Any(
+    PLATFORM_SCHEMA.extend(
+        {
+            vol.Required(CONF_HOST): cv.string,
+            vol.Optional(OPTION_HIDE_WATCHED, default=False): bool,
+        }
+    ),
+)
+
 KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA = cv.make_entity_service_schema(
     {vol.Required(ATTR_METHOD): cv.string}, extra=vol.ALLOW_EXTRA
 )
