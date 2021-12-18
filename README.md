@@ -94,6 +94,7 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_recent_movies | search | true | Include MOVIES search result of RECENTLY ADDED items |
 | search_recent_episodes | search | true | Include EPISODES search result of RECENTLY ADDED items |
 | search_recent_limit | search | 20 | Limits the number of result when searching the RECENTLY ADDED items |
+| search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. When using value **0**, the query will automatially be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
 
 ## Services
 
