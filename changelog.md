@@ -3,6 +3,7 @@
 ## 3.3.0
 
 - Added keep alive timer option for Search Sensor
+
 ## 3.2.3
 
 - No search limit when the configuration option **x_limit*- is 0
