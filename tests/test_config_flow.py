@@ -6,6 +6,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.kodi_media_sensors.const import (
     OPTION_HIDE_WATCHED,
     CONF_KODI_INSTANCE,
+    CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     DOMAIN,
 )
 from custom_components.kodi_media_sensors.utils import KODI_DOMAIN
@@ -134,7 +135,7 @@ async def test_options_flow(hass):
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="kodi_media_sensors",
-        data={"kodi_entry_id": "abc"},
+        data={"kodi_entry_id": "abc", CONF_SENSOR_RECENTLY_ADDED_TVSHOW: True},
     )
     config_entry.add_to_hass(hass)
     #assert await hass.config_entries.async_setup(config_entry.entry_id)
