@@ -1,5 +1,10 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.4.0
+
+- Search entity: new method add at position first, second or last
+- Bugfix : playlist sensor raised an error when starting HA 
+
 ## 3.3.0
 
 - Added keep alive timer option for Search Sensor

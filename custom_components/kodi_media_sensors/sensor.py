@@ -1,4 +1,5 @@
 import logging
+from config.custom_components.media_sensor_event_manager import MediaSensorEventManager
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from datetime import timedelta
@@ -102,7 +103,7 @@ async def async_setup_entry(
     reg = await hass.helpers.entity_registry.async_get_registry()
 
     key = kodi_config_entry.unique_id
-    if key == None:
+    if key is None:
         key = kodi_config_entry.entry_id
 
     kodi_entity_id = reg.async_get_entity_id(KODI_DOMAIN_PLATFORM, KODI_DOMAIN, key)
@@ -121,6 +122,7 @@ async def async_setup_entry(
 
     kodi = data[DATA_KODI]
     sensorsList = list()
+    event_manager = MediaSensorEventManager()
 
     if conf.get(CONF_SENSOR_RECENTLY_ADDED_TVSHOW):
         tv_entity = KodiRecentlyAddedTVEntity(
@@ -144,6 +146,7 @@ async def async_setup_entry(
             kodi,
             kodi_entity_id,
             kodi_config_entry.data,
+            event_manager,
         )
         sensorsList.append(playlist_entity)
 
@@ -153,6 +156,7 @@ async def async_setup_entry(
             kodi,
             kodi_entity_id,
             kodi_config_entry.data,
+            event_manager,
         )
         search_entity.set_search_songs(
             conf.get(OPTION_SEARCH_SONGS, DEFAULT_OPTION_SEARCH_SONGS)

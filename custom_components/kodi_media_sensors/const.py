@@ -74,7 +74,11 @@ ENTITY_NAME_SENSOR_SEARCH = "Kodi Media Sensor Search"
 # Service method
 ATTR_METHOD = "method"
 
-# Kodi keys returned in the aswer
+# KODI Constants
+PLAYLIST_MUSIC = 0
+PLAYLIST_MOVIE = 1
+
+# KODI keys returned in the aswer
 KEY_ADDONS = "addons"
 KEY_ALBUMS = "albums"
 KEY_ALBUM_DETAILS = "albumdetails"
@@ -104,7 +108,7 @@ KEYS = {
     KEY_ITEMS,
 }
 
-# Kodi types of items
+# KODI types of items
 # https://github.com/xbmc/xbmc/blob/master/xbmc/media/MediaType.h
 MEDIA_TYPE_ADDON = "addon"
 MEDIA_TYPE_ALBUM = "album"

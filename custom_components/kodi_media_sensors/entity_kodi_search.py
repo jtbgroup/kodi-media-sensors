@@ -1,4 +1,5 @@
 import logging
+from config.custom_components.media_sensor_event_manager import MediaSensorEventManager
 import homeassistant
 import time
 from typing import Dict, List, Any
@@ -28,6 +29,7 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
     DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
+    DOMAIN,
     ENTITY_SENSOR_SEARCH,
     ENTITY_NAME_SENSOR_SEARCH,
     MEDIA_TYPE_SEASON_DETAIL,
@@ -42,6 +44,8 @@ from .const import (
     PROPS_TVSHOW,
     PROPS_ADDONS,
     PROPS_CHANNEL,
+    PLAYLIST_MOVIE,
+    PLAYLIST_MUSIC,
 )
 from .types import KodiConfig
 
@@ -53,6 +57,7 @@ ACTION_REFRESH_META = "refresh_meta"
 METHOD_SEARCH = "search"
 METHOD_CLEAR = "clear"
 METHOD_PLAY = "play"
+METHOD_ADD = "add"
 METHOD_RESET_ADDONS = "reset_addons"
 SEARCH_MEDIA_TYPE_ALL = "all"
 SEARCH_MEDIA_TYPE_RECENT = "recent"
@@ -63,13 +68,13 @@ PLAY_ATTR_ALBUMID = "albumid"
 PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
+ADD_ATTR_POSITION = "position"
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
     """This sensor is dedicated to the search functionality of Kodi"""
 
     _search_start_time = 0
-    # _keep_alive_timer = 300
     addons_initialized = False
     can_search_pvr = False
     _search_songs = DEFAULT_OPTION_SEARCH_SONGS
@@ -101,11 +106,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         kodi: Kodi,
         kodi_entity_id,
         config: KodiConfig,
+        event_manager: MediaSensorEventManager,
     ):
-        super().__init__(kodi, config)
-        self._hass = hass
+        super().__init__(hass, kodi, config, event_manager)
+
         homeassistant.helpers.event.async_track_state_change_event(
-            hass, kodi_entity_id, self.__handle_event
+            self._hass, kodi_entity_id, self.__handle_kodi_state_event
         )
 
         kodi_state = self._hass.states.get(kodi_entity_id)
@@ -190,7 +196,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def set_search_keep_alive_timer(self, value: bool):
         self._search_keep_alive_timer = value
 
-    async def __handle_event(self, event):
+    async def __handle_kodi_state_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
 
         action = ACTION_DO_NOTHING
@@ -280,7 +286,20 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.play_episode(kwargs.get(PLAY_ATTR_EPISODEID))
             if kwargs.get("channelid") is not None:
                 await self.play_channel(kwargs.get(PLAY_ATTR_CHANNELID))
-
+        elif method == METHOD_ADD:
+            position = 1
+            if kwargs.get(ADD_ATTR_POSITION) is not None:
+                position = int(kwargs.get(ADD_ATTR_POSITION))
+            if kwargs.get("songid") is not None:
+                await self.add_song(kwargs.get(PLAY_ATTR_SONGID), position)
+            if kwargs.get("albumid") is not None:
+                await self.add_album(kwargs.get(PLAY_ATTR_ALBUMID), position)
+            if kwargs.get("movieid") is not None:
+                await self.add_movie(kwargs.get(PLAY_ATTR_MOVIEID), position)
+            if kwargs.get("episodeid") is not None:
+                await self.add_episode(kwargs.get(PLAY_ATTR_EPISODEID), position)
+            if kwargs.get("channelid") is not None:
+                await self.add_channel(kwargs.get(PLAY_ATTR_CHANNELID), position)
         else:
             raise ValueError("The given method is unsupported: " + method)
 
@@ -326,23 +345,80 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         )
 
     async def play_song(self, songid):
-        await self.play_item(0, "songid", songid)
+        await self.play_item(PLAYLIST_MUSIC, "songid", songid)
 
     async def play_album(self, albumid):
-        await self.play_item(0, "albumid", albumid)
+        await self.play_item(PLAYLIST_MUSIC, "albumid", albumid)
 
     async def play_movie(self, movieid):
-        await self.play_item(1, "movieid", movieid)
+        await self.play_item(PLAYLIST_MOVIE, "movieid", movieid)
 
     async def play_channel(self, channelid):
-        # await self.play_item(1, "channelid", channelid)
         await self.call_method_kodi_no_result(
             "Player.Open",
             {"item": {"channelid": channelid}},
         )
 
     async def play_episode(self, episodeid):
-        await self.play_item(1, "episodeid", episodeid)
+        await self.play_item(PLAYLIST_MOVIE, "episodeid", episodeid)
+
+    async def add_item(self, playlistid, item_name, item_value, position):
+        _LOGGER.debug(item_value)
+        if not isinstance(item_value, (list, tuple)):
+            insertable = [item_value]
+            item_value = insertable
+
+        idx = position
+        for item in item_value:
+            await self.call_method_kodi_no_result(
+                "Playlist.Insert",
+                {
+                    "playlistid": playlistid,
+                    "position": idx,
+                    "item": {item_name: item},
+                },
+            )
+            idx = idx + 1
+            _LOGGER.debug("added song id %s in position %s", item, idx)
+            event_data = {
+                "type": "playlist_item_added",
+            }
+            self._hass.bus.async_fire(DOMAIN, event_data)
+
+    async def add_song(self, songid, position):
+        if position > -1:
+            await self.add_item(PLAYLIST_MUSIC, "songid", songid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+
+    async def add_album(self, albumid, position):
+        if position > -1:
+            await self.add_item(PLAYLIST_MUSIC, "albumid", albumid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+
+    async def add_movie(self, movieid, position):
+        if position > -1:
+            await self.add_item(PLAYLIST_MOVIE, "movieid", movieid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+
+    async def add_channel(self, channelid, position):
+        if position > -1:
+            await self.add_item(PLAYLIST_MOVIE, "channelid", channelid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+
+    async def add_episode(self, episodeid, position):
+        if position > -1:
+            await self.add_item(PLAYLIST_MOVIE, "episodeid", episodeid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
 
     async def search_tvshow_detail(self, tvshowid):
         card_json = []
@@ -826,3 +902,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if data is not None and len(data) > 0:
             for row in data:
                 target.append(row)
+
+    async def handle_media_sensor_event(self, event):
+        return

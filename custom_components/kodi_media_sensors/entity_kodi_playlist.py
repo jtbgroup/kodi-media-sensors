@@ -1,3 +1,4 @@
+from config.custom_components.media_sensor_event_manager import MediaSensorEventManager
 import homeassistant
 import logging
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
@@ -12,7 +13,6 @@ from homeassistant.const import (
     # STATE_PROBLEM,
 )
 from .const import (
-    KEY_ITEMS,
     ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
     PROPS_ITEM,
@@ -47,20 +47,14 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         kodi: Kodi,
         kodi_entity_id,
         config: KodiConfig,
+        event_manager: MediaSensorEventManager,
     ):
-        super().__init__(kodi, config)
-        self._hass = hass
+        super().__init__(hass, kodi, config, event_manager)
 
         homeassistant.helpers.event.async_track_state_change_event(
-            hass, kodi_entity_id, self.__handle_event
+            self._hass, kodi_entity_id, self.__handle_kodi_state_event
         )
-        kodi_state = self._hass.states.get(kodi_entity_id)
-        if kodi_state is None or kodi_state == STATE_OFF:
-            self._state = STATE_OFF
-        else:
-            self._state = STATE_ON
 
-        # TODO: populate immediately the data if kodi is running
         kodi_state = self._hass.states.get(kodi_entity_id)
         if kodi_state is None or kodi_state == STATE_OFF:
             self._state = STATE_OFF
@@ -75,14 +69,23 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     def unique_id(self) -> str:
         return ENTITY_SENSOR_PLAYLIST
 
-    async def __handle_event(self, event):
+    async def handle_media_sensor_event(self, event):
+        event_id = event
+        await self._update_meta(event_id)
+        await self._update_data(event_id)
+        _LOGGER.debug("number of items in playlist : %s", str(len(self._data)))
+        self.schedule_update_ha_state()
+
+    async def __handle_kodi_state_event(self, event):
         old_kodi_event_state = (
             str(event.data.get("old_state").state)
-            if event.data.get("old_state") != None
+            if event.data.get("old_state") is not None
             else STATE_OFF
         )
         old_kodi_event_media_title = str(
-            event.data.get("old_state").attributes.get("media_title")
+            str(event.data.get("old_state").attributes.get("media_title"))
+            if event.data.get("old_state") is not None
+            else ""
         )
         new_kodi_event_state = str(event.data.get("new_state").state)
         new_kodi_event_media_title = str(
