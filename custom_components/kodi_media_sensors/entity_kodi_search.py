@@ -1,5 +1,5 @@
 import logging
-from config.custom_components.media_sensor_event_manager import MediaSensorEventManager
+from config.custom_components.kodi_media_sensors.media_sensor_event_manager import MediaSensorEventManager
 import homeassistant
 import time
 from typing import Dict, List, Any

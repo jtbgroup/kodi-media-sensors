@@ -5,7 +5,9 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pykodi import Kodi
 from urllib import parse
-from config.custom_components.media_sensor_event_manager import MediaSensorEventManager
+from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+    MediaSensorEventManager,
+)
 from homeassistant.helpers.entity import Entity
 from homeassistant import core
 from homeassistant.const import (
