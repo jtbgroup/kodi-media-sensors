@@ -7,9 +7,9 @@
 
 This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card), [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
-| Upcoming Media Card | Kodi playlist Card |
-| ---- | ---- |
-| ![Upcoming Media Card](./assets/upcoming_media_card.png) | ![Kodi Playlist Card](./assets/playlist_audio_dark_3_3_0.png) |
+| Upcoming Media Card | Kodi playlist Card | Kodi search Card |
+| ---- | ---- | ---- |
+| ![Upcoming Media Card](./assets/upcoming_media_card.png) | ![Kodi Playlist Card](./assets/playlist_audio_dark_3_3_0.png) | ![Kodi Search Card](./assets/search_result_v2.6_1.png) |
 
 ## Table of Contents
 
@@ -159,7 +159,7 @@ toggle additional options. To access the option, the right sensor must be presen
 
 3. ***play(arg)***
 
-    This function plays the desired object wth the good player. The argument depends on what object has to be played. the argument can be one of songid, albumid, movieid, episodeid.
+    This function plays the desired object wth the good player. The argument depends on what object has to be played. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`.
 
     Examples:
 
@@ -174,8 +174,19 @@ toggle additional options. To access the option, the right sensor must be presen
         method: play
         movieid: 15
     ```
+4.  **add(arg)**
+    This method adds an item to the right playlist depending on the item passed. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`. The `position`argument indicates where the item must be added in the playlist. The playlist index is 0-based, so 0 is the first position. To add an item at the end of the playlist, just use a index > the length of the playlist (ex: use 1000 when you have a playlist of 50 items, even in party mode).
 
-4. ***reset_addons()***
+    Example: 
+
+     ``` yaml
+        entity_id: sensor.kodi_media_sensor_search
+        method: add
+        songid: 1
+        position: 10
+    ```
+
+5. ***reset_addons()***
 
     This method resets the presence (and active status) of the addons. This is to call for example if you activate a PVR client addon and you want to include the search results of the channels in your resultset.
     ... another option would be to reboot HA!
