@@ -1,5 +1,7 @@
 import logging
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import MediaSensorEventManager
+from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+    MediaSensorEventManager,
+)
 import homeassistant
 import time
 from typing import Dict, List, Any
@@ -69,6 +71,8 @@ PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
 ADD_ATTR_POSITION = "position"
+
+PLAY_POSN = 0
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
@@ -327,21 +331,47 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             insertable = [item_value]
             item_value = insertable
 
-        idx = 1
+        players = await self._kodi.get_players()
+        current_posn = -1
+        if len(players) == 1:
+            player = players[0]
+            props_item_playing = await self._kodi.get_playing_item_properties(
+                player, []
+            )
+            current_item_id = props_item_playing.get("id")
+
+            playlistid = player.get("playerid")
+            playlist = await self.call_method_kodi(
+                "Playlist.GetItems",
+                {
+                    "playlistid": playlistid,
+                },
+            )
+
+            posn = 0
+            for item in playlist:
+                if item.get("id") == current_item_id:
+                    current_posn = posn
+                    break
+                else:
+                    posn = posn + 1
+
+        idx = current_posn + 1 if current_posn > -1 else PLAY_POSN
+        rolling_idx = idx
         for item in item_value:
             await self.call_method_kodi_no_result(
                 "Playlist.Insert",
                 {
                     "playlistid": playlistid,
-                    "position": idx,
+                    "position": rolling_idx,
                     "item": {item_name: item},
                 },
             )
-            idx = idx + 1
+            rolling_idx = rolling_idx + 1
 
         await self.call_method_kodi_no_result(
             "Player.Open",
-            {"item": {"playlistid": playlistid, "position": 1}},
+            {"item": {"playlistid": playlistid, "position": idx}},
         )
 
     async def play_song(self, songid):
@@ -642,10 +672,11 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "limits": limits,
             },
         )
-        for episode in result:
-            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
-            episode["tvshowtitle"] = tvshow["title"]
-            episode["genre"] = tvshow["genre"]
+        if result is not None:
+            for episode in result:
+                tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+                episode["tvshowtitle"] = tvshow["title"]
+                episode["genre"] = tvshow["genre"]
         return result
 
     async def kodi_search_artists(self, value, unlimited: bool = False):
@@ -792,10 +823,11 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 },
             },
         )
-        for episode in result:
-            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
-            episode["tvshowtitle"] = tvshow["title"]
-            episode["genre"] = tvshow["genre"]
+        if result is not None:
+            for episode in result:
+                tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+                episode["tvshowtitle"] = tvshow["title"]
+                episode["genre"] = tvshow["genre"]
         return result
 
     async def kodi_search_tvshow_details(self, tvshowid):
