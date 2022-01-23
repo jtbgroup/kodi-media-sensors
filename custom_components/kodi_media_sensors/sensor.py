@@ -1,15 +1,19 @@
 import logging
+
+# import time
+from datetime import timedelta
+from homeassistant import config_entries, core
+
+# from homeassistant.core import callback
+from homeassistant.helpers import entity_platform
+from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
+from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.const import CONF_HOST
 from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
     MediaSensorEventManager,
 )
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from datetime import timedelta
-from homeassistant import config_entries, core
-from homeassistant.helpers import entity_platform
-from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_HOST
 
 from .const import (
     OPTION_HIDE_WATCHED,
@@ -89,6 +93,7 @@ KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA = cv.make_entity_service_schema(
     {vol.Required(ATTR_METHOD): cv.string}, extra=vol.ALLOW_EXTRA
 )
 
+
 SCAN_INTERVAL = timedelta(seconds=300)
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,7 +110,7 @@ async def async_setup_entry(
     reg = await hass.helpers.entity_registry.async_get_registry()
 
     key = kodi_config_entry.unique_id
-    if key is None:
+    if key == None:
         key = kodi_config_entry.entry_id
 
     kodi_entity_id = reg.async_get_entity_id(KODI_DOMAIN_PLATFORM, KODI_DOMAIN, key)
@@ -154,11 +159,7 @@ async def async_setup_entry(
 
     if conf.get(CONF_SENSOR_SEARCH):
         search_entity = KodiSearchEntity(
-            hass,
-            kodi,
-            kodi_entity_id,
-            kodi_config_entry.data,
-            event_manager,
+            hass, kodi, kodi_entity_id, kodi_config_entry.data, event_manager
         )
         search_entity.set_search_songs(
             conf.get(OPTION_SEARCH_SONGS, DEFAULT_OPTION_SEARCH_SONGS)
@@ -213,7 +214,6 @@ async def async_setup_entry(
         search_entity.set_search_channels_radio(
             conf.get(OPTION_SEARCH_CHANNELS_RADIO, DEFAULT_OPTION_SEARCH_CHANNELS_RADIO)
         )
-
         search_entity.set_search_channels_radio_limit(
             conf.get(
                 OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
@@ -228,27 +228,22 @@ async def async_setup_entry(
         search_entity.set_search_recent_songs(
             conf.get(OPTION_SEARCH_RECENT_SONGS, DEFAULT_OPTION_SEARCH_RECENT_SONGS)
         )
-
         search_entity.set_search_recent_albums(
             conf.get(OPTION_SEARCH_RECENT_ALBUMS, DEFAULT_OPTION_SEARCH_RECENT_ALBUMS)
         )
-
         search_entity.set_search_recent_movies(
             conf.get(OPTION_SEARCH_RECENT_MOVIES, DEFAULT_OPTION_SEARCH_RECENT_MOVIES)
         )
-
         search_entity.set_search_recent_episodes(
             conf.get(
                 OPTION_SEARCH_RECENT_EPISODES, DEFAULT_OPTION_SEARCH_RECENT_EPISODES
             )
         )
-
         search_entity.set_search_keep_alive_timer(
             conf.get(
                 OPTION_SEARCH_KEEP_ALIVE_TIMER, DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER
             )
         )
-
         sensorsList.append(search_entity)
 
     async_add_entities(sensorsList, update_before_add=True)

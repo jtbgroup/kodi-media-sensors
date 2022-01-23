@@ -1,15 +1,13 @@
-from asyncio import FastChildWatcher
 import logging
 import json
+from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+    MediaSensorEventManager,
+)
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pykodi import Kodi
 from urllib import parse
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
-    MediaSensorEventManager,
-)
 from homeassistant.helpers.entity import Entity
-from homeassistant import core
 from homeassistant.const import (
     STATE_OFF,
     STATE_ON,
@@ -39,17 +37,14 @@ class KodiMediaSensorEntity(Entity, ABC):
 
     def __init__(
         self,
-        hass: core.HomeAssistant,
         kodi: Kodi,
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
-        # hide_watched: bool = False,
     ) -> None:
         super().__init__()
-        self._hass = hass
         self._kodi = kodi
-        self._define_base_url(config)
         self._event_manager = event_manager
+        self._define_base_url(config)
         self._state = STATE_OFF
 
         self._event_manager.register_sensor(self)
@@ -62,10 +57,6 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._base_web_url = (
             f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
         )
-
-    @abstractmethod
-    async def handle_media_sensor_event(self, event):
-        _LOGGER.warning("This method is not implemented for the entity")
 
     @abstractmethod
     async def async_call_method(self, method, **kwargs):
@@ -84,6 +75,11 @@ class KodiMediaSensorEntity(Entity, ABC):
                 "Error updating sensor, is kodi running? : %s", str(exception)
             )
             self._state = STATE_PROBLEM
+
+        # if result:
+        # else:
+        #     _LOGGER.warning("result is null state set to off")
+        #     self._state = STATE_OFF
 
         return data
 
@@ -114,7 +110,7 @@ class KodiMediaSensorEntity(Entity, ABC):
                 new_data: List[Dict[str, Any]] = result.get(entry, [])
                 default_type = MAP_KEY_MEDIA_TYPE.get(entry)
 
-                if self._has_leaf(default_type):
+                if self._hasLeaf(default_type):
                     for item in new_data:
                         self._format_item(item, default_type)
                 else:
@@ -122,7 +118,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
         return new_data
 
-    def _has_leaf(self, default_type):
+    def _hasLeaf(self, default_type):
         if (
             default_type == MEDIA_TYPE_ALBUM_DETAIL
             or default_type == MEDIA_TYPE_TVSHOW_DETAIL
@@ -138,8 +134,8 @@ class KodiMediaSensorEntity(Entity, ABC):
             item["genre"] = ", ".join(item["genre"])
 
         if "thumbnail" in item:
-            thumbnail = item["thumbnail"]
-            if thumbnail is None or thumbnail == "":
+            th = item["thumbnail"]
+            if th is None or th == "":
                 del item["thumbnail"]
             else:
                 thumbnail = self._kodi.thumbnail_url(item["thumbnail"])
@@ -216,9 +212,9 @@ class KodiMediaSensorEntity(Entity, ABC):
         self._attrs["data"] = json.dumps(self._data)
 
     def init_meta(self, event_id):
-        formatted_date = datetime.now().strftime(UPDATE_FORMAT)
+        ds = datetime.now().strftime(UPDATE_FORMAT)
         self.purge_meta(event_id)
-        self._meta[0]["update_time"] = formatted_date
+        self._meta[0]["update_time"] = ds
         self._meta[0]["sensor_entity_id"] = self.domain_unique_id
         self._meta[0]["service_domain"] = DOMAIN
         self.build_attrs()

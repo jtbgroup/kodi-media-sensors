@@ -1,11 +1,11 @@
 import logging
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
-    MediaSensorEventManager,
-)
 import homeassistant
 import time
 from typing import Dict, List, Any
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
+from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+    MediaSensorEventManager,
+)
 from homeassistant.const import STATE_OFF, STATE_ON
 from pykodi import Kodi
 from .const import (
@@ -31,7 +31,6 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
     DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
-    DOMAIN,
     ENTITY_SENSOR_SEARCH,
     ENTITY_NAME_SENSOR_SEARCH,
     MEDIA_TYPE_SEASON_DETAIL,
@@ -46,6 +45,7 @@ from .const import (
     PROPS_TVSHOW,
     PROPS_ADDONS,
     PROPS_CHANNEL,
+    DOMAIN,
     PLAYLIST_MOVIE,
     PLAYLIST_MUSIC,
 )
@@ -70,15 +70,16 @@ PLAY_ATTR_ALBUMID = "albumid"
 PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
-ADD_ATTR_POSITION = "position"
 
-PLAY_POSN = 0
+ADD_ATTR_POSITION = "position"
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
     """This sensor is dedicated to the search functionality of Kodi"""
 
     _search_start_time = 0
+    # _search_moment = 0
+    # _clear_timer = 300
     addons_initialized = False
     can_search_pvr = False
     _search_songs = DEFAULT_OPTION_SEARCH_SONGS
@@ -112,10 +113,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
     ):
-        super().__init__(hass, kodi, config, event_manager)
-
+        super().__init__(kodi, config, event_manager)
+        self._hass = hass
         homeassistant.helpers.event.async_track_state_change_event(
-            self._hass, kodi_entity_id, self.__handle_kodi_state_event
+            hass, kodi_entity_id, self.__handle_event
         )
 
         kodi_state = self._hass.states.get(kodi_entity_id)
@@ -200,7 +201,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def set_search_keep_alive_timer(self, value: bool):
         self._search_keep_alive_timer = value
 
-    async def __handle_kodi_state_event(self, event):
+    async def __handle_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
 
         action = ACTION_DO_NOTHING
@@ -222,7 +223,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta(ctxt_id)
 
         if action != ACTION_DO_NOTHING:
-            self.schedule_update_ha_state()
+            # self.schedule_update_ha_state()
+            self._force_update_state()
 
     async def async_update(self):
         """Update is only used to purge the search result"""
@@ -230,6 +232,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         if self._state != STATE_OFF and len(self._meta) == 0:
             self.init_meta("Kodi Search update event")
+
+        # if (
+        #     self._search_moment > 0
+        #     and (time.perf_counter() - self._search_moment) > self._clear_timer
+        # ):
+        #     await self._clear_result()
 
         if (
             self._search_keep_alive_timer == 0
@@ -250,9 +258,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             await self._clear_result()
 
     async def async_call_method(self, method, **kwargs):
+        # self._search_moment = time.perf_counter()
         self._search_start_time = time.perf_counter()
         args = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         _LOGGER.debug("calling method %s with arguments %s", method, args)
+        # self._meta[0]["method"] = method
+        # self._meta[0]["args"] = args
 
         if method == METHOD_SEARCH:
             item = kwargs.get("item")
@@ -272,11 +283,13 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta("search method called")
             if media_type == SEARCH_MEDIA_TYPE_RECENT or search_value is not None:
                 self.add_meta("search", "true")
-            self.schedule_update_ha_state()
+            # self.schedule_update_ha_state()
+            self._force_update_state()
 
         elif method == METHOD_CLEAR:
             await self._clear_result()
-            self.schedule_update_ha_state()
+            # self.schedule_update_ha_state()
+            self._force_update_state()
         elif method == METHOD_RESET_ADDONS:
             await self._reset_addons()
         elif method == METHOD_PLAY:
@@ -310,11 +323,16 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self._meta[0]["method"] = method
         self._meta[0]["kwargs"] = kwargs
 
+    def _force_update_state(self):
+        # self.schedule_update_ha_state()
+        self.hass.async_create_task(self.async_update_ha_state(True))
+
     async def _reset_addons(self):
         self.addons_initialized = False
         await self.init_addons()
 
     async def _clear_result(self):
+        # self._search_moment = 0
         self._search_start_time = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
@@ -324,73 +342,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self.purge_meta(event_id)
         self.purge_data(event_id)
         _LOGGER.debug("Kodi search result clearded")
-
-    async def play_item(self, playlistid, item_name, item_value):
-        _LOGGER.debug(item_value)
-        if not isinstance(item_value, (list, tuple)):
-            insertable = [item_value]
-            item_value = insertable
-
-        players = await self._kodi.get_players()
-        current_posn = -1
-        if len(players) == 1:
-            player = players[0]
-            props_item_playing = await self._kodi.get_playing_item_properties(
-                player, []
-            )
-            current_item_id = props_item_playing.get("id")
-
-            playlistid = player.get("playerid")
-            playlist = await self.call_method_kodi(
-                "Playlist.GetItems",
-                {
-                    "playlistid": playlistid,
-                },
-            )
-
-            posn = 0
-            for item in playlist:
-                if item.get("id") == current_item_id:
-                    current_posn = posn
-                    break
-                else:
-                    posn = posn + 1
-
-        idx = current_posn + 1 if current_posn > -1 else PLAY_POSN
-        rolling_idx = idx
-        for item in item_value:
-            await self.call_method_kodi_no_result(
-                "Playlist.Insert",
-                {
-                    "playlistid": playlistid,
-                    "position": rolling_idx,
-                    "item": {item_name: item},
-                },
-            )
-            rolling_idx = rolling_idx + 1
-
-        await self.call_method_kodi_no_result(
-            "Player.Open",
-            {"item": {"playlistid": playlistid, "position": idx}},
-        )
-
-    async def play_song(self, songid):
-        await self.play_item(PLAYLIST_MUSIC, "songid", songid)
-
-    async def play_album(self, albumid):
-        await self.play_item(PLAYLIST_MUSIC, "albumid", albumid)
-
-    async def play_movie(self, movieid):
-        await self.play_item(PLAYLIST_MOVIE, "movieid", movieid)
-
-    async def play_channel(self, channelid):
-        await self.call_method_kodi_no_result(
-            "Player.Open",
-            {"item": {"channelid": channelid}},
-        )
-
-    async def play_episode(self, episodeid):
-        await self.play_item(PLAYLIST_MOVIE, "episodeid", episodeid)
 
     async def add_item(self, playlistid, item_name, item_value, position):
         _LOGGER.debug(item_value)
@@ -410,10 +361,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             )
             idx = idx + 1
             _LOGGER.debug("added song id %s in position %s", item, idx)
-            event_data = {
-                "type": "playlist_item_added",
-            }
-            self._hass.bus.async_fire(DOMAIN, event_data)
 
     async def add_song(self, songid, position):
         if position > -1:
@@ -449,6 +396,48 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
+
+    async def play_item(self, playlistid, item_name, item_value):
+        _LOGGER.debug(item_value)
+        if not isinstance(item_value, (list, tuple)):
+            insertable = [item_value]
+            item_value = insertable
+
+        idx = 1
+        for item in item_value:
+            await self.call_method_kodi_no_result(
+                "Playlist.Insert",
+                {
+                    "playlistid": playlistid,
+                    "position": idx,
+                    "item": {item_name: item},
+                },
+            )
+            idx = idx + 1
+
+        await self.call_method_kodi_no_result(
+            "Player.Open",
+            {"item": {"playlistid": playlistid, "position": 1}},
+        )
+
+    async def play_song(self, songid):
+        await self.play_item(0, "songid", songid)
+
+    async def play_album(self, albumid):
+        await self.play_item(0, "albumid", albumid)
+
+    async def play_movie(self, movieid):
+        await self.play_item(1, "movieid", movieid)
+
+    async def play_channel(self, channelid):
+        # await self.play_item(1, "channelid", channelid)
+        await self.call_method_kodi_no_result(
+            "Player.Open",
+            {"item": {"channelid": channelid}},
+        )
+
+    async def play_episode(self, episodeid):
+        await self.play_item(1, "episodeid", episodeid)
 
     async def search_tvshow_detail(self, tvshowid):
         card_json = []
@@ -672,11 +661,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "limits": limits,
             },
         )
-        if result is not None:
-            for episode in result:
-                tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
-                episode["tvshowtitle"] = tvshow["title"]
-                episode["genre"] = tvshow["genre"]
+        for episode in result:
+            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+            episode["tvshowtitle"] = tvshow["title"]
+            episode["genre"] = tvshow["genre"]
         return result
 
     async def kodi_search_artists(self, value, unlimited: bool = False):
@@ -823,11 +811,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 },
             },
         )
-        if result is not None:
-            for episode in result:
-                tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
-                episode["tvshowtitle"] = tvshow["title"]
-                episode["genre"] = tvshow["genre"]
+        for episode in result:
+            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+            episode["tvshowtitle"] = tvshow["title"]
+            episode["genre"] = tvshow["genre"]
         return result
 
     async def kodi_search_tvshow_details(self, tvshowid):
@@ -934,6 +921,3 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if data is not None and len(data) > 0:
             for row in data:
                 target.append(row)
-
-    async def handle_media_sensor_event(self, event):
-        return

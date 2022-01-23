@@ -1,8 +1,8 @@
+import homeassistant
+import logging
 from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
     MediaSensorEventManager,
 )
-import homeassistant
-import logging
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from pykodi import Kodi
 from homeassistant.const import (
@@ -15,6 +15,7 @@ from homeassistant.const import (
     # STATE_PROBLEM,
 )
 from .const import (
+    KEY_ITEMS,
     ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
     PROPS_ITEM,
@@ -51,12 +52,19 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
     ):
-        super().__init__(hass, kodi, config, event_manager)
+        super().__init__(kodi, config, event_manager)
+        self._hass = hass
 
         homeassistant.helpers.event.async_track_state_change_event(
-            self._hass, kodi_entity_id, self.__handle_kodi_state_event
+            hass, kodi_entity_id, self.__handle_event
         )
+        kodi_state = self._hass.states.get(kodi_entity_id)
+        if kodi_state is None or kodi_state == STATE_OFF:
+            self._state = STATE_OFF
+        else:
+            self._state = STATE_ON
 
+        # TODO: populate immediately the data if kodi is running
         kodi_state = self._hass.states.get(kodi_entity_id)
         if kodi_state is None or kodi_state == STATE_OFF:
             self._state = STATE_OFF
@@ -76,12 +84,12 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         await self._update_meta(event_id)
         await self._update_data(event_id)
         _LOGGER.debug("number of items in playlist : %s", str(len(self._data)))
-        self.schedule_update_ha_state()
+        self._force_update_state()
 
-    async def __handle_kodi_state_event(self, event):
+    async def __handle_event(self, event):
         old_kodi_event_state = (
             str(event.data.get("old_state").state)
-            if event.data.get("old_state") is not None
+            if event.data.get("old_state") != None
             else STATE_OFF
         )
         old_kodi_event_media_title = str(
@@ -157,7 +165,12 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             await self._clear_all_data(evt_id)
 
         _LOGGER.debug("number of items in playlist : %s", str(len(self._data)))
-        self.schedule_update_ha_state()
+        self._force_update_state()
+
+    def _force_update_state(self):
+        # self.schedule_update_ha_state()
+        # await self.async_schedule_update_ha_state()
+        self.hass.async_create_task(self.async_update_ha_state(True))
 
     async def async_call_method(self, method, **kwargs):
         _LOGGER.debug("************************************calling method")
@@ -184,7 +197,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         # updating data is needed as there is no event fired by kodi
         await self._update_meta("remove event")
         await self._update_data("remove event")
-        self.schedule_update_ha_state()
+        self._force_update_state()
 
     async def _goto(self, playerid, to):
         await self.call_method_kodi_no_result(
