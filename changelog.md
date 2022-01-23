@@ -4,8 +4,7 @@
 
 - Search entity: new method add at position first, second or last
 - search entity plays now the selected item at the current position +1
-- Bugfix : playlist sensor raised an error when starting HA 
-
+- Bugfix : playlist sensor raised an error when starting HA
 
 ## 3.3.0
 
