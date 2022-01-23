@@ -1,6 +1,6 @@
 import logging
 import json
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+from .media_sensor_event_manager import (
     MediaSensorEventManager,
 )
 from datetime import datetime

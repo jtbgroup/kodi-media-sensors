@@ -3,7 +3,7 @@ import homeassistant
 import time
 from typing import Dict, List, Any
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+from .media_sensor_event_manager import (
     MediaSensorEventManager,
 )
 from homeassistant.const import STATE_OFF, STATE_ON

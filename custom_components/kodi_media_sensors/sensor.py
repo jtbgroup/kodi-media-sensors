@@ -9,7 +9,7 @@ from homeassistant.helpers import entity_platform
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_HOST
-from config.custom_components.kodi_media_sensors.media_sensor_event_manager import (
+from .media_sensor_event_manager import (
     MediaSensorEventManager,
 )
 import homeassistant.helpers.config_validation as cv
