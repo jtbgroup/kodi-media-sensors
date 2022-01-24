@@ -72,14 +72,13 @@ PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
 
 ADD_ATTR_POSITION = "position"
+PLAY_POSN = 0
 
 
 class KodiSearchEntity(KodiMediaSensorEntity):
     """This sensor is dedicated to the search functionality of Kodi"""
 
     _search_start_time = 0
-    # _search_moment = 0
-    # _clear_timer = 300
     addons_initialized = False
     can_search_pvr = False
     _search_songs = DEFAULT_OPTION_SEARCH_SONGS
@@ -223,7 +222,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta(ctxt_id)
 
         if action != ACTION_DO_NOTHING:
-            # self.schedule_update_ha_state()
             self._force_update_state()
 
     async def async_update(self):
@@ -232,12 +230,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         if self._state != STATE_OFF and len(self._meta) == 0:
             self.init_meta("Kodi Search update event")
-
-        # if (
-        #     self._search_moment > 0
-        #     and (time.perf_counter() - self._search_moment) > self._clear_timer
-        # ):
-        #     await self._clear_result()
 
         if (
             self._search_keep_alive_timer == 0
@@ -258,12 +250,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             await self._clear_result()
 
     async def async_call_method(self, method, **kwargs):
-        # self._search_moment = time.perf_counter()
         self._search_start_time = time.perf_counter()
         args = ", ".join(f"{key}={value}" for key, value in kwargs.items())
         _LOGGER.debug("calling method %s with arguments %s", method, args)
-        # self._meta[0]["method"] = method
-        # self._meta[0]["args"] = args
 
         if method == METHOD_SEARCH:
             item = kwargs.get("item")
@@ -283,12 +272,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             self.init_meta("search method called")
             if media_type == SEARCH_MEDIA_TYPE_RECENT or search_value is not None:
                 self.add_meta("search", "true")
-            # self.schedule_update_ha_state()
             self._force_update_state()
 
         elif method == METHOD_CLEAR:
             await self._clear_result()
-            # self.schedule_update_ha_state()
             self._force_update_state()
         elif method == METHOD_RESET_ADDONS:
             await self._reset_addons()
@@ -324,7 +311,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self._meta[0]["kwargs"] = kwargs
 
     def _force_update_state(self):
-        # self.schedule_update_ha_state()
         self.hass.async_create_task(self.async_update_ha_state(True))
 
     async def _reset_addons(self):
@@ -332,7 +318,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         await self.init_addons()
 
     async def _clear_result(self):
-        # self._search_moment = 0
         self._search_start_time = 0
         self.init_meta("clear results event")
         self.purge_data("clear results event")
@@ -403,21 +388,47 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             insertable = [item_value]
             item_value = insertable
 
-        idx = 1
+        players = await self._kodi.get_players()
+        current_posn = -1
+        if len(players) == 1:
+            player = players[0]
+            props_item_playing = await self._kodi.get_playing_item_properties(
+                player, []
+            )
+            current_item_id = props_item_playing.get("id")
+
+            playlistid = player.get("playerid")
+            playlist = await self.call_method_kodi(
+                "Playlist.GetItems",
+                {
+                    "playlistid": playlistid,
+                },
+            )
+
+            posn = 0
+            for item in playlist:
+                if item.get("id") == current_item_id:
+                    current_posn = posn
+                    break
+                else:
+                    posn = posn + 1
+
+        idx = current_posn + 1 if current_posn > -1 else PLAY_POSN
+        rolling_idx = idx
         for item in item_value:
             await self.call_method_kodi_no_result(
                 "Playlist.Insert",
                 {
                     "playlistid": playlistid,
-                    "position": idx,
+                    "position": rolling_idx,
                     "item": {item_name: item},
                 },
             )
-            idx = idx + 1
+            rolling_idx = rolling_idx + 1
 
         await self.call_method_kodi_no_result(
             "Player.Open",
-            {"item": {"playlistid": playlistid, "position": 1}},
+            {"item": {"playlistid": playlistid, "position": idx}},
         )
 
     async def play_song(self, songid):
@@ -430,7 +441,6 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         await self.play_item(1, "movieid", movieid)
 
     async def play_channel(self, channelid):
-        # await self.play_item(1, "channelid", channelid)
         await self.call_method_kodi_no_result(
             "Player.Open",
             {"item": {"channelid": channelid}},

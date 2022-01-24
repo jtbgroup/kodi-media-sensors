@@ -1,10 +1,14 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.4.1
+
+- Bugfix: regression bug when getting position of the current playing item
+
 ## 3.4.0
 
-- Search entity: new method add at the desired position (see [issue #6](https://github.com/jtbgroup/kodi-search-card/issues/6)
-- search entity plays now the selected item at the current position +1
-- Bugfix : playlist sensor raised an error when starting HA
+- Search entity: new method add at the desired position (see [issue #6](https://github.com/jtbgroup/kodi-search-card/issues/6))
+- Search entity plays now the selected item at the current position +1
+- Bugfix: playlist sensor raised an error when starting HA
 
 ## 3.3.0
 
