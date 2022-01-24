@@ -2,7 +2,7 @@
 
 ## 3.4.0
 
-- Search entity: new method add at position first, second or last
+- Search entity: new method add at the desired position (see [issue #6](https://github.com/jtbgroup/kodi-search-card/issues/6)
 - search entity plays now the selected item at the current position +1
 - Bugfix : playlist sensor raised an error when starting HA
 
