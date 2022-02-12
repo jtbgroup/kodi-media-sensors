@@ -45,9 +45,9 @@ from .const import (
     PROPS_TVSHOW,
     PROPS_ADDONS,
     PROPS_CHANNEL,
-    DOMAIN,
-    PLAYLIST_MOVIE,
-    PLAYLIST_MUSIC,
+    PLAYLIST_ID_MUSIC,
+    PLAYLIST_ID_VIDEO,
+    PLAYLIST_MAP,
 )
 from .types import KodiConfig
 
@@ -328,7 +328,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         self.purge_data(event_id)
         _LOGGER.debug("Kodi search result clearded")
 
-    async def add_item(self, playlistid, item_name, item_value, position):
+    async def add_item(self, dest_playlistid, item_name, item_value, position):
         _LOGGER.debug(item_value)
         if not isinstance(item_value, (list, tuple)):
             insertable = [item_value]
@@ -339,7 +339,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             await self.call_method_kodi_no_result(
                 "Playlist.Insert",
                 {
-                    "playlistid": playlistid,
+                    "playlistid": dest_playlistid,
                     "position": idx,
                     "item": {item_name: item},
                 },
@@ -349,69 +349,73 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def add_song(self, songid, position):
         if position > -1:
-            await self.add_item(PLAYLIST_MUSIC, "songid", songid, position)
+            await self.add_item(PLAYLIST_ID_MUSIC, "songid", songid, position)
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
 
     async def add_album(self, albumid, position):
         if position > -1:
-            await self.add_item(PLAYLIST_MUSIC, "albumid", albumid, position)
+            await self.add_item(PLAYLIST_ID_MUSIC, "albumid", albumid, position)
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
 
     async def add_movie(self, movieid, position):
         if position > -1:
-            await self.add_item(PLAYLIST_MOVIE, "movieid", movieid, position)
+            await self.add_item(PLAYLIST_ID_VIDEO, "movieid", movieid, position)
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
 
     async def add_channel(self, channelid, position):
         if position > -1:
-            await self.add_item(PLAYLIST_MOVIE, "channelid", channelid, position)
+            await self.add_item(PLAYLIST_ID_VIDEO, "channelid", channelid, position)
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
 
     async def add_episode(self, episodeid, position):
         if position > -1:
-            await self.add_item(PLAYLIST_MOVIE, "episodeid", episodeid, position)
+            await self.add_item(PLAYLIST_ID_VIDEO, "episodeid", episodeid, position)
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
 
-    async def play_item(self, playlistid, item_name, item_value):
+    async def play_item(self, dest_playlistid, item_name, item_value):
         _LOGGER.debug(item_value)
         if not isinstance(item_value, (list, tuple)):
             insertable = [item_value]
             item_value = insertable
 
-        players = await self._kodi.get_players()
         current_posn = -1
-        if len(players) == 1:
-            player = players[0]
-            props_item_playing = await self._kodi.get_playing_item_properties(
-                player, []
-            )
-            current_item_id = props_item_playing.get("id")
 
-            playlistid = player.get("playerid")
-            playlist = await self.call_method_kodi(
+        active_players = await self._kodi.get_players()
+        if len(active_players) == 1:
+            active_player = active_players[0]
+            active_type = active_player.get("type")
+            active_playlistid = PLAYLIST_MAP.get(active_type).get("playlistid")
+            dest_playlist = await self.call_method_kodi(
                 "Playlist.GetItems",
                 {
-                    "playlistid": playlistid,
+                    "playlistid": dest_playlistid,
                 },
             )
+            if active_playlistid == dest_playlistid:
+                props_item_playing = await self._kodi.get_playing_item_properties(
+                    active_player, []
+                )
+                active_item_id = props_item_playing.get("id")
+                posn = 0
+                for item in dest_playlist:
+                    if item.get("id") == active_item_id:
+                        current_posn = posn
+                        break
+                    else:
+                        posn = posn + 1
 
-            posn = 0
-            for item in playlist:
-                if item.get("id") == current_item_id:
-                    current_posn = posn
-                    break
-                else:
-                    posn = posn + 1
+            else:
+                current_posn = len(dest_playlist)
 
         idx = current_posn + 1 if current_posn > -1 else PLAY_POSN
         rolling_idx = idx
@@ -419,7 +423,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             await self.call_method_kodi_no_result(
                 "Playlist.Insert",
                 {
-                    "playlistid": playlistid,
+                    "playlistid": dest_playlistid,
                     "position": rolling_idx,
                     "item": {item_name: item},
                 },
@@ -428,17 +432,17 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
         await self.call_method_kodi_no_result(
             "Player.Open",
-            {"item": {"playlistid": playlistid, "position": idx}},
+            {"item": {"playlistid": dest_playlistid, "position": idx}},
         )
 
     async def play_song(self, songid):
-        await self.play_item(0, "songid", songid)
+        await self.play_item(PLAYLIST_ID_MUSIC, "songid", songid)
 
     async def play_album(self, albumid):
-        await self.play_item(0, "albumid", albumid)
+        await self.play_item(PLAYLIST_ID_MUSIC, "albumid", albumid)
 
     async def play_movie(self, movieid):
-        await self.play_item(1, "movieid", movieid)
+        await self.play_item(PLAYLIST_ID_VIDEO, "movieid", movieid)
 
     async def play_channel(self, channelid):
         await self.call_method_kodi_no_result(
@@ -447,11 +451,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         )
 
     async def play_episode(self, episodeid):
-        await self.play_item(1, "episodeid", episodeid)
+        await self.play_item(PLAYLIST_ID_VIDEO, "episodeid", episodeid)
 
     async def search_tvshow_detail(self, tvshowid):
         card_json = []
-        self._data.clear
 
         if tvshowid is None or tvshowid == "":
             _LOGGER.warning("The argument 'value' passed is empty")

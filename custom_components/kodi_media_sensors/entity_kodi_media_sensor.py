@@ -207,7 +207,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             target[target_attribute_name] = data[attribute_name]
 
     def build_attrs(self):
-        self._attrs.clear
+        # self._attrs.clear
         self._attrs["meta"] = json.dumps(self._meta)
         self._attrs["data"] = json.dumps(self._data)
 

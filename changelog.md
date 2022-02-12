@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.4.2
+
+- Bugfix: choose the right playlist when playing or adding an item (id of the player isn't constant in rpc methods)
+
 ## 3.4.1
 
 - Bugfix: regression bug when getting position of the current playing item

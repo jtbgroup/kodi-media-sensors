@@ -12,10 +12,8 @@ from homeassistant.const import (
     STATE_IDLE,
     STATE_PAUSED,
     STATE_PLAYING,
-    # STATE_PROBLEM,
 )
 from .const import (
-    KEY_ITEMS,
     ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
     PROPS_ITEM,
@@ -158,11 +156,12 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         )
 
         self._state = new_entity_state
-        if sensor_action == ACTION_REFRESH_ALL or sensor_action == ACTION_REFRESH_META:
+        # if sensor_action == ACTION_REFRESH_ALL or sensor_action == ACTION_REFRESH_META:
+        if sensor_action == ACTION_CLEAR:
+            await self._clear_all_data(evt_id)
+        else:
             await self._update_meta(evt_id)
             await self._update_data(evt_id)
-        elif sensor_action == ACTION_CLEAR:
-            await self._clear_all_data(evt_id)
 
         _LOGGER.debug("number of items in playlist : %s", str(len(self._data)))
         self._force_update_state()

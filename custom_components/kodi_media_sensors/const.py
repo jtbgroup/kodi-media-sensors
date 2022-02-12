@@ -75,8 +75,16 @@ ENTITY_NAME_SENSOR_SEARCH = "Kodi Media Sensor Search"
 ATTR_METHOD = "method"
 
 # KODI Constants
-PLAYLIST_MUSIC = 0
-PLAYLIST_MOVIE = 1
+PLAYLIST_ID_MUSIC = 0
+PLAYLIST_ID_VIDEO = 1
+PLAYLIST_TYPE_MUSIC = "music"
+PLAYLIST_TYPE_VIDEO = "video"
+PLAYLIST_TYPE_AUDIO = "audio"
+PLAYLIST_MAP = {
+    PLAYLIST_TYPE_MUSIC: {"playlistid": PLAYLIST_ID_MUSIC},
+    PLAYLIST_TYPE_AUDIO: {"playlistid": PLAYLIST_ID_MUSIC},
+    PLAYLIST_TYPE_VIDEO: {"playlistid": PLAYLIST_ID_VIDEO},
+}
 
 # KODI keys returned in the aswer
 KEY_ADDONS = "addons"
