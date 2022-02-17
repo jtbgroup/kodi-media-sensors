@@ -2,7 +2,7 @@
 
 ## 3.4.2
 
-- Bugfix: choose the right playlist when playing or adding an item (id of the player isn't constant in rpc methods)
+- Bugfix: choose the right playlist when playing or adding an item (id of the player isn't constant in rpc methods) (see [issue#9](https://github.com/jtbgroup/kodi-search-card/issues/9))
 
 ## 3.4.1
 
