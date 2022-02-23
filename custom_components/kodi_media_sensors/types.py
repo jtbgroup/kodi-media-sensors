@@ -3,7 +3,7 @@ from typing import Optional
 from typing_extensions import TypedDict
 
 
-class DeviceStateAttrs(TypedDict):
+class ExtraStateAttrs(TypedDict):
     data: str
 
 

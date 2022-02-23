@@ -10,7 +10,7 @@ from homeassistant.const import (
     STATE_ON,
     STATE_PROBLEM,
 )
-from .types import DeviceStateAttrs, KodiConfig
+from .types import ExtraStateAttrs, KodiConfig
 from .const import (
     DOMAIN,
     KEYS,
@@ -187,7 +187,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         return "sensor." + self.unique_id
 
     @property
-    def extra_state_attributes(self) -> DeviceStateAttrs:
+    def extra_state_attributes(self) -> ExtraStateAttrs:
         self.build_attrs()
         return self._attrs
 
