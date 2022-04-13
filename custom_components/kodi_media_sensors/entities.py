@@ -122,7 +122,7 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
         return "kodi_recently_added_tv"
 
     @property
-    def device_state_attributes(self) -> ExtraStateAttrs:
+    def extra_state_attributes(self) -> ExtraStateAttrs:
         attrs = {}
         card_json = [
             {
@@ -199,7 +199,7 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
         return "kodi_recently_added_movies"
 
     @property
-    def device_state_attributes(self) -> ExtraStateAttrs:
+    def extra_state_attributes(self) -> ExtraStateAttrs:
         attrs = {}
         card_json = [
             {
