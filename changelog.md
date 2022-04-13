@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.4.3
+
+- BugFix: changed from DeviceStateAttrs to ExtraStateAttrs. Thanks to [Raman Gupta](https://github.com/raman325)
+
 ## 3.4.2
 
 - Bugfix: choose the right playlist when playing or adding an item (id of the player isn't constant in rpc methods) (see [issue#9](https://github.com/jtbgroup/kodi-search-card/issues/9))

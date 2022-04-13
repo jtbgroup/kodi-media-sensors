@@ -7,7 +7,7 @@ from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM, STATE_UNKNOW
 from homeassistant.helpers.entity import Entity
 from pykodi import Kodi
 
-from .types import DeviceStateAttrs, KodiConfig
+from .types import ExtraStateAttrs, KodiConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
         return "kodi_recently_added_tv"
 
     @property
-    def device_state_attributes(self) -> DeviceStateAttrs:
+    def device_state_attributes(self) -> ExtraStateAttrs:
         attrs = {}
         card_json = [
             {
@@ -199,7 +199,7 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
         return "kodi_recently_added_movies"
 
     @property
-    def device_state_attributes(self) -> DeviceStateAttrs:
+    def device_state_attributes(self) -> ExtraStateAttrs:
         attrs = {}
         card_json = [
             {
