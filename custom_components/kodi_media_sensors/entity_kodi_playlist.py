@@ -169,20 +169,20 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     def _force_update_state(self):
         # self.schedule_update_ha_state()
         # await self.async_schedule_update_ha_state()
-        self.hass.async_create_task(self.async_update_ha_state(True))
+        self._hass.async_create_task(self.async_update_ha_state(True))
 
     async def async_call_method(self, method, **kwargs):
         _LOGGER.debug("************************************calling method")
         args = ", ".join(f"{key}={value}" for key, value in kwargs.items())
-        _LOGGER.debug("calling method " + method + " with arguments " + args)
+        _LOGGER.debug("calling method %s with arguments %s", method, args)
         self._meta[0]["method"] = method
         self._meta[0]["args"] = args
 
         if method == "goto":
             item = kwargs.get("item")
             playerid = item.get("playerid")
-            to = item.get("to")
-            await self._goto(playerid, to)
+            position = item.get("position")
+            await self._goto(playerid, position)
         elif method == "remove":
             item = kwargs.get("item")
             playlistid = item.get("playlistid")
@@ -251,6 +251,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
 
+        self._kodi.get_album_details
         card_json = []
         self.add_result(items, card_json)
         self._data.clear
