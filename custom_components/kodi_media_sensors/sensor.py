@@ -13,6 +13,7 @@ from .media_sensor_event_manager import (
     MediaSensorEventManager,
 )
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity_registry import async_get
 import voluptuous as vol
 
 from .const import (
@@ -107,7 +108,7 @@ async def async_setup_entry(
     # _hass = hass
     conf = hass.data[DOMAIN][config_entry.entry_id]
     kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
-    reg = await hass.helpers.entity_registry.async_get_registry()
+    reg = async_get(hass)
 
     key = kodi_config_entry.unique_id
     if key == None:
