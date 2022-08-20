@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.5.0
+
+- Search sensor can now search for recently played songs and albums. Some config options changed name. You'll need to reconfigure them if you don't use the default values.
+
 ## 3.4.3
 
 - BugFix: changed from DeviceStateAttrs to ExtraStateAttrs. Thanks to [Raman Gupta](https://github.com/raman325)

@@ -89,11 +89,14 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_channels_tv_limit | search | 10 | Limits the number of TV CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_channels_radio | search | true | Include RADIO CHANNELS search result |
 | search_channels_radio_limit | search | 5 | Limits the number of RADIO CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_recent_songs | search | true | Include SONGS search result of RECENTLY ADDED items |
-| search_recent_albums | search | true | Include ALBUMS search result of RECENTLY ADDED items |
-| search_recent_movies | search | true | Include MOVIES search result of RECENTLY ADDED items |
-| search_recent_episodes | search | true | Include EPISODES search result of RECENTLY ADDED items |
-| search_recent_limit | search | 20 | Limits the number of result when searching the RECENTLY ADDED items. <br/>Value must be O (unlimited) or a positive integer. |
+| search_recently_added_songs | search | true | Include SONGS search result of RECENTLY ADDED items |
+| search_recently_added_albums | search | true | Include ALBUMS search result of RECENTLY ADDED items |
+| search_recently_added_movies | search | true | Include MOVIES search result of RECENTLY ADDED items |
+| search_recently_added_episodes | search | true | Include EPISODES search result of RECENTLY ADDED items |
+| search_recently_added_limit | search | 20 | Limits the number of result when searching the RECENTLY ADDED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
+| search_recently_played_songs | search | true | Include SONGS search result of RECENTLY PLAYED items |
+| search_recently_played_albums | search | true | Include ALBUMS search result of RECENTLY PLAYED items |
+| search_recently_played_limit | search | 10 | Limits the number of result when searching the RECENTLY PLAYED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
 | search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. <br/>When using value **0**, the query will automatially be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
 
 ## Services
@@ -133,7 +136,7 @@ toggle additional options. To access the option, the right sensor must be presen
 1. ***search(media_type, value)***
 
     Searches in the specified media type for the referenced value. The media type 'all' will return result for songs, albums, artists, movies and tv shows.
-    - `media_type:` { all &#124; artist &#124; tvshow }
+    - `media_type:` { all &#124; artist &#124; tvshow &#124; recently_added &#124; recently_played}
     - `value:` { str (title) &#124; int (artistid) &#124; int (tvshowid) }
 
     Example:
@@ -144,6 +147,13 @@ toggle additional options. To access the option, the right sensor must be presen
         item:
           media_type: all
           value: beatles
+    ```
+
+    ``` yaml
+        entity_id: sensor.kodi_media_sensor_search
+        method: search
+        item:
+          media_type: recently_played
     ```
 
 2. ***clear()***
@@ -174,7 +184,8 @@ toggle additional options. To access the option, the right sensor must be presen
         method: play
         movieid: 15
     ```
-4.  **add(arg)**
+
+4.  ***add(arg)***
     This method adds an item to the right playlist depending on the item passed. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`. The `position`argument indicates where the item must be added in the playlist. The playlist index is 0-based, so 0 is the first position. To add an item at the end of the playlist, just use a index > the length of the playlist (ex: use 1000 when you have a playlist of 50 items, even in party mode).
 
     Example: 
