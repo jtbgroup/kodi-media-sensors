@@ -40,11 +40,14 @@
           "search_episodes_limit": "SEARCH Sensor : limits the number of EPISODES in the search result",
           "search_channels_tv_limit": "SEARCH Sensor : limits the number of TV CHANNELS in the search result",
           "search_channels_radio_limit": "SEARCH Sensor : limits the number of RADIO CHANNELS in the search result",
-          "search_recent_songs": "SEARCH Sensor : include SONGS search result of RECENTLY ADDED items",
-          "search_recent_albums": "SEARCH Sensor : include ALBUMS search result of RECENTLY ADDED items",
-          "search_recent_movies": "SEARCH Sensor : include MOVIES search result of RECENTLY ADDED items",
-          "search_recent_episodes": "SEARCH Sensor : include EPISODES search result of RECENTLY ADDED items",
-          "search_recent_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY ADDED items",
+          "search_recently_added_songs": "SEARCH Sensor : include SONGS search result of RECENTLY ADDED items",
+          "search_recently_added_albums": "SEARCH Sensor : include ALBUMS search result of RECENTLY ADDED items",
+          "search_recently_added_movies": "SEARCH Sensor : include MOVIES search result of RECENTLY ADDED items",
+          "search_recently_added_episodes": "SEARCH Sensor : include EPISODES search result of RECENTLY ADDED items",
+          "search_recently_added_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY ADDED items",
+          "search_recently_played_songs": "SEARCH Sensor : include SONGS search result of RECENTLY PLAYED items",
+          "search_recently_played_albums": "SEARCH Sensor : include ALBUMS search result of RECENTLY PLAYED items",
+          "search_recently_played_limit": "SEARCH Sensor : limits the number of result when searching the RECENTLY PLAYED items",
           "search_keep_alive_timer": "SEARCH Sensor : lifetime (in sec) of the result. '0' will auto reproces the search"
         }
       }

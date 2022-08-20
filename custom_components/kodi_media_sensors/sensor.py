@@ -19,7 +19,6 @@ from .const import (
     OPTION_HIDE_WATCHED,
     OPTION_SEARCH_EPISODES,
     OPTION_SEARCH_EPISODES_LIMIT,
-    OPTION_SEARCH_RECENT_LIMIT,
     OPTION_SEARCH_SONGS,
     OPTION_SEARCH_SONGS_LIMIT,
     OPTION_SEARCH_ALBUMS,
@@ -34,10 +33,14 @@ from .const import (
     OPTION_SEARCH_CHANNELS_TV_LIMIT,
     OPTION_SEARCH_CHANNELS_RADIO,
     OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    OPTION_SEARCH_RECENT_SONGS,
-    OPTION_SEARCH_RECENT_ALBUMS,
-    OPTION_SEARCH_RECENT_MOVIES,
-    OPTION_SEARCH_RECENT_EPISODES,
+    OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+    OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+    OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+    OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+    OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+    OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
     OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DEFAULT_OPTION_SEARCH_SONGS,
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
@@ -55,11 +58,14 @@ from .const import (
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_TVSHOWS,
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
-    DEFAULT_OPTION_SEARCH_RECENT_SONGS,
-    DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
-    DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
-    DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
-    DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DOMAIN,
     KODI_DOMAIN_PLATFORM,
@@ -221,22 +227,55 @@ async def async_setup_entry(
             )
         )
 
-        search_entity.set_search_recent_limit(
-            conf.get(OPTION_SEARCH_RECENT_LIMIT, DEFAULT_OPTION_SEARCH_RECENT_LIMIT)
+        search_entity.set_search_recently_played_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+            )
         )
 
-        search_entity.set_search_recent_songs(
-            conf.get(OPTION_SEARCH_RECENT_SONGS, DEFAULT_OPTION_SEARCH_RECENT_SONGS)
-        )
-        search_entity.set_search_recent_albums(
-            conf.get(OPTION_SEARCH_RECENT_ALBUMS, DEFAULT_OPTION_SEARCH_RECENT_ALBUMS)
-        )
-        search_entity.set_search_recent_movies(
-            conf.get(OPTION_SEARCH_RECENT_MOVIES, DEFAULT_OPTION_SEARCH_RECENT_MOVIES)
-        )
-        search_entity.set_search_recent_episodes(
+        search_entity.set_search_recently_played_songs(
             conf.get(
-                OPTION_SEARCH_RECENT_EPISODES, DEFAULT_OPTION_SEARCH_RECENT_EPISODES
+                OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+            )
+        )
+        search_entity.set_search_recently_played_albums(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+            )
+        )
+
+        search_entity.set_search_recently_added_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+            )
+        )
+
+        search_entity.set_search_recently_added_songs(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+            )
+        )
+        search_entity.set_search_recently_added_albums(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+            )
+        )
+        search_entity.set_search_recently_added_movies(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+            )
+        )
+        search_entity.set_search_recently_added_episodes(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
             )
         )
         search_entity.set_search_keep_alive_timer(

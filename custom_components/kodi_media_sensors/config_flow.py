@@ -26,11 +26,14 @@ from .const import (
     OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
     OPTION_SEARCH_EPISODES,
     OPTION_SEARCH_EPISODES_LIMIT,
-    OPTION_SEARCH_RECENT_LIMIT,
-    OPTION_SEARCH_RECENT_SONGS,
-    OPTION_SEARCH_RECENT_ALBUMS,
-    OPTION_SEARCH_RECENT_MOVIES,
-    OPTION_SEARCH_RECENT_EPISODES,
+    OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+    OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+    OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+    OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+    OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+    OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
     OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DEFAULT_OPTION_HIDE_WATCHED,
     DEFAULT_OPTION_SEARCH_SONGS,
@@ -49,11 +52,14 @@ from .const import (
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
     DEFAULT_OPTION_SEARCH_EPISODES,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
-    DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
-    DEFAULT_OPTION_SEARCH_RECENT_SONGS,
-    DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
-    DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
-    DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     CONF_KODI_INSTANCE,
     DOMAIN,
@@ -291,38 +297,59 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 schema_base,
             )
 
-            # SEARCH RECENTS
+            # SEARCH RECENTLT ADDED
             schema_base = self.add_to_schema(
-                OPTION_SEARCH_RECENT_SONGS,
-                DEFAULT_OPTION_SEARCH_RECENT_SONGS,
+                OPTION_SEARCH_RECENTLY_ADDED_SONGS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
                 bool,
                 schema_base,
             )
             schema_base = self.add_to_schema(
-                OPTION_SEARCH_RECENT_ALBUMS,
-                DEFAULT_OPTION_SEARCH_RECENT_ALBUMS,
+                OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
                 bool,
                 schema_base,
             )
             schema_base = self.add_to_schema(
-                OPTION_SEARCH_RECENT_MOVIES,
-                DEFAULT_OPTION_SEARCH_RECENT_MOVIES,
+                OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
                 bool,
                 schema_base,
             )
             schema_base = self.add_to_schema(
-                OPTION_SEARCH_RECENT_EPISODES,
-                DEFAULT_OPTION_SEARCH_RECENT_EPISODES,
+                OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
                 bool,
                 schema_base,
             )
 
             schema_base = self.add_to_schema(
-                OPTION_SEARCH_RECENT_LIMIT,
-                DEFAULT_OPTION_SEARCH_RECENT_LIMIT,
+                OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
                 int,
                 schema_base,
             )
+
+            # SEARCH RECENTLT PLAYED
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+                int,
+                schema_base,
+            )
+
             schema_base = self.add_to_schema(
                 OPTION_SEARCH_KEEP_ALIVE_TIMER,
                 DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
