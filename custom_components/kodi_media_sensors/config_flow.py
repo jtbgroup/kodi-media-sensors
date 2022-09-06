@@ -16,6 +16,8 @@ from .const import (
     OPTION_SEARCH_ALBUMS_LIMIT,
     OPTION_SEARCH_ARTISTS,
     OPTION_SEARCH_ARTISTS_LIMIT,
+    OPTION_SEARCH_MUSICVIDEOS,
+    OPTION_SEARCH_MUSICVIDEOS_LIMIT,
     OPTION_SEARCH_MOVIES,
     OPTION_SEARCH_MOVIES_LIMIT,
     OPTION_SEARCH_TVSHOWS,
@@ -30,6 +32,7 @@ from .const import (
     OPTION_SEARCH_RECENTLY_ADDED_SONGS,
     OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
     OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
     OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
     OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
     OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
@@ -46,6 +49,8 @@ from .const import (
     DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
     DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
     DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
+    DEFAULT_OPTION_SEARCH_MUSICVIDEOS,
+    DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
     DEFAULT_OPTION_SEARCH_MOVIES,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_TVSHOWS,
@@ -56,6 +61,7 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
@@ -227,6 +233,20 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 schema_base,
             )
 
+            # SEARCH MUSIC_VIDEOS
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_MUSICVIDEOS,
+                DEFAULT_OPTION_SEARCH_MUSICVIDEOS,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_MUSICVIDEOS_LIMIT,
+                DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
+                int,
+                schema_base,
+            )
+
             # SEARCH MOVIES
             schema_base = self.add_to_schema(
                 OPTION_SEARCH_MOVIES,
@@ -313,6 +333,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             schema_base = self.add_to_schema(
                 OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
                 DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
+                bool,
+                schema_base,
+            )
+            schema_base = self.add_to_schema(
+                OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
                 bool,
                 schema_base,
             )

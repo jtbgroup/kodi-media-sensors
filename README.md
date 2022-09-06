@@ -81,6 +81,8 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_artists_limit | search | 10 | Limits the number of ARTISTS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_movies | search | true | Include MOVIES search result |
 | search_movies_limit | search | 5 | Limits the number of MOVIES in the search result. <br/>Value must be O (unlimited) or a positive integer.|
+| search_musicvideos | search | true | Include MUSIC VIDEOS search result. The search is performed on two fileds: title of the song or the artist name. The result is a mix of both subqueries.  |
+| search_musicvideos_limit | search | 5 | Limits the number of MUSIC VIDEOS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_tvshows | search | true | Include TVSHOWS search result |
 | search_tvshows_limit | search | 5 | Limits the number of TVSHOWS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
 | search_episodes | search | true | Include EPISODES search result |
@@ -89,13 +91,14 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_channels_tv_limit | search | 10 | Limits the number of TV CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_channels_radio | search | true | Include RADIO CHANNELS search result |
 | search_channels_radio_limit | search | 5 | Limits the number of RADIO CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_recently_added_songs | search | true | Include SONGS search result of RECENTLY ADDED items |
-| search_recently_added_albums | search | true | Include ALBUMS search result of RECENTLY ADDED items |
-| search_recently_added_movies | search | true | Include MOVIES search result of RECENTLY ADDED items |
-| search_recently_added_episodes | search | true | Include EPISODES search result of RECENTLY ADDED items |
+| search_recently_added_songs | search | true | Include SONGS search result in RECENTLY ADDED items |
+| search_recently_added_albums | search | true | Include ALBUMS search result in RECENTLY ADDED items |
+| search_recently_added_movies | search | true | Include MOVIES search result in RECENTLY ADDED items |
+| search_recently_added_musicvideos | search | true | Include MUSIC VIDEOS search result in RECENTLY ADDED items |
+| search_recently_added_episodes | search | true | Include EPISODES search result in RECENTLY ADDED items |
 | search_recently_added_limit | search | 20 | Limits the number of result when searching the RECENTLY ADDED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
-| search_recently_played_songs | search | true | Include SONGS search result of RECENTLY PLAYED items |
-| search_recently_played_albums | search | true | Include ALBUMS search result of RECENTLY PLAYED items |
+| search_recently_played_songs | search | true | Include SONGS search result in RECENTLY PLAYED items |
+| search_recently_played_albums | search | true | Include ALBUMS search result in RECENTLY PLAYED items |
 | search_recently_played_limit | search | 10 | Limits the number of result when searching the RECENTLY PLAYED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
 | search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. <br/>When using value **0**, the query will automatially be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
 

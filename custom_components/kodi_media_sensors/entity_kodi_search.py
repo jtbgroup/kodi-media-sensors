@@ -17,9 +17,12 @@ from .const import (
     DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
     DEFAULT_OPTION_SEARCH_CHANNELS_TV,
     DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
+    DEFAULT_OPTION_SEARCH_MUSICVIDEOS,
+    DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
     DEFAULT_OPTION_SEARCH_MOVIES,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
@@ -44,6 +47,7 @@ from .const import (
     PROPS_ARTIST,
     PROPS_EPISODE,
     PROPS_MOVIE,
+    PROPS_MUSICVIDEOS,
     PROPS_SONG,
     PROPS_TVSHOW,
     PROPS_ADDONS,
@@ -72,6 +76,7 @@ SEARCH_MEDIA_TYPE_TVSHOW = "tvshow"
 PLAY_ATTR_SONGID = "songid"
 PLAY_ATTR_ALBUMID = "albumid"
 PLAY_ATTR_MOVIEID = "movieid"
+PLAY_ATTR_MUSICVIDEOID = "musicvideoid"
 PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
 
@@ -91,8 +96,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_albums_limit = DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT
     _search_artists = DEFAULT_OPTION_SEARCH_ARTISTS
     _search_artists_limit = DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT
-    _search_movies = DEFAULT_OPTION_SEARCH_MOVIES
+    _search_musicvideos = DEFAULT_OPTION_SEARCH_MUSICVIDEOS
+    _search_musicvideos_limit = DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT
     _search_movies_limit = DEFAULT_OPTION_SEARCH_MOVIES_LIMIT
+    _search_movies = DEFAULT_OPTION_SEARCH_MOVIES
     _search_tvshows = DEFAULT_OPTION_SEARCH_TVSHOWS
     _search_tvshows_limit = DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT
     _search_channels_tv = DEFAULT_OPTION_SEARCH_CHANNELS_TV
@@ -106,6 +113,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     _search_recently_added_albums = DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS
     _search_recently_added_movies = DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES
     _search_recently_added_episodes = DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES
+    _search_recently_added_musicvideos = (
+        DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS
+    )
     _search_recently_played_limit = DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT
     _search_recently_played_songs = DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS
     _search_recently_played_albums = DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS
@@ -165,6 +175,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     def set_search_movies_limit(self, limit: int):
         self._search_movies_limit = limit
 
+    def set_search_musicvideos(self, value: bool):
+        self._search_musicvideos = value
+
+    def set_search_musicvideos_limit(self, value: int):
+        self._search_musicvideos_limit = value
+
     def set_search_tvshows(self, value: bool):
         self._search_tvshows = value
 
@@ -200,6 +216,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     def set_search_recently_added_movies(self, value: bool):
         self._search_recently_added_movies = value
+
+    def set_search_recently_added_musicvideos(self, value: bool):
+        self._search_recently_added_musicvideos = value
 
     def set_search_recently_added_episodes(self, value: bool):
         self._search_recently_added_episodes = value
@@ -308,6 +327,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.play_album(kwargs.get(PLAY_ATTR_ALBUMID))
             if kwargs.get("movieid") is not None:
                 await self.play_movie(kwargs.get(PLAY_ATTR_MOVIEID))
+            if kwargs.get("musicvideoid") is not None:
+                await self.play_musicvideo(kwargs.get(PLAY_ATTR_MUSICVIDEOID))
             if kwargs.get("episodeid") is not None:
                 await self.play_episode(kwargs.get(PLAY_ATTR_EPISODEID))
             if kwargs.get("channelid") is not None:
@@ -322,6 +343,8 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 await self.add_album(kwargs.get(PLAY_ATTR_ALBUMID), position)
             if kwargs.get("movieid") is not None:
                 await self.add_movie(kwargs.get(PLAY_ATTR_MOVIEID), position)
+            if kwargs.get("musicvideoid") is not None:
+                await self.add_musicvideo(kwargs.get(PLAY_ATTR_MUSICVIDEOID), position)
             if kwargs.get("episodeid") is not None:
                 await self.add_episode(kwargs.get(PLAY_ATTR_EPISODEID), position)
             if kwargs.get("channelid") is not None:
@@ -386,6 +409,15 @@ class KodiSearchEntity(KodiMediaSensorEntity):
     async def add_movie(self, movieid, position):
         if position > -1:
             await self.add_item(PLAYLIST_ID_VIDEO, "movieid", movieid, position)
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+
+    async def add_musicvideo(self, musicvideoid, position):
+        if position > -1:
+            await self.add_item(
+                PLAYLIST_ID_VIDEO, "musicvideoid", musicvideoid, position
+            )
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
@@ -465,6 +497,9 @@ class KodiSearchEntity(KodiMediaSensorEntity):
 
     async def play_movie(self, movieid):
         await self.play_item(PLAYLIST_ID_VIDEO, "movieid", movieid)
+
+    async def play_musicvideo(self, musicvideoid):
+        await self.play_item(PLAYLIST_ID_VIDEO, "musicvideoid", musicvideoid)
 
     async def play_channel(self, channelid):
         await self.call_method_kodi_no_result(
@@ -706,6 +741,18 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if not unlimited or self._search_recently_added_limit == 0:
             limits["end"] = self._search_recently_added_limit
         return await self.call_method_kodi(
+            "VideoLibrary.GetRecentlyAddedMusicVideos",
+            {
+                "properties": PROPS_MUSICVIDEOS,
+                "limits": limits,
+            },
+        )
+
+    async def kodi_search_recently_added_musicvideos(self, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited or self._search_recently_added_limit == 0:
+            limits["end"] = self._search_recently_added_limit
+        return await self.call_method_kodi(
             "VideoLibrary.GetRecentlyAddedMovies",
             {
                 "properties": PROPS_MOVIE,
@@ -748,6 +795,30 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                     "field": "artist",
                     "operator": "contains",
                     "value": value,
+                },
+            },
+        )
+
+    async def kodi_search_musicvideos(self, value, unlimited: bool = False):
+        limits = {"start": 0}
+        if not unlimited or self._search_musicvideos_limit == 0:
+            limits["end"] = self._search_musicvideos_limit
+
+        return await self.call_method_kodi(
+            "VideoLibrary.GetMusicVideos",
+            {
+                "properties": PROPS_MUSICVIDEOS,
+                "limits": limits,
+                "sort": {
+                    "method": "artist",
+                    "order": "ascending",
+                    "ignorearticle": True,
+                },
+                "filter": {
+                    "or": [
+                        {"field": "title", "operator": "contains", "value": value},
+                        {"field": "artist", "operator": "contains", "value": value},
+                    ]
                 },
             },
         )
@@ -905,6 +976,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             episodes = await self.kodi_search_recently_added_episodes()
             self._add_result(episodes, card_json)
 
+        if self._search_recently_added_musicvideos is True:
+            musicvideos = await self.kodi_search_recently_added_musicvideos()
+            self._add_result(musicvideos, card_json)
+
         self._data.clear
         self._data = card_json
 
@@ -949,6 +1024,10 @@ class KodiSearchEntity(KodiMediaSensorEntity):
         if self._search_movies is True:
             movies = await self.kodi_search_movies(value)
             self._add_result(movies, card_json)
+
+        if self._search_musicvideos is True:
+            musicvodeos = await self.kodi_search_musicvideos(value)
+            self._add_result(musicvodeos, card_json)
 
         if self._search_tvshows is True:
             tvshows = await self.kodi_search_tvshows(value)

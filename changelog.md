@@ -1,8 +1,13 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.6.0
+ - Add the music videos items in the search result if wanted (see [issue #16](https://github.com/jtbgroup/kodi-search-card/issues/16)). Thanks to [Rudd-O](https://github.com/Rudd-O)
+ - Recently added items alo include the music videos
+
 ## 3.5.0
 
 - Search sensor can now search for recently played songs and albums. Some config options changed name. You'll need to reconfigure them if you don't use the default values.
+- Deprecated code (see [issue #18](https://github.com/jtbgroup/kodi-media-sensors/issues/18)). Thanks to [mshuflin](https://github.com/mshuflin) for reporting and [Raman Gupta](https://github.com/raman325) for the solution.
 
 ## 3.4.3
 
