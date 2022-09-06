@@ -248,6 +248,7 @@ PROPS_ITEM = [
     "episode",
     "season",
     "art",
+    "file",
 ]
 
 PROPS_ADDONS = ["enabled"]
