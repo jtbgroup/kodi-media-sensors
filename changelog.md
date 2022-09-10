@@ -3,7 +3,7 @@
 ## 3.6.0
  - Added the music videos items in the search result if wanted (see [issue #16](https://github.com/jtbgroup/kodi-search-card/issues/16)). Thanks to [Rudd-O](https://github.com/Rudd-O)
  - Added the file attribute in the item object of the playlist (see [issue #21](https://github.com/jtbgroup/kodi-search-card/issues/21)). Thanks to [Rudd-O](https://github.com/Rudd-O)
- - Recently added items alo include the music videos
+ - Recently added items also includes the music videos
 
 ## 3.5.0
 
