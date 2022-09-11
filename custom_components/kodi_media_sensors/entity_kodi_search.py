@@ -453,6 +453,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
                 "Playlist.GetItems",
                 {
                     "playlistid": dest_playlistid,
+                    "properties": ["file"],
                 },
             )
             if active_playlistid == dest_playlistid:
