@@ -457,12 +457,16 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             )
             if active_playlistid == dest_playlistid:
                 props_item_playing = await self._kodi.get_playing_item_properties(
-                    active_player, []
+                    active_player, ["file"],
                 )
                 active_item_id = props_item_playing.get("id")
+                active_item_file = props_item_playing.get("file")
                 posn = 0
                 for item in dest_playlist:
-                    if item.get("id") == active_item_id:
+                    if item.get("id") is not None and item.get("id") == active_item_id:
+                        current_posn = posn
+                        break
+                    if item.get("file") is not None and item.get("file") == active_item_file:
                         current_posn = posn
                         break
                     else:
