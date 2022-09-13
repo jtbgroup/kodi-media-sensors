@@ -228,13 +228,18 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             self.add_meta("playlist_type", player["type"])
 
             props_item_playing = await self._kodi.get_playing_item_properties(
-                player, []
+                player, ["file"]
             )
             if props_item_playing.get("id") is not None:
                 self.add_meta("currently_playing", props_item_playing["id"])
                 _LOGGER.debug("Currently playing %s", str(props_item_playing["id"]))
             else:
                 _LOGGER.info("No id defined for this item")
+            if props_item_playing.get("file") is not None:
+                self.add_meta("currently_playing_file", props_item_playing["file"])
+                _LOGGER.debug("Currently playing file %s", str(props_item_playing["file"]))
+            else:
+                _LOGGER.info("No file path known for this item")
             self._playlistid = player_id
         else:
             self._playlistid = -1
