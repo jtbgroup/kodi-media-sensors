@@ -1,5 +1,8 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 3.7.0
+- Added the file attribute in the meta data. This value can be used when item is not yet in a library and no ID can be used. (see [issue #22](https://github.com/jtbgroup/kodi-media-sensors/issues/22). Thanks to [Rudd-O](https://github.com/Rudd-O)
+
 ## 3.6.0
  - Added the music videos items in the search result if wanted (see [issue #16](https://github.com/jtbgroup/kodi-search-card/issues/16)). Thanks to [Rudd-O](https://github.com/Rudd-O)
  - Added the file attribute in the item object of the playlist (see [issue #21](https://github.com/jtbgroup/kodi-search-card/issues/21)). Thanks to [Rudd-O](https://github.com/Rudd-O)
