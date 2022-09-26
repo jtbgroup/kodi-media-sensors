@@ -251,6 +251,12 @@ PROPS_ITEM = [
     "file",
 ]
 
+PROPS_ITEM_LIGHT = [
+    # "type",
+    # "id",
+    "title",
+]
+
 PROPS_ADDONS = ["enabled"]
 
 PROPS_CHANNEL = [

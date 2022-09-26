@@ -17,6 +17,7 @@ from .const import (
     ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
     PROPS_ITEM,
+    PROPS_ITEM_LIGHT,
 )
 
 
@@ -188,6 +189,44 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             playlistid = item.get("playlistid")
             position = item.get("position")
             await self._remove(playlistid, position)
+        elif method == "moveto":
+            item = kwargs.get("item")
+            playlistid = item.get("playlistid")
+            position_from = item.get("position_from")
+            position_to = item.get("position_to")
+            await self._moveto(playlistid, position_from, position_to)
+
+    async def _moveto(self, playlistid, position_from, position_to):
+        items = await self.kodi_get_playlist_light(playlistid)
+        origin = items[int(position_from)]
+        if position_from < position_to:
+            position_to = position_to - 1
+
+        await self.call_method_kodi_no_result(
+            "Playlist.Remove", {"playlistid": playlistid, "position": position_from}
+        )
+
+        await self.call_method_kodi_no_result(
+            "Playlist.Insert",
+            {
+                "playlistid": playlistid,
+                "position": position_to,
+                "item": {self._get_Id_Tag(origin.get("type")): origin.get("id")},
+            },
+        )
+
+        # updating data is needed as there is no event fired by kodi
+        await self._update_meta("move event")
+        await self._update_data("move event")
+        self._force_update_state()
+
+    def _get_Id_Tag(self, type):
+        if type == "song":
+            return "songid"
+        elif type == "movie":
+            return "movieid"
+
+        return "itemid"
 
     async def _remove(self, playlistid, position):
         await self.call_method_kodi_no_result(
@@ -237,7 +276,9 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
                 _LOGGER.info("No id defined for this item")
             if props_item_playing.get("file") is not None:
                 self.add_meta("currently_playing_file", props_item_playing["file"])
-                _LOGGER.debug("Currently playing file %s", str(props_item_playing["file"]))
+                _LOGGER.debug(
+                    "Currently playing file %s", str(props_item_playing["file"])
+                )
             else:
                 _LOGGER.info("No file path known for this item")
             self._playlistid = player_id
@@ -276,6 +317,17 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
             {
                 "properties": PROPS_ITEM,
                 "playlistid": self._playlistid,
+                "limits": limits,
+            },
+        )
+
+    async def kodi_get_playlist_light(self, playlistid):
+        limits = {"start": 0}
+        return await self.call_method_kodi(
+            "Playlist.GetItems",
+            {
+                "properties": PROPS_ITEM_LIGHT,
+                "playlistid": playlistid,
                 "limits": limits,
             },
         )
