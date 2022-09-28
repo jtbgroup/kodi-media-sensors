@@ -199,8 +199,8 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
     async def _moveto(self, playlistid, position_from, position_to):
         items = await self.kodi_get_playlist_light(playlistid)
         origin = items[int(position_from)]
-        if position_from < position_to:
-            position_to = position_to - 1
+        # if position_from < position_to:
+        #     position_to = position_to - 1
 
         await self.call_method_kodi_no_result(
             "Playlist.Remove", {"playlistid": playlistid, "position": position_from}
