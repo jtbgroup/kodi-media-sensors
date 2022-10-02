@@ -3,7 +3,7 @@
 [![](https://img.shields.io/github/release/jtbgroup/kodi-media-sensors/all.svg?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors)
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![](https://img.shields.io/github/license/jtbgroup/kodi-media-sensors?style=for-the-badge)](LICENSE)
-[![](https://img.shields.io/github/workflow/status/jtbgroup/kodi-media-sensors/Python%20package?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors/actions)
+<!-- [![](https://img.shields.io/github/workflow/status/jtbgroup/kodi-media-sensors/Python%20package?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors/actions) -->
 
 This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card), [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
 
@@ -106,7 +106,7 @@ toggle additional options. To access the option, the right sensor must be presen
 
 ### Sensor **Playlist**
 
-1. ***goto(posn, player)***
+1. ***goto(playerid, position)***
 
     This function plays the object at the given position for the given player
 
@@ -117,10 +117,10 @@ toggle additional options. To access the option, the right sensor must be presen
         method: goto
         item: 
           playerid: 0
-          to: 5
+          position: 5
     ```
 
-2. ***remove(posn, player)***
+2. ***remove(playlistid, position)***
 
     This function removes an object from the given playlist 
 
@@ -132,6 +132,21 @@ toggle additional options. To access the option, the right sensor must be presen
         item:
           playlistid: 0
           position: 5
+    ```
+
+3. ***moveto(playlistid, position_from, position_to)***
+
+    This function moves an item from position `from`to position `to` in the given playlist. Basically, the function does a `remove` followed by an `insert`. It means the indexes passed as position must take into acount that in some cases, -1 must be calculated for the `position_to`0. If you use a framework such as SortableJS, this calculation is already taken into account.
+
+    Example:
+
+    ``` yaml
+        entity_id: sensor.kodi_media_sensor_playlist
+        method: moveto
+        item:
+          playlistid: 0
+          position_from: 5
+          position_to: 2
     ```
 
 ### Sensor **Search**

@@ -2,7 +2,7 @@
 
 ## 3.8.0
 
-- Added the moveto command in the plylist sensor 
+- Added the `moveto` command in the playlist sensor . This new command is used to reorder the playlist.
 
 ## 3.7.0
 - Added the file attribute in the meta data. This value can be used when item is not yet in a library and no ID can be used. (see [issue #22](https://github.com/jtbgroup/kodi-media-sensors/issues/22). Thanks to [Rudd-O](https://github.com/Rudd-O)
