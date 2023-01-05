@@ -1,10 +1,8 @@
 import logging
 
-# import time
 from datetime import timedelta
 from homeassistant import config_entries, core
 
-# from homeassistant.core import callback
 from homeassistant.helpers import entity_platform
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
 from homeassistant.components.sensor import PLATFORM_SCHEMA
@@ -18,61 +16,39 @@ import voluptuous as vol
 
 from .const import (
     OPTION_HIDE_WATCHED,
-    OPTION_SEARCH_EPISODES,
     OPTION_SEARCH_EPISODES_LIMIT,
-    OPTION_SEARCH_SONGS,
     OPTION_SEARCH_SONGS_LIMIT,
-    OPTION_SEARCH_ALBUMS,
     OPTION_SEARCH_ALBUMS_LIMIT,
-    OPTION_SEARCH_ARTISTS,
     OPTION_SEARCH_ARTISTS_LIMIT,
-    OPTION_SEARCH_MUSICVIDEOS,
     OPTION_SEARCH_MUSICVIDEOS_LIMIT,
-    OPTION_SEARCH_MOVIES,
     OPTION_SEARCH_MOVIES_LIMIT,
-    OPTION_SEARCH_TVSHOWS,
     OPTION_SEARCH_TVSHOWS_LIMIT,
-    OPTION_SEARCH_CHANNELS_TV,
     OPTION_SEARCH_CHANNELS_TV_LIMIT,
-    OPTION_SEARCH_CHANNELS_RADIO,
     OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
-    OPTION_SEARCH_RECENTLY_ADDED_SONGS,
-    OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
-    OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
-    OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
-    OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
-    OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
-    OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
-    OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
+    OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_ALBUMS_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_MOVIES_LIMIT,
+    OPTION_SEARCH_RECENTLY_ADDED_EPISODES_LIMIT,
+    OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
+    OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
     OPTION_SEARCH_KEEP_ALIVE_TIMER,
-    DEFAULT_OPTION_SEARCH_SONGS,
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
-    DEFAULT_OPTION_SEARCH_ALBUMS,
     DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
-    DEFAULT_OPTION_SEARCH_ARTISTS,
     DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
-    DEFAULT_OPTION_SEARCH_EPISODES,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_TV,
     DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO,
     DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    DEFAULT_OPTION_SEARCH_MUSICVIDEOS,
     DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
-    DEFAULT_OPTION_SEARCH_MOVIES,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
-    DEFAULT_OPTION_SEARCH_TVSHOWS,
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
-    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
-    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
-    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
-    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
+    DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DOMAIN,
     KODI_DOMAIN_PLATFORM,
@@ -174,68 +150,33 @@ async def async_setup_entry(
         search_entity = KodiSearchEntity(
             hass, kodi, kodi_entity_id, kodi_config_entry.data, event_manager
         )
-        search_entity.set_search_songs(
-            conf.get(OPTION_SEARCH_SONGS, DEFAULT_OPTION_SEARCH_SONGS)
-        )
         search_entity.set_search_songs_limit(
             conf.get(OPTION_SEARCH_SONGS_LIMIT, DEFAULT_OPTION_SEARCH_SONGS_LIMIT)
-        )
-        search_entity.set_search_albums(
-            conf.get(OPTION_SEARCH_ALBUMS, DEFAULT_OPTION_SEARCH_ALBUMS)
         )
         search_entity.set_search_albums_limit(
             conf.get(OPTION_SEARCH_ALBUMS_LIMIT, DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT)
         )
-
-        search_entity.set_search_artists(
-            conf.get(OPTION_SEARCH_ARTISTS, DEFAULT_OPTION_SEARCH_ARTISTS)
-        )
         search_entity.set_search_artists_limit(
             conf.get(OPTION_SEARCH_ARTISTS_LIMIT, DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT)
         )
-
-        search_entity.set_search_musicvideos(
-            conf.get(OPTION_SEARCH_MUSICVIDEOS, DEFAULT_OPTION_SEARCH_MUSICVIDEOS)
-        )
-
         search_entity.set_search_musicvideos_limit(
             conf.get(
                 OPTION_SEARCH_MUSICVIDEOS_LIMIT, DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT
             )
         )
-
-        search_entity.set_search_movies(
-            conf.get(OPTION_SEARCH_MOVIES, DEFAULT_OPTION_SEARCH_MOVIES)
-        )
         search_entity.set_search_movies_limit(
             conf.get(OPTION_SEARCH_MOVIES_LIMIT, DEFAULT_OPTION_SEARCH_MOVIES_LIMIT)
-        )
-
-        search_entity.set_search_tvshows(
-            conf.get(OPTION_SEARCH_TVSHOWS, DEFAULT_OPTION_SEARCH_TVSHOWS)
         )
         search_entity.set_search_tvshows_limit(
             conf.get(OPTION_SEARCH_TVSHOWS_LIMIT, DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT)
         )
-
-        search_entity.set_search_episodes(
-            conf.get(OPTION_SEARCH_EPISODES, DEFAULT_OPTION_SEARCH_EPISODES)
-        )
         search_entity.set_search_episodes_limit(
             conf.get(OPTION_SEARCH_EPISODES_LIMIT, DEFAULT_OPTION_SEARCH_EPISODES_LIMIT)
-        )
-
-        search_entity.set_search_channels_tv(
-            conf.get(OPTION_SEARCH_CHANNELS_TV, DEFAULT_OPTION_SEARCH_CHANNELS_TV)
         )
         search_entity.set_search_channels_tv_limit(
             conf.get(
                 OPTION_SEARCH_CHANNELS_TV_LIMIT, DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT
             )
-        )
-
-        search_entity.set_search_channels_radio(
-            conf.get(OPTION_SEARCH_CHANNELS_RADIO, DEFAULT_OPTION_SEARCH_CHANNELS_RADIO)
         )
         search_entity.set_search_channels_radio_limit(
             conf.get(
@@ -243,63 +184,47 @@ async def async_setup_entry(
                 DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
             )
         )
-
-        search_entity.set_search_recently_played_limit(
+        search_entity.set_search_recently_played_songs_limit(
             conf.get(
-                OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
-                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_LIMIT,
+                OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
+            )
+        )
+        search_entity.set_search_recently_played_albums_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
+            )
+        )
+        search_entity.set_search_recently_added_songs_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT,
+            )
+        )
+        search_entity.set_search_recently_added_albums_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_ALBUMS_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS_LIMIT,
+            )
+        )
+        search_entity.set_search_recently_added_movies_limit(
+            conf.get(
+                OPTION_SEARCH_RECENTLY_ADDED_MOVIES_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES_LIMIT,
             )
         )
 
-        search_entity.set_search_recently_played_songs(
+        search_entity.set_search_recently_added_musicvideos_limit(
             conf.get(
-                OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
-                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS,
+                OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS_LIMIT,
             )
         )
-        search_entity.set_search_recently_played_albums(
+        search_entity.set_search_recently_added_episodes_limit(
             conf.get(
-                OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
-                DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS,
-            )
-        )
-
-        search_entity.set_search_recently_added_limit(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_LIMIT,
-            )
-        )
-
-        search_entity.set_search_recently_added_songs(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_SONGS,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS,
-            )
-        )
-        search_entity.set_search_recently_added_albums(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS,
-            )
-        )
-        search_entity.set_search_recently_added_movies(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MOVIES,
-            )
-        )
-
-        search_entity.set_search_recently_added_musicvideos(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_MUSICVIDEOS,
-            )
-        )
-        search_entity.set_search_recently_added_episodes(
-            conf.get(
-                OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
-                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES,
+                OPTION_SEARCH_RECENTLY_ADDED_EPISODES_LIMIT,
+                DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES_LIMIT,
             )
         )
         search_entity.set_search_keep_alive_timer(
