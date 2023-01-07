@@ -70,36 +70,25 @@ Some sensors come with services you can use. The definition of the services depe
 A `Configure` button will appear on the integration. Clicking this will allow you to
 toggle additional options. To access the option, the right sensor must be present.
 
-| Option | Sensor | Default | Description |
+| Option | Sensor | Value | Description |
 | ------ | ---- | ------- | ---- |
-| hide_watched | recently added movie, <br/>recently added tvshow | false | Excludes recently added video media that is marked as watched (movie sensors) when option is schecked |
-| search_songs | search | false | Include SONGS search result |
-| search_songs_limit | search | 15 | Limits the number of SONGS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_albums | search | true | Include ALBUMS search result |
-| search_albums_limit | search | 10 | Limits the number of ALBUMS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_artists | search | true | Include ARTISTS search result |
-| search_artists_limit | search | 10 | Limits the number of ARTISTS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
-| search_movies | search | true | Include MOVIES search result |
-| search_movies_limit | search | 5 | Limits the number of MOVIES in the search result. <br/>Value must be O (unlimited) or a positive integer.|
-| search_musicvideos | search | true | Include MUSIC VIDEOS search result. The search is performed on two fields: title of the song or the artist name. The result is a mix of both subqueries.  |
-| search_musicvideos_limit | search | 5 | Limits the number of MUSIC VIDEOS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
-| search_tvshows | search | true | Include TVSHOWS search result |
-| search_tvshows_limit | search | 5 | Limits the number of TVSHOWS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_episodes | search | true | Include EPISODES search result |
-| search_episodes_limit | search | 5 | Limits the number of EPISODES in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_channels_tv | search | true | Include TV CHANNELS search result |
-| search_channels_tv_limit | search | 10 | Limits the number of TV CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
-| search_channels_radio | search | true | Include RADIO CHANNELS search result |
-| search_channels_radio_limit | search | 5 | Limits the number of RADIO CHANNELS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
-| search_recently_added_songs | search | true | Include SONGS search result in RECENTLY ADDED items |
-| search_recently_added_albums | search | true | Include ALBUMS search result in RECENTLY ADDED items |
-| search_recently_added_movies | search | true | Include MOVIES search result in RECENTLY ADDED items |
-| search_recently_added_musicvideos | search | true | Include MUSIC VIDEOS search result in RECENTLY ADDED items |
-| search_recently_added_episodes | search | true | Include EPISODES search result in RECENTLY ADDED items |
-| search_recently_added_limit | search | 20 | Limits the number of result when searching the RECENTLY ADDED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
-| search_recently_played_songs | search | true | Include SONGS search result in RECENTLY PLAYED items |
-| search_recently_played_albums | search | true | Include ALBUMS search result in RECENTLY PLAYED items |
-| search_recently_played_limit | search | 10 | Limits the number of result when searching the RECENTLY PLAYED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
+| hide_watched | recently added movie, <br/>recently added tvshow | boolean (default = false) | Excludes recently added video media that is marked as watched (movie sensors) when option is schecked |
+| search_songs_limit | search | int [0 - 100] (default = 15) | Limits the number of SONGS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_albums_limit | search | int [0 - 100] (default = 10) | Limits the number of ALBUMS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_artists_limit | search | int [0 - 100] (default = 10) | Limits the number of ARTISTS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100.|
+| search_movies_limit | search | int [0 - 100] (default = 5) | Limits the number of MOVIES in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100.|
+| search_musicvideos_limit | search | int [0 - 100] (default = 5) | Limits the number of MUSIC VIDEOS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100.|
+| search_tvshows_limit | search | int [0 - 100] (default = 5) | Limits the number of TVSHOWS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_episodes_limit | search | int [0 - 100] (default = 5) | Limits the number of EPISODES in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_channels_tv_limit | search | int [0 - 100] (default = 10) | Limits the number of TV CHANNELS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_channels_radio_limit | search | int [0 - 100] (default = 5) | Limits the number of RADIO CHANNELS in the search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_recently_added_songs_limit | search | int [0 - 100] (default = 20) | Limits the number of SONGS in the RECENTLY ADDED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100.|
+| search_recently_added_albums_limit | search | int [0 - 100] (default = 20) | Limits the number of ALBUMS in the RECENTLY ADDED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_recently_added_movies_limit | search | int [0 - 100] (default = 20) | Limits the number of MOVIES in the RECENTLY ADDED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100.|
+| search_recently_added_musicvideos_limit | search | int [0 - 100] (default = 20) | Limits the number of MUSIC VIDEOS in the RECENTLY ADDED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_recently_added_episodes_limit | search | int [0 - 100] (default = 20) | Include EPISODES search result in RECENTLY ADDED items |
+| search_recently_played_songs_limit | search | int [0 - 100] (default = 10) | Limits the number of SONGS in the RECENTLY PLAYED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
+| search_recently_played_albums_limit | search | int [0 - 100] (default = 10) | Limits the number of ALBUMS in the RECENTLY PLAYED search result. <br/>0 means the search won't be performed for this ite type. Values < 0 are considered = 0; values > 100 are considered = 100. |
 | search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. <br/>When using value **0**, the query will automatically be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
 
 ## Services
