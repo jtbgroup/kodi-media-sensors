@@ -4,10 +4,7 @@ from unittest import mock
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.kodi_media_sensors.const import (
-    CONF_KODI_INSTANCE,
-    CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
-    DOMAIN,
-    OPTION_HIDE_WATCHED,
+        DOMAIN,
 )
 from custom_components.kodi_media_sensors.utils import KODI_DOMAIN
 
