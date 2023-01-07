@@ -1,0 +1,4 @@
+pykodi
+pytest
+pytest-cov
+pytest-homeassistant-custom-component>=0.5.8
