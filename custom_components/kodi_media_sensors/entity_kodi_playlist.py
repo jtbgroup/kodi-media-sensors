@@ -1,28 +1,24 @@
-import homeassistant
 import logging
-from .media_sensor_event_manager import (
-    MediaSensorEventManager,
-)
-from .entity_kodi_media_sensor import KodiMediaSensorEntity
-from pykodi import Kodi
-from homeassistant.const import (
-    # EVENT_STATE_CHANGED,
+
+import homeassistant
+from homeassistant.const import (  # EVENT_STATE_CHANGED,
+    STATE_IDLE,
     STATE_OFF,
     STATE_ON,
-    STATE_IDLE,
     STATE_PAUSED,
     STATE_PLAYING,
 )
+from pykodi import Kodi
+
 from .const import (
-    ENTITY_SENSOR_PLAYLIST,
     ENTITY_NAME_SENSOR_PLAYLIST,
+    ENTITY_SENSOR_PLAYLIST,
     PROPS_ITEM,
     PROPS_ITEM_LIGHT,
 )
-
-
+from .entity_kodi_media_sensor import KodiMediaSensorEntity
+from .media_sensor_event_manager import MediaSensorEventManager
 from .types import KodiConfig
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -243,7 +239,7 @@ class KodiPlaylistEntity(KodiMediaSensorEntity):
         )
 
     async def async_update(self) -> None:
-        """This update is ony used to trigger events so the frontend can be updated. But nothing will happen with this method as no polling is required, but every data change occur when kodi sends events."""
+        """This update is only used to trigger events so the frontend can be updated. But nothing will happen with this method as no polling is required, but every data change occur when kodi sends events."""
         _LOGGER.debug("> Update Playlist sensor")
 
         # this piece of code is used to initialize the meta and data when the sensor starts for the first time and kodi is not off (and thus the sensor neither as the state is set in the constructor based on the state of kodi)

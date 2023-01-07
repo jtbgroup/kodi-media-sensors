@@ -68,7 +68,7 @@
 }
 ```
 
-*** Exemple of video ***
+*** Example of video ***
 
 ```
 {

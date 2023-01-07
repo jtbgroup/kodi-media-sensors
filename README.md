@@ -81,7 +81,7 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_artists_limit | search | 10 | Limits the number of ARTISTS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_movies | search | true | Include MOVIES search result |
 | search_movies_limit | search | 5 | Limits the number of MOVIES in the search result. <br/>Value must be O (unlimited) or a positive integer.|
-| search_musicvideos | search | true | Include MUSIC VIDEOS search result. The search is performed on two fileds: title of the song or the artist name. The result is a mix of both subqueries.  |
+| search_musicvideos | search | true | Include MUSIC VIDEOS search result. The search is performed on two fields: title of the song or the artist name. The result is a mix of both subqueries.  |
 | search_musicvideos_limit | search | 5 | Limits the number of MUSIC VIDEOS in the search result. <br/>Value must be O (unlimited) or a positive integer.|
 | search_tvshows | search | true | Include TVSHOWS search result |
 | search_tvshows_limit | search | 5 | Limits the number of TVSHOWS in the search result. <br/>Value must be O (unlimited) or a positive integer. |
@@ -100,7 +100,7 @@ toggle additional options. To access the option, the right sensor must be presen
 | search_recently_played_songs | search | true | Include SONGS search result in RECENTLY PLAYED items |
 | search_recently_played_albums | search | true | Include ALBUMS search result in RECENTLY PLAYED items |
 | search_recently_played_limit | search | 10 | Limits the number of result when searching the RECENTLY PLAYED items. <br/>Value must be O (unlimited **>>> bad idea**) or a positive integer. |
-| search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. <br/>When using value **0**, the query will automatially be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
+| search_keep_alive_timer | search | 300 | Lifetime (in sec) of the result. <br/>When using value **0**, the query will automatically be reprocessed with the same parameters. This is only true for search methods (_normal search_ and _recently added_), not the other methods (like _clear_ or _reset addons_). <br/> **Remark**: the timer also depends on the polling of the sensor which is set to 300 sec. The evaluation of purging data is only evaluated during the polling. This means the real lifetime of the data is between the specified value and this value added by the polling eriod. <br/> Ex: if value = 20 sec, the purge occurs after a period between 20sec and 320sec |
 
 ## Services
 
@@ -115,14 +115,14 @@ toggle additional options. To access the option, the right sensor must be presen
     ``` yaml
         entity_id: sensor.kodi_media_sensor_playlist
         method: goto
-        item: 
+        item:
           playerid: 0
           position: 5
     ```
 
 2. ***remove(playlistid, position)***
 
-    This function removes an object from the given playlist 
+    This function removes an object from the given playlist
 
     Example:
 
@@ -136,7 +136,7 @@ toggle additional options. To access the option, the right sensor must be presen
 
 3. ***moveto(playlistid, position_from, position_to)***
 
-    This function moves an item from position `from`to position `to` in the given playlist. Basically, the function does a `remove` followed by an `insert`. It means the indexes passed as position must take into acount that in some cases, -1 must be calculated for the `position_to`0. If you use a framework such as SortableJS, this calculation is already taken into account.
+    This function moves an item from position `from`to position `to` in the given playlist. Basically, the function does a `remove` followed by an `insert`. It means the indexes passed as position must take into account that in some cases, -1 must be calculated for the `position_to`0. If you use a framework such as SortableJS, this calculation is already taken into account.
 
     Example:
 
@@ -187,7 +187,7 @@ toggle additional options. To access the option, the right sensor must be presen
 
 3. ***play(arg)***
 
-    This function plays the desired object wth the good player. The argument depends on what object has to be played. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`.
+    This function plays the desired object with the good player. The argument depends on what object has to be played. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`.
 
     Examples:
 
@@ -206,7 +206,7 @@ toggle additional options. To access the option, the right sensor must be presen
 4.  ***add(arg)***
     This method adds an item to the right playlist depending on the item passed. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid` or `channelid`. The `position`argument indicates where the item must be added in the playlist. The playlist index is 0-based, so 0 is the first position. To add an item at the end of the playlist, just use a index > the length of the playlist (ex: use 1000 when you have a playlist of 50 items, even in party mode).
 
-    Example: 
+    Example:
 
      ``` yaml
         entity_id: sensor.kodi_media_sensor_search
@@ -231,7 +231,7 @@ toggle additional options. To access the option, the right sensor must be presen
 
 ### Cards to use with sensors
 
-The goal is to group all the sensors and have seperate Cards to display the sensors data. The cards that where tested are:
+The goal is to group all the sensors and have separate Cards to display the sensors data. The cards that where tested are:
 
 - [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) (kodi_media_sensor_recently_added_tvshow or kodi_media_sensor_recently_added_movie)
 - [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) (kodi_media_sensor_playlist)
@@ -260,7 +260,7 @@ Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upc
 1. Remove any sensors in your `configuration.yaml` that reference the `kodi_media_sensors`
    platform.
 2. Restart Home Assistant.
-3. Follow the steps from the begining in the section [Installation](#installation)
+3. Follow the steps from the beginning in the section [Installation](#installation)
 
 ## Known Issues
 

@@ -1,19 +1,14 @@
-import logging
-import json
-from .media_sensor_event_manager import (
-    MediaSensorEventManager,
-)
+from abc import ABC, abstractmethod
 from datetime import datetime
+import json
+import logging
 from typing import Any, Dict, List, Optional
-from pykodi import Kodi
 from urllib import parse
+
+from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM
 from homeassistant.helpers.entity import Entity
-from homeassistant.const import (
-    STATE_OFF,
-    STATE_ON,
-    STATE_PROBLEM,
-)
-from .types import ExtraStateAttrs, KodiConfig
+from pykodi import Kodi
+
 from .const import (
     DOMAIN,
     KEYS,
@@ -22,14 +17,15 @@ from .const import (
     MEDIA_TYPE_SEASON_DETAIL,
     MEDIA_TYPE_TVSHOW_DETAIL,
 )
-from abc import ABC, abstractmethod
+from .media_sensor_event_manager import MediaSensorEventManager
+from .types import ExtraStateAttrs, KodiConfig
 
 _LOGGER = logging.getLogger(__name__)
 UPDATE_FORMAT = "%Y%m%d%H%M%S%f"
 
 
 class KodiMediaSensorEntity(Entity, ABC):
-    """This super class should never be instanciated. It's ba parent class of all the kodi media sensors"""
+    """This super class should never be instantiated. It's the parent class of all the kodi media sensors"""
 
     _attrs = {}
     _data = []
@@ -66,7 +62,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         result = None
         data = None
         try:
-            # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
+            # Parameters are passed using a **kwargs because the number of JSON parameters depends on each function
             result = await self._kodi.call_method(method, **args)
             data = self._handle_result(result)
             self._state = STATE_ON
@@ -85,7 +81,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
     async def call_method_kodi_no_result(self, method, args):
         try:
-            # Parameters are passed using a **kwargs because the number of JSON parmeters depends on each function
+            # Parameters are passed using a **kwargs because the number of JSON parameters depends on each function
             await self._kodi.call_method(method, **args)
             self._state = STATE_ON
         except Exception as exception:

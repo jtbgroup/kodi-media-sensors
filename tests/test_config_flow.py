@@ -4,10 +4,10 @@ from unittest import mock
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.kodi_media_sensors.const import (
-    OPTION_HIDE_WATCHED,
     CONF_KODI_INSTANCE,
     CONF_SENSOR_RECENTLY_ADDED_TVSHOW,
     DOMAIN,
+    OPTION_HIDE_WATCHED,
 )
 from custom_components.kodi_media_sensors.utils import KODI_DOMAIN
 
@@ -23,6 +23,7 @@ async def test_flow_init_kodi_not_configured(hass):
         "errors": {"base": "kodi_not_configured"},
         "flow_id": mock.ANY,
         "handler": "kodi_media_sensors",
+        "last_step": None,
         "step_id": "user",
         "type": "form",
     } == result
@@ -69,6 +70,7 @@ async def test_flow_init_kodi_is_configured(hass):
         "errors": {},
         "flow_id": mock.ANY,
         "handler": "kodi_media_sensors",
+        "last_step": None,
         "step_id": "user",
         "type": "form",
     } == result
@@ -122,10 +124,17 @@ async def test_flow_user_setp_success(hass):
         "flow_id": mock.ANY,
         "handler": "kodi_media_sensors",
         "title": "Kodi Media Sensors",
-        "data": {"kodi_config_entry_id": "bar","sensor_recently_added_tvshow": False, "sensor_recently_added_movie": False, "sensor_playlist": False, "sensor_search": False},
+        "data": {
+            "kodi_config_entry_id": "bar",
+            "sensor_recently_added_tvshow": False,
+            "sensor_recently_added_movie": False,
+            "sensor_playlist": False,
+            "sensor_search": False,
+        },
         "description": None,
         "description_placeholders": None,
         "result": mock.ANY,
+        "options": {},
     }
     assert expected == result
 
@@ -138,8 +147,8 @@ async def test_options_flow(hass):
         data={"kodi_entry_id": "abc", CONF_SENSOR_RECENTLY_ADDED_TVSHOW: True},
     )
     config_entry.add_to_hass(hass)
-    #assert await hass.config_entries.async_setup(config_entry.entry_id)
-    #await hass.async_block_till_done()
+    # assert await hass.config_entries.async_setup(config_entry.entry_id)
+    # await hass.async_block_till_done()
 
     # show initial form
     result = await hass.config_entries.options.async_init(config_entry.entry_id)

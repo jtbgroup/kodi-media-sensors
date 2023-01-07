@@ -1,5 +1,10 @@
 # KODI MEDIA SENSOR - Changelog
 
+
+## 4.0.0
+- Bugfix: the return of movies and music  videos was inverted for the recently added items
+- New way to set the result limits in the configuration (only 1/2 config needed)
+
 ## 3.8.0
 
 - Added the `moveto` command in the playlist sensor . This new command is used to reorder the playlist.
@@ -43,7 +48,7 @@
 ## 3.2.3
 
 - No search limit when the configuration option **x_limit*- is 0
-- Added Search PVR Channels functionnality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is desactivated.
+- Added Search PVR Channels functionality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is deactivated.
 - New properties in the configuration to (de)activate item types in the search and setlimits per item types.
 
 ## 3.1.5
