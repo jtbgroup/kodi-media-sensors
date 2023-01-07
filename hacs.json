@@ -2,4 +2,8 @@
   "name": "Kodi Media Sensors",
   "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
   "homeassistant": "2022.8.7",
+  "config_flow": true,
+  "domains": ["sensor"],
+  "iot_class": "Local Polling",
+  "render_readme": true
 }
