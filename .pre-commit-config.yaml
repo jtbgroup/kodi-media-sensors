@@ -26,7 +26,7 @@ repos:
       - id: codespell
         args:
           - --ignore-words-list=hass,alot,datas,dof,dur,farenheit,hist,iff,ines,ist,lightsensor,mut,nd,pres,referer,ser,serie,te,technik,ue,uint,visability,wan,wanna,withing
-          - --skip="./.*,*.csv,*.json"
+          - --skip="*.csv,*.json"
           - --quiet-level=2
         exclude_types: [csv, json]
   - repo: https://github.com/pycqa/flake8
@@ -60,6 +60,11 @@ repos:
       - id: check-added-large-files
         stages: [manual]
       - id: check-json
+  # - repo: https://github.com/pre-commit/mirrors-prettier
+  #   rev: v2.7.1
+  #   hooks:
+  #     - id: prettier
+  #       types_or: [markdown]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.991
     hooks:

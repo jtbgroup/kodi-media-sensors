@@ -1,7 +1,8 @@
 # KODI MEDIA SENSOR - Changelog
 
-
 ## 4.0.0
+!!! Attention to some breaking changes in the configuration. Check the readme file !!!
+
 - Bugfix: the return of movies and music movies was inverted for the recently added items
 - New way to set the result limits in the configuration (only 1/2 config needed)
 
@@ -10,6 +11,7 @@
 - Added the `moveto` command in the playlist sensor . This new command is used to reorder the playlist.
 
 ## 3.7.0
+
 - Added the file attribute in the meta data. This value can be used when item is not yet in a library and no ID can be used. (see [issue #22](https://github.com/jtbgroup/kodi-media-sensors/issues/22). Thanks to [Rudd-O](https://github.com/Rudd-O)
 
 ## 3.6.0
