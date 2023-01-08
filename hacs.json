@@ -1,8 +1,5 @@
 {
   "name": "Kodi Media Sensors",
   "homeassistant": "2022.8.7",
-  "config_flow": true,
-  "domains": ["sensor"],
-  "iot_class": "Local Polling",
   "render_readme": true
 }
