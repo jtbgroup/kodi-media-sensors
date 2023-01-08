@@ -11,8 +11,15 @@ jobs:
     name: Validate HACS requirements
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v2"
+      - uses: "actions/checkout@v4"
       - name: HACS validation
         uses: "hacs/action@main"
         with:
           category: "integration"
+  
+  validate_hassfest:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v2"
+      - uses: home-assistant/actions/hassfest@master
+
