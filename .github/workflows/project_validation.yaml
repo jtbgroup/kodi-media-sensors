@@ -16,7 +16,7 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
-  
+
   validate_hassfest:
     name: Validate with Hassfest for Home assistant
     runs-on: "ubuntu-latest"
@@ -56,7 +56,7 @@ jobs:
   #     - name: Install requirements
   #       run: |
   #         python3 -m pip install --upgrade pip
-  #         python3 install -r requirements_test.txt 
+  #         python3 install -r requirements.prectest.txt
 
   #     - name: Run tests
   #       run: |
@@ -69,4 +69,3 @@ jobs:
   #           -o console_output_style=count \
   #           -p no:sugar \
   #           tests
-
