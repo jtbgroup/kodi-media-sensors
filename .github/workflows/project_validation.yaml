@@ -1,4 +1,4 @@
-name: Push changes
+name: Project validation
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     name: Validate HACS requirements
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v2"
+      - uses: "actions/checkout@v3"
       - name: HACS validation
         uses: "hacs/action@main"
         with:
@@ -21,6 +21,17 @@ jobs:
     name: Validate with Hassfest for Home assistant
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v2"
+      - uses: "actions/checkout@v3"
       - uses: home-assistant/actions/hassfest@master
+
+  control_style:
+    name: Check style formatting
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions/setup-python@v1"
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install black
+      - run: black .
 
