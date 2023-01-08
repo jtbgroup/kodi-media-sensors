@@ -2,7 +2,7 @@
 
 
 ## 4.0.0
-- Bugfix: the return of movies and music  videos was inverted for the recently added items
+- Bugfix: the return of movies and music movies was inverted for the recently added items
 - New way to set the result limits in the configuration (only 1/2 config needed)
 
 ## 3.8.0

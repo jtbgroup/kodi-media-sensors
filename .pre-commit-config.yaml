@@ -1,3 +1,6 @@
+# This is the config file for the pre-commit utility. Please, refer to https://pre-commit.com for more information.
+# From the project path, do not forget to type this command:  "pre-commit install"
+
 default_language_version:
     python: python3
 repos:
