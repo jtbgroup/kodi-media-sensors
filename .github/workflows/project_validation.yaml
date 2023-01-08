@@ -3,7 +3,7 @@ name: Project validation
 on:
   push:
     branches:
-      - main
+      - master
       - develop
 
 jobs:
