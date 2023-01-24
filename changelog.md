@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 4.0.1
+
+- BugFix: not all the songs of an artist were returned in the search sensor when querying for a specific artist
+
 ## 4.0.0
 !!! Attention to some breaking changes in the configuration. Check the readme file !!!
 

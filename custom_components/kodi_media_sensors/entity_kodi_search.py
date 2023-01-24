@@ -567,7 +567,7 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             _LOGGER.warning("The argument 'value' passed is empty")
             return
         try:
-            songs_resultset = await self.kodi_search_songs(value, "artistid")
+            songs_resultset = await self.kodi_search_songs(value, "artistid", True)
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
@@ -619,8 +619,12 @@ class KodiSearchEntity(KodiMediaSensorEntity):
             },
         )
 
-    async def kodi_search_songs(self, value, filter_field: str = "title"):
-        limits = {"start": 0, "end": self._search_songs_limit}
+    async def kodi_search_songs(
+        self, value, filter_field: str = "title", unlimited: bool = False
+    ):
+        limits = {"start": 0}
+        if not unlimited:
+            limits["end"] = self._search_songs_limit
 
         _filter = {}
         if filter_field == "title":
