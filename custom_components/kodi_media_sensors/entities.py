@@ -41,9 +41,10 @@ class KodiMediaEntity(Entity):
     async def async_update(self) -> None:
         result = None
         try:
-            result = await self.kodi.call_method(
-                self.update_method, properties=self.properties
-            )
+            if self._state == STATE_ON:
+                result = await self.kodi.call_method(
+                    self.update_method, properties=self.properties
+                )
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_OFF

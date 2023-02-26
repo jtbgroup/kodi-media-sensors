@@ -1,11 +1,10 @@
-from __future__ import annotations
-
+import logging
 from typing import Any, Optional
 
 from homeassistant import config_entries
 from homeassistant.components.kodi.const import DOMAIN as KODI_DOMAIN
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+# from homeassistant.helpers import entity_registry, entity_platform
 import voluptuous as vol
 
 from .const import (
@@ -55,27 +54,23 @@ from .const import (
     OPTION_SEARCH_TVSHOWS_LIMIT,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    async def async_step_user(self, info):
+    """Kodi Media Sensors config flow."""
+
+    async def async_step_user(self, user_input: Optional[dict[str, Any]]):
+        """Handle a flow initialized via the user interface."""
         # Find all configured kodi instances to allow the user to select one.
-
-        _in_use = list()
-        _kms = self.hass.config_entries.async_entries(DOMAIN)
-        for kms in _kms:
-            _in_use.append(kms.data[CONF_KODI_INSTANCE])
-
-        _kodi_instances: dict[str, str] = {
+        kodi_instances: dict[str, str] = {
             entry.entry_id: entry.title
             for entry in self.hass.config_entries.async_entries(KODI_DOMAIN)
-            if entry.source != "ignore" and entry.entry_id not in _in_use
+            if entry.source != "ignore"
         }
-
-        _data_schema = vol.Schema(
+        data_schema = vol.Schema(
             {
-                vol.Required(CONF_KODI_INSTANCE): vol.In(
-                    list(_kodi_instances.values())
-                ),
+                vol.Required(CONF_KODI_INSTANCE): vol.In(list(kodi_instances.values())),
                 vol.Optional(CONF_SENSOR_RECENTLY_ADDED_TVSHOW, default=False): bool,
                 vol.Optional(CONF_SENSOR_RECENTLY_ADDED_MOVIE, default=False): bool,
                 vol.Optional(CONF_SENSOR_PLAYLIST, default=False): bool,
@@ -84,15 +79,14 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         errors = {}
-
-        if not _kodi_instances:
+        if not kodi_instances:
             errors["base"] = "kodi_not_configured"
 
         selected_kodi_title = ""
-        if info is not None:
-            config_entry_id: str | None = None
-            for entry_id, title in _kodi_instances.items():
-                if title == info[CONF_KODI_INSTANCE]:
+        if user_input is not None:
+            config_entry_id: Optional[str] = None
+            for entry_id, title in kodi_instances.items():
+                if title == user_input[CONF_KODI_INSTANCE]:
                     config_entry_id = entry_id
                     selected_kodi_title = title
                     break
@@ -104,29 +98,27 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title="Kodi Media Sensors (" + selected_kodi_title + ")",
                     data={
                         CONF_KODI_INSTANCE: config_entry_id,
-                        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: info[
+                        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: user_input[
                             CONF_SENSOR_RECENTLY_ADDED_TVSHOW
                         ],
-                        CONF_SENSOR_RECENTLY_ADDED_MOVIE: info[
+                        CONF_SENSOR_RECENTLY_ADDED_MOVIE: user_input[
                             CONF_SENSOR_RECENTLY_ADDED_MOVIE
                         ],
-                        CONF_SENSOR_PLAYLIST: info[CONF_SENSOR_PLAYLIST],
-                        CONF_SENSOR_SEARCH: info[CONF_SENSOR_SEARCH],
+                        CONF_SENSOR_PLAYLIST: user_input[CONF_SENSOR_PLAYLIST],
+                        CONF_SENSOR_SEARCH: user_input[CONF_SENSOR_SEARCH],
                     },
                 )
 
         return self.async_show_form(
             step_id="user",
-            data_schema=_data_schema,
+            data_schema=data_schema,
             errors=errors,
         )
 
     @staticmethod
     @callback
-    def async_get_options_flow(
-        config_entry: config_entries.ConfigEntry,
-    ) -> config_entries.OptionsFlow:
-        """Create the options flow."""
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
 

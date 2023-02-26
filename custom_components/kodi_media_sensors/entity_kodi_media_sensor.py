@@ -30,20 +30,31 @@ class KodiMediaSensorEntity(Entity, ABC):
     _attrs = {}
     _data = []
     _meta = []
+    _unique_id: str
 
     def __init__(
         self,
+        unique_id,
         kodi: Kodi,
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
     ) -> None:
         super().__init__()
+        self._unique_id = unique_id
         self._kodi = kodi
         self._event_manager = event_manager
         self._define_base_url(config)
         self._state = STATE_OFF
-
         self._event_manager.register_sensor(self)
+
+    @property
+    def unique_id(self):
+        """Return the unique id of the device."""
+        return self._unique_id
+
+    @property
+    def name(self):
+        return self._unique_id
 
     def _define_base_url(self, config):
         protocol = "https" if config["ssl"] else "http"
@@ -184,7 +195,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             return path
         # This looks strange, but the path needs to be quoted twice in order
         # to work.
-        # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
+        # added Gautier : character @ causes encoding problems for thumbnails retrieved from http://...music@smb... Therefore, it is escaped in the first quote
         quoted_path2 = parse.quote(parse.quote(path, safe="@"))
         encoded = self._base_web_url + quoted_path2
         return encoded

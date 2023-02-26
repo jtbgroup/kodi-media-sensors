@@ -1,0 +1,48 @@
+{
+  "config": {
+    "error": {
+      "kodi_not_configured": "You must fist add Kodi via the integrations page."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "kodi_entry_id": "Kodi integration",
+          "sensor_recently_added_tvshow": "Use Sensor recently added TV Show",
+          "sensor_recently_added_movie": "Use Sensor recently added Movie",
+          "sensor_playlist": "Use Sensor playlist",
+          "sensor_search": "Use Sensor search"
+        },
+        "description": "Select which Kodi integration to use.",
+        "title": "Setup"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kodi Media Sensors Options",
+        "description": "Additional settings for the component.",
+        "data": {
+          "hide_watched": "RECENTLY ADDED MOVIE / TVSHOW Sensor : Exclude recently added video media that is marked as watched (movie sensors)",
+          "search_songs_limit": "SEARCH Sensor: \n\nlimits the number of SONGS in the search result",
+          "search_albums_limit": "SEARCH Sensor: limits the number of ALBUMS in the search result",
+          "search_artists_limit": "SEARCH Sensor: limits the number of ARTISTS in the search result",
+          "search_movies_limit": "SEARCH Sensor: limits the number of MOVIES in the search result",
+          "search_musicvideos_limit": "SEARCH Sensor: limits the number of MUSIC VIDEOS in the search result",
+          "search_tvshows_limit": "SEARCH Sensor: limits the number of TVSHOWS in the search result",
+          "search_episodes_limit": "SEARCH Sensor: limits the number of EPISODES in the search result",
+          "search_channels_tv_limit": "SEARCH Sensor: limits the number of TV CHANNELS in the search result",
+          "search_channels_radio_limit": "SEARCH Sensor: limits the number of RADIO CHANNELS in the search result",
+          "search_recently_added_songs_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of SONGS search result in RECENTLY ADDED items",
+          "search_recently_added_albums_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of ALBUMS search result in RECENTLY ADDED items",
+          "search_recently_added_movies_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of MOVIES search result in RECENTLY ADDED items",
+          "search_recently_added_musicvideos_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of MUSIC VIDEOS search result in RECENTLY ADDED items",
+          "search_recently_added_episodes_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of EPISODES search result in RECENTLY ADDED items",
+          "search_recently_played_songs_limit": "SEARCH Sensor (RECENTLY PLAYED): include SONGS search result in RECENTLY PLAYED items",
+          "search_recently_played_albums_limit": "SEARCH Sensor (RECENTLY PLAYED): include ALBUMS search result in RECENTLY PLAYED items",
+          "search_keep_alive_timer": "SEARCH Sensor : lifetime (in sec) of the result. '0' will auto reproces the search"
+        }
+      }
+    }
+  }
+}
