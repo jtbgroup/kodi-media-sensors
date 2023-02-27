@@ -10,6 +10,8 @@ from pykodi import Kodi
 from .types import ExtraStateAttrs, KodiConfig
 
 _LOGGER = logging.getLogger(__name__)
+_UNIQUE_ID_PREFIX_TV_ADDED = "kms_t_"
+_UNIQUE_ID_PREFIX_MOVIE_ADDED = "kms_m_"
 
 
 class KodiMediaEntity(Entity):
@@ -18,9 +20,10 @@ class KodiMediaEntity(Entity):
     update_method: str = NotImplemented
 
     def __init__(
-        self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
+        self, unique_id, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
     ) -> None:
         super().__init__()
+        self._unique_id = unique_id
         self.kodi = kodi
         self.hide_watched = hide_watched
         self.data = []
@@ -33,6 +36,15 @@ class KodiMediaEntity(Entity):
         self.base_web_url = (
             f"{protocol}://{auth}{config['host']}:{config['port']}/image/image%3A%2F%2F"
         )
+
+    @property
+    def unique_id(self):
+        """Return the unique id of the device."""
+        return self._unique_id
+
+    @property
+    def name(self):
+        return self._unique_id
 
     @property
     def state(self) -> Optional[str]:
@@ -110,17 +122,28 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     update_method = "VideoLibrary.GetRecentlyAddedEpisodes"
     result_key = "episodes"
 
-    @property
-    def unique_id(self) -> str:
-        """The unique ID of the entity.
-        It's important to define this, otherwise the entities created will not show up
-        on the configured integration card as associated with the integration.
-        """
-        return self.name
+    def __init__(
+        self,
+        config_unique_id,
+        kodi: Kodi,
+        config: KodiConfig,
+        hide_watched: bool = False,
+    ) -> None:
+        super().__init__(
+            _UNIQUE_ID_PREFIX_TV_ADDED + config_unique_id, kodi, config, hide_watched
+        )
 
-    @property
-    def name(self) -> str:
-        return "kodi_recently_added_tv"
+    # @property
+    # def unique_id(self) -> str:
+    #     """The unique ID of the entity.
+    #     It's important to define this, otherwise the entities created will not show up
+    #     on the configured integration card as associated with the integration.
+    #     """
+    #     return self.name
+
+    # @property
+    # def name(self) -> str:
+    #     return "kodi_recently_added_tv"
 
     @property
     def extra_state_attributes(self) -> ExtraStateAttrs:
@@ -191,13 +214,24 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     update_method = "VideoLibrary.GetRecentlyAddedMovies"
     result_key = "movies"
 
-    @property
-    def unique_id(self) -> str:
-        return self.name
+    def __init__(
+        self,
+        config_unique_id,
+        kodi: Kodi,
+        config: KodiConfig,
+        hide_watched: bool = False,
+    ) -> None:
+        super().__init__(
+            _UNIQUE_ID_PREFIX_MOVIE_ADDED + config_unique_id, kodi, config, hide_watched
+        )
 
-    @property
-    def name(self) -> str:
-        return "kodi_recently_added_movies"
+    # @property
+    # def unique_id(self) -> str:
+    #     return self.name
+
+    # @property
+    # def name(self) -> str:
+    #     return "kodi_recently_added_movies"
 
     @property
     def extra_state_attributes(self) -> ExtraStateAttrs:
