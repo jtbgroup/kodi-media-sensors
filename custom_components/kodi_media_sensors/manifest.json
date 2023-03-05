@@ -1,7 +1,7 @@
 {
   "domain": "kodi_media_sensors",
   "name": "Kodi Media Sensors",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "codeowners": ["@boralyl", "@Gautier Vanderslyen"],
   "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
   "issue_tracker": "https://github.com/jtbgroup/kodi-media-sensors/issues",

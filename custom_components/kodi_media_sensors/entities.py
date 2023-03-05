@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib import parse
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM, STATE_UNKNOWN
@@ -15,7 +15,7 @@ _UNIQUE_ID_PREFIX_MOVIE_ADDED = "kms_m_"
 
 
 class KodiMediaEntity(Entity):
-    properties: List[str] = NotImplemented
+    properties: list[str] = NotImplemented
     result_key: str = NotImplemented
     update_method: str = NotImplemented
 
@@ -76,7 +76,7 @@ class KodiMediaEntity(Entity):
             self._state = STATE_PROBLEM
             return
 
-        new_data: List[Dict[str, Any]] = result.get(self.result_key, [])
+        new_data: list[dict[str, Any]] = result.get(self.result_key, [])
         if not new_data:
             _LOGGER.info(
                 "No %s found after requesting data from Kodi, assuming empty."
@@ -132,18 +132,6 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
         super().__init__(
             _UNIQUE_ID_PREFIX_TV_ADDED + config_unique_id, kodi, config, hide_watched
         )
-
-    # @property
-    # def unique_id(self) -> str:
-    #     """The unique ID of the entity.
-    #     It's important to define this, otherwise the entities created will not show up
-    #     on the configured integration card as associated with the integration.
-    #     """
-    #     return self.name
-
-    # @property
-    # def name(self) -> str:
-    #     return "kodi_recently_added_tv"
 
     @property
     def extra_state_attributes(self) -> ExtraStateAttrs:

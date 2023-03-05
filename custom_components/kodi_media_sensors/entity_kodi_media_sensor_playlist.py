@@ -10,12 +10,7 @@ from homeassistant.const import (  # EVENT_STATE_CHANGED,
 )
 from pykodi import Kodi
 
-from .const import (
-    ENTITY_NAME_SENSOR_PLAYLIST,
-    ENTITY_SENSOR_PLAYLIST,
-    PROPS_ITEM,
-    PROPS_ITEM_LIGHT,
-)
+from .const import PROPS_ITEM, PROPS_ITEM_LIGHT
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from .media_sensor_event_manager import MediaSensorEventManager
 from .types import KodiConfig
@@ -63,24 +58,6 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
             self._state = STATE_OFF
         else:
             self._state = STATE_ON
-
-    # @property
-    # def device_info(self) -> DeviceInfo:
-    #     """Return device info for this device."""
-    #     return DeviceInfo(
-    #         identifiers={(DOMAIN, self._unique_id)},
-    #         manufacturer="Kodi Media Sensor",
-    #         name=self.name,
-    #     )
-
-    # @property
-    # def unique_id(self):
-    #     """Return the unique id of the device."""
-    #     return self._unique_id
-
-    # @property
-    # def name(self):
-    #     return "kodi_playlist_" + self._unique_id
 
     async def handle_media_sensor_event(self, event):
         event_id = event
@@ -215,7 +192,7 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
             {
                 "playlistid": playlistid,
                 "position": position_to,
-                "item": {self._get_Id_Tag(origin.get("type")): origin.get("id")},
+                "item": {self._get_id_tag(origin.get("type")): origin.get("id")},
             },
         )
 
@@ -224,7 +201,7 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
         await self._update_data("move event")
         self._force_update_state()
 
-    def _get_Id_Tag(self, type):
+    def _get_id_tag(self, type):
         if type == "song":
             return "songid"
         elif type == "movie":

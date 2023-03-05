@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from homeassistant import config_entries, core
 
@@ -46,6 +47,7 @@ from .const import (
     OPTION_SEARCH_TVSHOWS_LIMIT,
 )
 
+_LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor"]
 
 
@@ -63,6 +65,7 @@ async def async_setup_entry(hass, config: config_entries.ConfigEntries):
     sensor_recently_added_movie = config.data[CONF_SENSOR_RECENTLY_ADDED_MOVIE]
     sensor_playlist = config.data[CONF_SENSOR_PLAYLIST]
     sensor_search = config.data[CONF_SENSOR_SEARCH]
+    unsub_options_update_listener = config.add_update_listener(options_update_listener)
     hass.data[DOMAIN][config.entry_id] = {
         OPTION_HIDE_WATCHED: config.options.get(OPTION_HIDE_WATCHED, False),
         OPTION_SEARCH_SONGS_LIMIT: config.options.get(
@@ -129,10 +132,8 @@ async def async_setup_entry(hass, config: config_entries.ConfigEntries):
         CONF_SENSOR_RECENTLY_ADDED_MOVIE: sensor_recently_added_movie,
         CONF_SENSOR_PLAYLIST: sensor_playlist,
         CONF_SENSOR_SEARCH: sensor_search,
-        # "unsub_options_update_listener": unsub_options_update_listener,
+        "unsub_options_update_listener": unsub_options_update_listener,
     }
-
-    # config.async_on_unload(config.add_update_listener(update_listener))
 
     for component in PLATFORMS:
         hass.async_create_task(
@@ -142,25 +143,22 @@ async def async_setup_entry(hass, config: config_entries.ConfigEntries):
     return True
 
 
-async def update_listener(hass, config):
+async def options_update_listener(
+    hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
+):
     """Handle options update."""
-    await hass.config_entries.async_reload(config.entry_id)
+    await hass.config_entries.async_reload(config_entry.entry_id)
 
 
 async def async_unload_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
-    )
-    # # Remove options_update_listener.
-    # hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
+    _LOGGER.debug(f"async_unload_entry entry [{entry.entry_id}]")
+
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    # Remove options_update_listener.
+    hass.data[DOMAIN][entry.entry_id]["unsub_options_update_listener"]()
 
     # Remove config entry from domain.
     if unload_ok:

@@ -4,7 +4,6 @@ from typing import Any
 
 import homeassistant
 from homeassistant.const import STATE_OFF, STATE_ON
-from homeassistant.helpers.entity import DeviceInfo
 from pykodi import Kodi
 
 from .const import (
@@ -25,9 +24,6 @@ from .const import (
     DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
-    DOMAIN,
-    ENTITY_NAME_SENSOR_SEARCH,
-    ENTITY_SENSOR_SEARCH,
     MAX_KEEP_ALIVE,
     MAX_SEARCH_LIMIT,
     MEDIA_TYPE_SEASON_DETAIL,
@@ -138,24 +134,6 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             self._state = STATE_OFF
         else:
             self._state = STATE_ON
-
-    # @property
-    # def device_info(self) -> DeviceInfo:
-    #     """Return device info for this device."""
-    #     return DeviceInfo(
-    #         identifiers={(DOMAIN, self._unique_id)},
-    #         manufacturer="Kodi Media Sensor",
-    #         name=self.name,
-    #     )
-
-    @property
-    def unique_id(self):
-        """Return the unique id of the device."""
-        return self._unique_id
-
-    # @property
-    # def name(self):
-    #     return "kodi_search_" + self._unique_id
 
     def set_search_songs_limit(self, limit: int):
         """Assigns the search limits for the SONGS object. Value provided is enforced between 0 and MAX_SEARCH_LIMIT"""

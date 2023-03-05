@@ -1,5 +1,14 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.0.1
+
+*** Attention ***
+
+The sensor entities now have their unique id. This means it's a breaking change! Better to reconfigure the integration from scratch (delete and reinstall).
+
+- BugFix: soved issue with status of the sensors depending on the status of kodi
+- Introducing UUID for the sensors so we can have multiple instances
+
 ## 4.0.1
 
 - BugFix: not all the songs of an artist were returned in the search sensor when querying for a specific artist

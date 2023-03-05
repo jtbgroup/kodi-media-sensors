@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Optional
 
 from homeassistant import config_entries
 from homeassistant.components.kodi.const import DOMAIN as KODI_DOMAIN
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 import voluptuous as vol
 
 from .const import (
@@ -57,7 +56,7 @@ from .const import (
 
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    async def async_step_user(self, info):
+    async def async_step_user(self, user_input):
         # Find all configured kodi instances to allow the user to select one.
 
         _in_use = list()
@@ -89,10 +88,10 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors["base"] = "kodi_not_configured"
 
         selected_kodi_title = ""
-        if info is not None:
+        if user_input is not None:
             config_entry_id: str | None = None
             for entry_id, title in _kodi_instances.items():
-                if title == info[CONF_KODI_INSTANCE]:
+                if title == user_input[CONF_KODI_INSTANCE]:
                     config_entry_id = entry_id
                     selected_kodi_title = title
                     break
@@ -104,14 +103,14 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     title="Kodi Media Sensors (" + selected_kodi_title + ")",
                     data={
                         CONF_KODI_INSTANCE: config_entry_id,
-                        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: info[
+                        CONF_SENSOR_RECENTLY_ADDED_TVSHOW: user_input[
                             CONF_SENSOR_RECENTLY_ADDED_TVSHOW
                         ],
-                        CONF_SENSOR_RECENTLY_ADDED_MOVIE: info[
+                        CONF_SENSOR_RECENTLY_ADDED_MOVIE: user_input[
                             CONF_SENSOR_RECENTLY_ADDED_MOVIE
                         ],
-                        CONF_SENSOR_PLAYLIST: info[CONF_SENSOR_PLAYLIST],
-                        CONF_SENSOR_SEARCH: info[CONF_SENSOR_SEARCH],
+                        CONF_SENSOR_PLAYLIST: user_input[CONF_SENSOR_PLAYLIST],
+                        CONF_SENSOR_SEARCH: user_input[CONF_SENSOR_SEARCH],
                     },
                 )
 

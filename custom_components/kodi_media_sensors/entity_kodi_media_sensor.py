@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib import parse
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM
@@ -69,7 +69,7 @@ class KodiMediaSensorEntity(Entity, ABC):
     async def async_call_method(self, method, **kwargs):
         _LOGGER.warning("This method is not implemented for the entity")
 
-    async def call_method_kodi(self, method, args) -> List:
+    async def call_method_kodi(self, method, args) -> list:
         result = None
         data = None
         try:
@@ -82,11 +82,6 @@ class KodiMediaSensorEntity(Entity, ABC):
                 "Error updating sensor, is kodi running? : %s", str(exception)
             )
             self._state = STATE_PROBLEM
-
-        # if result:
-        # else:
-        #     _LOGGER.warning("result is null state set to off")
-        #     self._state = STATE_OFF
 
         return data
 
@@ -101,7 +96,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             )
             self._state = STATE_PROBLEM
 
-    def _handle_result(self, result) -> List:
+    def _handle_result(self, result) -> list:
         new_data = []
         error = result.get("error")
         if error:
@@ -114,7 +109,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
         for entry in result:
             if entry in KEYS:
-                new_data: List[Dict[str, Any]] = result.get(entry, [])
+                new_data: list[dict[str, Any]] = result.get(entry, [])
                 default_type = MAP_KEY_MEDIA_TYPE.get(entry)
 
                 if self._hasLeaf(default_type):
