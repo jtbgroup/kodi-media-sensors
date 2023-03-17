@@ -1,12 +1,12 @@
 {
   "domain": "kodi_media_sensors",
   "name": "Kodi Media Sensors",
-  "config_flow": true,
   "codeowners": ["@boralyl", "@Gautier Vanderslyen"],
+  "config_flow": true,
   "dependencies": ["kodi"],
   "documentation": "https://github.com/jtbgroup/kodi-media-sensors",
-  "issue_tracker": "https://github.com/jtbgroup/kodi-media-sensors/issues",
   "integration_type": "hub",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/jtbgroup/kodi-media-sensors/issues",
   "version": "5.0.1"
 }
