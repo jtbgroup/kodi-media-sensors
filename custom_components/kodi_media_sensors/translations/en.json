@@ -15,8 +15,7 @@
         "description": "Select which Kodi integration to use.",
         "title": "Setup"
       }
-    },
-    "title": "Kodi Media Sensors"
+    }
   },
   "options": {
     "step": {
