@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib import parse
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM, STATE_UNKNOWN
@@ -10,17 +10,20 @@ from pykodi import Kodi
 from .types import ExtraStateAttrs, KodiConfig
 
 _LOGGER = logging.getLogger(__name__)
+_UNIQUE_ID_PREFIX_TV_ADDED = "kms_t_"
+_UNIQUE_ID_PREFIX_MOVIE_ADDED = "kms_m_"
 
 
 class KodiMediaEntity(Entity):
-    properties: List[str] = NotImplemented
+    properties: list[str] = NotImplemented
     result_key: str = NotImplemented
     update_method: str = NotImplemented
 
     def __init__(
-        self, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
+        self, unique_id, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
     ) -> None:
         super().__init__()
+        self._unique_id = unique_id
         self.kodi = kodi
         self.hide_watched = hide_watched
         self.data = []
@@ -35,15 +38,25 @@ class KodiMediaEntity(Entity):
         )
 
     @property
+    def unique_id(self):
+        """Return the unique id of the device."""
+        return self._unique_id
+
+    @property
+    def name(self):
+        return self._unique_id
+
+    @property
     def state(self) -> Optional[str]:
         return self._state
 
     async def async_update(self) -> None:
         result = None
         try:
-            result = await self.kodi.call_method(
-                self.update_method, properties=self.properties
-            )
+            if self._state == STATE_ON:
+                result = await self.kodi.call_method(
+                    self.update_method, properties=self.properties
+                )
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
             self._state = STATE_OFF
@@ -63,7 +76,7 @@ class KodiMediaEntity(Entity):
             self._state = STATE_PROBLEM
             return
 
-        new_data: List[Dict[str, Any]] = result.get(self.result_key, [])
+        new_data: list[dict[str, Any]] = result.get(self.result_key, [])
         if not new_data:
             _LOGGER.info(
                 "No %s found after requesting data from Kodi, assuming empty."
@@ -109,17 +122,16 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     update_method = "VideoLibrary.GetRecentlyAddedEpisodes"
     result_key = "episodes"
 
-    @property
-    def unique_id(self) -> str:
-        """The unique ID of the entity.
-        It's important to define this, otherwise the entities created will not show up
-        on the configured integration card as associated with the integration.
-        """
-        return self.name
-
-    @property
-    def name(self) -> str:
-        return "kodi_recently_added_tv"
+    def __init__(
+        self,
+        config_unique_id,
+        kodi: Kodi,
+        config: KodiConfig,
+        hide_watched: bool = False,
+    ) -> None:
+        super().__init__(
+            _UNIQUE_ID_PREFIX_TV_ADDED + config_unique_id, kodi, config, hide_watched
+        )
 
     @property
     def extra_state_attributes(self) -> ExtraStateAttrs:
@@ -190,13 +202,24 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     update_method = "VideoLibrary.GetRecentlyAddedMovies"
     result_key = "movies"
 
-    @property
-    def unique_id(self) -> str:
-        return self.name
+    def __init__(
+        self,
+        config_unique_id,
+        kodi: Kodi,
+        config: KodiConfig,
+        hide_watched: bool = False,
+    ) -> None:
+        super().__init__(
+            _UNIQUE_ID_PREFIX_MOVIE_ADDED + config_unique_id, kodi, config, hide_watched
+        )
 
-    @property
-    def name(self) -> str:
-        return "kodi_recently_added_movies"
+    # @property
+    # def unique_id(self) -> str:
+    #     return self.name
+
+    # @property
+    # def name(self) -> str:
+    #     return "kodi_recently_added_movies"
 
     @property
     def extra_state_attributes(self) -> ExtraStateAttrs:

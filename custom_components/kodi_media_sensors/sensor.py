@@ -3,8 +3,6 @@ import logging
 
 from homeassistant import config_entries, core
 from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.const import CONF_HOST
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_registry import async_get
@@ -56,19 +54,10 @@ from .const import (
     OPTION_SEARCH_TVSHOWS_LIMIT,
 )
 from .entities import KodiRecentlyAddedMoviesEntity, KodiRecentlyAddedTVEntity
-from .entity_kodi_playlist import KodiPlaylistEntity
-from .entity_kodi_search import KodiSearchEntity
+from .entity_kodi_media_sensor_playlist import KodiMediaSensorsPlaylistEntity
+from .entity_kodi_media_sensor_search import KodiMediaSensorsSearchEntity
 from .media_sensor_event_manager import MediaSensorEventManager
 from .utils import find_matching_config_entry
-
-PLATFORM_SCHEMA = vol.Any(
-    PLATFORM_SCHEMA.extend(
-        {
-            vol.Required(CONF_HOST): cv.string,
-            vol.Optional(OPTION_HIDE_WATCHED, default=False): bool,
-        }
-    ),
-)
 
 KODI_MEDIA_SENSOR_CALL_METHOD_SCHEMA = cv.make_entity_service_schema(
     {vol.Required(ATTR_METHOD): cv.string}, extra=vol.ALLOW_EXTRA
@@ -84,14 +73,14 @@ async def async_setup_entry(
     config_entry: config_entries.ConfigEntry,
     async_add_entities,
 ):
-    """Setup sensors from a config entry created in the integrations UI."""
-    # _hass = hass
+    """Set up the media player platform for Sonos."""
+
     conf = hass.data[DOMAIN][config_entry.entry_id]
     kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
     reg = async_get(hass)
 
     key = kodi_config_entry.unique_id
-    if key == None:
+    if key is None:
         key = kodi_config_entry.entry_id
 
     kodi_entity_id = reg.async_get_entity_id(KODI_DOMAIN_PLATFORM, KODI_DOMAIN, key)
@@ -114,6 +103,7 @@ async def async_setup_entry(
 
     if conf.get(CONF_SENSOR_RECENTLY_ADDED_TVSHOW):
         tv_entity = KodiRecentlyAddedTVEntity(
+            config_entry.entry_id,
             kodi,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
@@ -122,6 +112,7 @@ async def async_setup_entry(
 
     if conf.get(CONF_SENSOR_RECENTLY_ADDED_MOVIE):
         movies_entity = KodiRecentlyAddedMoviesEntity(
+            config_entry.entry_id,
             kodi,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
@@ -129,7 +120,8 @@ async def async_setup_entry(
         sensorsList.append(movies_entity)
 
     if conf.get(CONF_SENSOR_PLAYLIST):
-        playlist_entity = KodiPlaylistEntity(
+        playlist_entity = KodiMediaSensorsPlaylistEntity(
+            config_entry.entry_id,
             hass,
             kodi,
             kodi_entity_id,
@@ -139,8 +131,13 @@ async def async_setup_entry(
         sensorsList.append(playlist_entity)
 
     if conf.get(CONF_SENSOR_SEARCH):
-        search_entity = KodiSearchEntity(
-            hass, kodi, kodi_entity_id, kodi_config_entry.data, event_manager
+        search_entity = KodiMediaSensorsSearchEntity(
+            config_entry.entry_id,
+            hass,
+            kodi,
+            kodi_entity_id,
+            kodi_config_entry.data,
+            event_manager,
         )
         search_entity.set_search_songs_limit(
             conf.get(OPTION_SEARCH_SONGS_LIMIT, DEFAULT_OPTION_SEARCH_SONGS_LIMIT)

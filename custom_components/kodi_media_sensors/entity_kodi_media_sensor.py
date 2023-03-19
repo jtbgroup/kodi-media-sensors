@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib import parse
 
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM
@@ -30,20 +30,31 @@ class KodiMediaSensorEntity(Entity, ABC):
     _attrs = {}
     _data = []
     _meta = []
+    _unique_id: str
 
     def __init__(
         self,
+        unique_id,
         kodi: Kodi,
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
     ) -> None:
         super().__init__()
+        self._unique_id = unique_id
         self._kodi = kodi
         self._event_manager = event_manager
         self._define_base_url(config)
         self._state = STATE_OFF
-
         self._event_manager.register_sensor(self)
+
+    @property
+    def unique_id(self):
+        """Return the unique id of the device."""
+        return self._unique_id
+
+    @property
+    def name(self):
+        return self._unique_id
 
     def _define_base_url(self, config):
         protocol = "https" if config["ssl"] else "http"
@@ -58,7 +69,7 @@ class KodiMediaSensorEntity(Entity, ABC):
     async def async_call_method(self, method, **kwargs):
         _LOGGER.warning("This method is not implemented for the entity")
 
-    async def call_method_kodi(self, method, args) -> List:
+    async def call_method_kodi(self, method, args) -> list:
         result = None
         data = None
         try:
@@ -71,11 +82,6 @@ class KodiMediaSensorEntity(Entity, ABC):
                 "Error updating sensor, is kodi running? : %s", str(exception)
             )
             self._state = STATE_PROBLEM
-
-        # if result:
-        # else:
-        #     _LOGGER.warning("result is null state set to off")
-        #     self._state = STATE_OFF
 
         return data
 
@@ -90,7 +96,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             )
             self._state = STATE_PROBLEM
 
-    def _handle_result(self, result) -> List:
+    def _handle_result(self, result) -> list:
         new_data = []
         error = result.get("error")
         if error:
@@ -103,7 +109,7 @@ class KodiMediaSensorEntity(Entity, ABC):
 
         for entry in result:
             if entry in KEYS:
-                new_data: List[Dict[str, Any]] = result.get(entry, [])
+                new_data: list[dict[str, Any]] = result.get(entry, [])
                 default_type = MAP_KEY_MEDIA_TYPE.get(entry)
 
                 if self._hasLeaf(default_type):
@@ -184,7 +190,7 @@ class KodiMediaSensorEntity(Entity, ABC):
             return path
         # This looks strange, but the path needs to be quoted twice in order
         # to work.
-        # added Gautier : character @ causes encoding problems for thumbnails revrieved from http://...music@smb... Therefore, it is escaped in the first quote
+        # added Gautier : character @ causes encoding problems for thumbnails retrieved from http://...music@smb... Therefore, it is escaped in the first quote
         quoted_path2 = parse.quote(parse.quote(path, safe="@"))
         encoded = self._base_web_url + quoted_path2
         return encoded
