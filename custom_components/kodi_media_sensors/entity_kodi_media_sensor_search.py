@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import time
 from typing import Any
 
@@ -14,6 +15,7 @@ from .const import (
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
     DEFAULT_OPTION_SEARCH_KEEP_ALIVE_TIMER,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
+    DEFAULT_OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
     DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_EPISODES_LIMIT,
@@ -26,10 +28,12 @@ from .const import (
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
     MAX_KEEP_ALIVE,
     MAX_SEARCH_LIMIT,
+    MEDIA_TYPE_FILE_MUSIC_PLAYLIST,
     MEDIA_TYPE_SEASON_DETAIL,
     PLAYLIST_ID_MUSIC,
     PLAYLIST_ID_VIDEO,
     PLAYLIST_MAP,
+    PLAYLIST_MUSIC_EXTENSIONS_ALLOWED,
     PROPS_ADDONS,
     PROPS_ALBUM,
     PROPS_ALBUM_DETAIL,
@@ -87,6 +91,7 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
     _search_tvshows_limit = DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT
     _search_channels_tv_limit = DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT
     _search_channels_radio_limit = DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT
+    _search_music_playlists_limit = DEFAULT_OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT
     _search_episodes_limit = DEFAULT_OPTION_SEARCH_EPISODES_LIMIT
     _search_recently_added_songs_limit = (
         DEFAULT_OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT
@@ -176,6 +181,12 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
         value = 0 if limit < 0 else limit
         value = MAX_SEARCH_LIMIT if value > MAX_SEARCH_LIMIT else value
         self._search_channels_tv_limit = value
+
+    def set_search_music_playlists_limit(self, limit: int):
+        """Assigns the search limits for the playlist (music) object. Value provided is enforced between 0 and MAX_SEARCH_LIMIT"""
+        value = 0 if limit < 0 else limit
+        value = MAX_SEARCH_LIMIT if value > MAX_SEARCH_LIMIT else value
+        self._search_music_playlists_limit = value
 
     def set_search_channels_radio_limit(self, limit: int):
         """Assigns the search limits for the CHANNEL_RADIO object. Value provided is enforced between 0 and MAX_SEARCH_LIMIT"""
@@ -929,10 +940,11 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
                 },
             },
         )
-        for episode in result:
-            tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
-            episode["tvshowtitle"] = tvshow["title"]
-            episode["genre"] = tvshow["genre"]
+        if result is not None:
+            for episode in result:
+                tvshow = await self.kodi_search_tvshow_details(episode["tvshowid"])
+                episode["tvshowtitle"] = tvshow["title"]
+                episode["genre"] = tvshow["genre"]
         return result
 
     async def kodi_search_tvshow_details(self, tvshowid):
@@ -940,6 +952,39 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             "VideoLibrary.GetTVShowDetails",
             {"properties": PROPS_TVSHOW, "tvshowid": tvshowid},
         )
+
+    async def kodi_search_playlists(self, value):
+        # limits = {"start": 0}
+        playlists = await self.call_method_kodi(
+            "Files.GetDirectory",
+            {
+                "directory": "special://musicplaylists",
+                # "limits": limits,
+                "media": "files",
+                # "sort": {
+                #     "method": "label",
+                #     "order": "ascending",
+                # },
+            },
+        )
+
+        filtered_result = []
+        idx = 0
+        for playlist in playlists:
+            file = pathlib.Path(playlist["file"])
+
+            if file.suffix in PLAYLIST_MUSIC_EXTENSIONS_ALLOWED and (
+                value.lower() in playlist["label"].lower()
+                or value.lower() in file.name.lower()
+            ):
+                playlist["type"] = MEDIA_TYPE_FILE_MUSIC_PLAYLIST
+                filtered_result.append(playlist)
+                if idx < self._search_music_playlists_limit - 1:
+                    idx += 1
+                else:
+                    break
+
+        return filtered_result
 
     async def search_recently_added(self):
         _LOGGER.debug("Searching recently added")
@@ -1028,6 +1073,10 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
         if self.can_search_pvr and self._search_channels_radio_limit > 0:
             channels = await self.kodi_search_channels_radio(value)
             self._add_result(channels, card_json)
+
+        if self._search_music_playlists_limit > 0:
+            playlists = await self.kodi_search_playlists(value)
+            self._add_result(playlists, card_json)
 
         self._data.clear
         self._data = card_json

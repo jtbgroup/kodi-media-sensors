@@ -33,6 +33,7 @@
           "search_episodes_limit": "SEARCH Sensor: limits the number of EPISODES in the search result",
           "search_channels_tv_limit": "SEARCH Sensor: limits the number of TV CHANNELS in the search result",
           "search_channels_radio_limit": "SEARCH Sensor: limits the number of RADIO CHANNELS in the search result",
+          "search_music_playlists_limit": "SEARCH Sensor: limits the number of Playlists (music) in the search result",
           "search_recently_added_songs_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of SONGS search result in RECENTLY ADDED items",
           "search_recently_added_albums_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of ALBUMS search result in RECENTLY ADDED items",
           "search_recently_added_movies_limit": "SEARCH Sensor (RECENTLY ADDED): limits the number of MOVIES search result in RECENTLY ADDED items",
