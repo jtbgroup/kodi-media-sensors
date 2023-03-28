@@ -84,7 +84,7 @@ PLAYLIST_MAP = {
     PLAYLIST_TYPE_VIDEO: {"playlistid": PLAYLIST_ID_VIDEO},
 }
 
-PLAYLIST_MUSIC_EXTENSIONS_ALLOWED = {".xsp"}
+PLAYLIST_MUSIC_EXTENSIONS_ALLOWED = {".xsp", ".m3u", ".m3u8", ".cue"}
 
 # KODI keys returned in the aswer
 KEY_ADDONS = "addons"

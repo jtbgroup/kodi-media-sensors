@@ -73,6 +73,7 @@ PLAY_ATTR_MOVIEID = "movieid"
 PLAY_ATTR_MUSICVIDEOID = "musicvideoid"
 PLAY_ATTR_EPISODEID = "episodeid"
 PLAY_ATTR_CHANNELID = "channelid"
+PLAY_ATTR_FILEMUSICPLAYLIST = "filemusicplaylist"
 
 ADD_ATTR_POSITION = "position"
 PLAY_POSN = 0
@@ -130,6 +131,7 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
         )
 
         self._hass = hass
+        self._kodi = kodi
         homeassistant.helpers.event.async_track_state_change_event(
             hass, kodi_entity_id, self.__handle_event
         )
@@ -348,6 +350,10 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
                 await self.play_episode(kwargs.get(PLAY_ATTR_EPISODEID))
             if kwargs.get("channelid") is not None:
                 await self.play_channel(kwargs.get(PLAY_ATTR_CHANNELID))
+            if kwargs.get("filemusicplaylist") is not None:
+                await self.play_filemusicplaylist(
+                    kwargs.get(PLAY_ATTR_FILEMUSICPLAYLIST)
+                )
         elif method == METHOD_ADD:
             position = 1
             if kwargs.get(ADD_ATTR_POSITION) is not None:
@@ -364,6 +370,10 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
                 await self.add_episode(kwargs.get(PLAY_ATTR_EPISODEID), position)
             if kwargs.get("channelid") is not None:
                 await self.add_channel(kwargs.get(PLAY_ATTR_CHANNELID), position)
+            if kwargs.get("filemusicplaylist") is not None:
+                await self.add_filemusicplaylist(
+                    kwargs.get(PLAY_ATTR_FILEMUSICPLAYLIST), position
+                )
         else:
             raise ValueError("The given method is unsupported: " + method)
 
@@ -443,6 +453,16 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             await self._event_manager.notify_event(self, "item_added")
         else:
             raise Exception("Position can't be < -1")
+
+    async def add_filemusicplaylist(self, filemusicplaylist, position):
+        if position > -1:
+            await self.add_item(
+                PLAYLIST_ID_MUSIC, "directory", filemusicplaylist, position
+            )
+            await self._event_manager.notify_event(self, "item_added")
+        else:
+            raise Exception("Position can't be < -1")
+        return
 
     async def add_episode(self, episodeid, position):
         if position > -1:
@@ -530,6 +550,29 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             "Player.Open",
             {"item": {"channelid": channelid}},
         )
+
+    async def play_filemusicplaylist(self, filemusicplaylist):
+        await self.call_method_kodi_no_result(
+            "Player.Open",
+            {"item": {"directory": filemusicplaylist}},
+        )
+        # self._kodi.clear_playlist()
+
+        # # await self.call_method_kodi_no_result(
+        # #     "Playlist.Clear",
+        # #     {"playlistid": PLAYLIST_ID_MUSIC},
+        # # )
+        # await self.call_method_kodi_no_result(
+        #     "Playlist.Add",
+        #     {
+        #         "playlistid": PLAYLIST_ID_MUSIC,
+        #         "item": {"recursive": true, "directory": filemusicplaylist},
+        #     },
+        # )
+        # await self.call_method_kodi_no_result(
+        #     "Player.Open",
+        #     {"item": {"playlistid": PLAYLIST_ID_MUSIC, "position": 0}},
+        # )
 
     async def play_episode(self, episodeid):
         await self.play_item(PLAYLIST_ID_VIDEO, "episodeid", episodeid)
