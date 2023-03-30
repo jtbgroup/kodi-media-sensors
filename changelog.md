@@ -1,8 +1,17 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.1.0
+
+** Attention **
+
+This version contains some feature that haven't deeply tested because they are part of cases not used by the developer. Be careful when using it and don't hesitate to report in case of trouble (or in case of good working too).
+
+- Displays the music playlists included in the search result. (see [issue #25](https://github.com/jtbgroup/kodi-search-card/issues/25)). Thanks to [Rudd-O](https://github.com/Rudd-O)
+- Bugfix: media sensor event only propagated to the sensors linked to the same kodi instance as the eent source.
+
 ## 5.0.1
 
-*** Attention ***
+** Attention **
 
 The sensor entities now have their unique id. This means it's a breaking change! Better to reconfigure the integration from scratch (delete and reinstall).
 
