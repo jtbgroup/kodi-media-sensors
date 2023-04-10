@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.1.1
+
+- Bugfix: auto clean functionality didn't works as it should due to a wrong time conversion
+
 ## 5.1.0
 
 ** Attention **

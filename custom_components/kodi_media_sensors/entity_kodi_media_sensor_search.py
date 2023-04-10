@@ -246,11 +246,11 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
 
     # def set_search_keep_alive_timer(self, value: bool):
     def set_search_keep_alive_timer(self, timer: int):
-        """Assigns the search limits for the ALBUMS object in the recently played search. Value provided is enforced between 0 and MAX_SEARCH_LIMIT. timer is expressed in minutes."""
+        """Assigns the search limits for the ALBUMS object in the recently played search. Value provided is enforced between 0 and MAX_SEARCH_LIMIT. timer is expressed in seconds."""
         value = 0 if timer < 0 else timer
         value = MAX_KEEP_ALIVE if value > MAX_KEEP_ALIVE else value
 
-        self._search_keep_alive_timer = value * 60
+        self._search_keep_alive_timer = value
 
     async def __handle_event(self, event):
         new_kodi_event_state = str(event.data.get("new_state").state)
@@ -283,6 +283,8 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
         if self._state != STATE_OFF and len(self._meta) == 0:
             self.init_meta("Kodi Search update event")
 
+        current_time = time.perf_counter()
+
         if (
             self._search_keep_alive_timer == 0
             and "method" in self._meta[0]
@@ -296,8 +298,7 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             await self.async_call_method(method, **kwargs)
         elif (
             self._search_start_time > 0
-            and (time.perf_counter() - self._search_start_time)
-            > self._search_keep_alive_timer
+            and (current_time - self._search_start_time) > self._search_keep_alive_timer
         ):
             await self._clear_result()
 
