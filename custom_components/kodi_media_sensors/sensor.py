@@ -106,7 +106,9 @@ async def async_setup_entry(
     if conf.get(CONF_SENSOR_RECENTLY_ADDED_TVSHOW):
         tv_entity = KodiRecentlyAddedTVEntity(
             config_entry.entry_id,
+            hass,
             kodi,
+            kodi_entity_id,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
         )
@@ -115,7 +117,9 @@ async def async_setup_entry(
     if conf.get(CONF_SENSOR_RECENTLY_ADDED_MOVIE):
         movies_entity = KodiRecentlyAddedMoviesEntity(
             config_entry.entry_id,
+            hass,
             kodi,
+            kodi_entity_id,
             kodi_config_entry.data,
             hide_watched=conf.get(OPTION_HIDE_WATCHED, False),
         )
