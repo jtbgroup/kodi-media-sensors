@@ -3,6 +3,7 @@ import logging
 from typing import Any, Optional
 from urllib import parse
 
+import homeassistant
 from homeassistant.const import STATE_OFF, STATE_ON, STATE_PROBLEM, STATE_UNKNOWN
 from homeassistant.helpers.entity import Entity
 from pykodi import Kodi
@@ -20,14 +21,32 @@ class KodiMediaEntity(Entity):
     update_method: str = NotImplemented
 
     def __init__(
-        self, unique_id, kodi: Kodi, config: KodiConfig, hide_watched: bool = False
+        self,
+        unique_id,
+        hass,
+        kodi: Kodi,
+        kodi_entity_id,
+        config: KodiConfig,
+        hide_watched: bool = False,
     ) -> None:
         super().__init__()
         self._unique_id = unique_id
+        self._hass = hass
         self.kodi = kodi
         self.hide_watched = hide_watched
         self.data = []
-        self._state = None
+        self._state = STATE_OFF
+
+        homeassistant.helpers.event.async_track_state_change_event(
+            hass, kodi_entity_id, self.__handle_event
+        )
+
+        # TODO: populate immediately the data if kodi is running
+        kodi_state = self._hass.states.get(kodi_entity_id).state
+        if kodi_state is None or kodi_state == STATE_OFF:
+            self._state = STATE_OFF
+        else:
+            self._state = STATE_ON
 
         protocol = "https" if config["ssl"] else "http"
         auth = ""
@@ -49,6 +68,11 @@ class KodiMediaEntity(Entity):
     @property
     def state(self) -> Optional[str]:
         return self._state
+
+    async def __handle_event(self, event):
+        newstate = event.data.get("new_state").state
+        self._state = STATE_OFF if newstate == STATE_OFF else STATE_ON
+        self._hass.async_create_task(self.async_update_ha_state(True))
 
     async def async_update(self) -> None:
         result = None
@@ -125,12 +149,19 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
     def __init__(
         self,
         config_unique_id,
+        hass,
         kodi: Kodi,
+        kodi_entity_id,
         config: KodiConfig,
         hide_watched: bool = False,
     ) -> None:
         super().__init__(
-            _UNIQUE_ID_PREFIX_TV_ADDED + config_unique_id, kodi, config, hide_watched
+            _UNIQUE_ID_PREFIX_TV_ADDED + config_unique_id,
+            hass,
+            kodi,
+            kodi_entity_id,
+            config,
+            hide_watched,
         )
 
     @property
@@ -205,12 +236,19 @@ class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
     def __init__(
         self,
         config_unique_id,
+        hass,
         kodi: Kodi,
+        kodi_entity_id,
         config: KodiConfig,
         hide_watched: bool = False,
     ) -> None:
         super().__init__(
-            _UNIQUE_ID_PREFIX_MOVIE_ADDED + config_unique_id, kodi, config, hide_watched
+            _UNIQUE_ID_PREFIX_MOVIE_ADDED + config_unique_id,
+            hass,
+            kodi,
+            kodi_entity_id,
+            config,
+            hide_watched,
         )
 
     # @property

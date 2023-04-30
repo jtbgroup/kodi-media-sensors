@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.1.2
+
+- Bugfix : Recently added movie wasn't publishing anything due to a state issue. (see [issue #28](https://github.com/jtbgroup/kodi-media-sensors/issues/28)). Thanks to [Rudd-O](https://github.com/Rudd-O).
+
 ## 5.1.1
 
 - Bugfix: auto clean functionality didn't works as it should due to a wrong time conversion
