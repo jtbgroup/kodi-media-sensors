@@ -1,23 +1,26 @@
 call_method:
-  name: Komi Media Sensor services
+  name: Kodi Media Sensor services
   # Description of the service
   description: Search for items in Kodi
   # Different fields that your service accepts
   fields:
     # entity_id called by the service
     entity_id:
+      name: Entry ID
       # Description of the field
       description: the entity to interact with. This must be one of the kodi media sensors. Not all the sensors implement the methods, so refer to the documentation to know how to call the method on the sensors.
       # Example value that can be passed for this field
       example: "sensor.kodi_media_sensor_search"
     # Gives the method called by the service on the entity previously defined
     method:
+      name: Method
       # Description of the field
       description: the method to call on the entity. There are several possibilities, so refer to the documentation to know more about it.
       # Example value that can be passed for this field
       example: "search"
     # item depending on the service called. See readme for more info
     item:
+      name: Item
       # description of the field
       description: "this param depends on the method you call; it might contain many other parameters"
       # Example value
