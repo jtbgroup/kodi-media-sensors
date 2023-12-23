@@ -30,6 +30,7 @@ from .const import (
     MAX_SEARCH_LIMIT,
     MEDIA_TYPE_FILE_MUSIC_PLAYLIST,
     MEDIA_TYPE_SEASON_DETAIL,
+    PLAYER_ID_MUSIC,
     PLAYLIST_ID_MUSIC,
     PLAYLIST_ID_VIDEO,
     PLAYLIST_MAP,
@@ -46,6 +47,7 @@ from .const import (
     PROPS_SEASON,
     PROPS_SONG,
     PROPS_TVSHOW,
+    PROPS_ITEM_ARTISTID,
 )
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from .media_sensor_event_manager import MediaSensorEventManager
@@ -65,6 +67,7 @@ METHOD_RESET_ADDONS = "reset_addons"
 SEARCH_MEDIA_TYPE_ALL = "all"
 SEARCH_MEDIA_TYPE_RECENTLY_ADDED = "recently_added"
 SEARCH_MEDIA_TYPE_RECENTLY_PLAYED = "recently_played"
+SEARCH_MEDIA_TYPE_CURRENT_ARTIST = "current_artist"
 SEARCH_MEDIA_TYPE_ARTIST = "artist"
 SEARCH_MEDIA_TYPE_TVSHOW = "tvshow"
 PLAY_ATTR_SONGID = "songid"
@@ -80,7 +83,6 @@ PLAY_POSN = 0
 
 
 class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
-
     _search_start_time = 0
     addons_initialized = False
     can_search_pvr = False
@@ -317,6 +319,8 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
                 await self.search_recently_added()
             elif media_type == SEARCH_MEDIA_TYPE_RECENTLY_PLAYED:
                 await self.search_recently_played()
+            elif media_type == SEARCH_MEDIA_TYPE_CURRENT_ARTIST:
+                await self.search_current_artist()
             elif media_type == SEARCH_MEDIA_TYPE_ARTIST:
                 await self.search_artist(search_value)
             elif media_type == SEARCH_MEDIA_TYPE_TVSHOW:
@@ -557,23 +561,6 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             "Player.Open",
             {"item": {"directory": filemusicplaylist}},
         )
-        # self._kodi.clear_playlist()
-
-        # # await self.call_method_kodi_no_result(
-        # #     "Playlist.Clear",
-        # #     {"playlistid": PLAYLIST_ID_MUSIC},
-        # # )
-        # await self.call_method_kodi_no_result(
-        #     "Playlist.Add",
-        #     {
-        #         "playlistid": PLAYLIST_ID_MUSIC,
-        #         "item": {"recursive": true, "directory": filemusicplaylist},
-        #     },
-        # )
-        # await self.call_method_kodi_no_result(
-        #     "Player.Open",
-        #     {"item": {"playlistid": PLAYLIST_ID_MUSIC, "position": 0}},
-        # )
 
     async def play_episode(self, episodeid):
         await self.play_item(PLAYLIST_ID_VIDEO, "episodeid", episodeid)
@@ -609,12 +596,12 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
 
         self._data = card_json
 
-    async def search_artist(self, value):
-        if value is None or value == "":
+    async def search_artist(self, artistId):
+        if artistId is None or artistId == "":
             _LOGGER.warning("The argument 'value' passed is empty")
             return
         try:
-            songs_resultset = await self.kodi_search_songs(value, "artistid", True)
+            songs_resultset = await self.kodi_search_songs(artistId, "artistid", True)
 
         except Exception:
             _LOGGER.exception("Error updating sensor, is kodi running?")
@@ -657,12 +644,12 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
             self._data.clear
             self._data = card_json
 
-    async def kodi_search_albumdetails(self, value):
+    async def kodi_search_albumdetails(self, albumId):
         return await self.call_method_kodi(
             "AudioLibrary.GetAlbumDetails",
             {
                 "properties": PROPS_ALBUM_DETAIL,
-                "albumid": value,
+                "albumid": albumId,
             },
         )
 
@@ -747,6 +734,17 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
                     "operator": "contains",
                     "value": value,
                 },
+            },
+        )
+
+    async def kodi_search_current_artist(self):
+        limits = {"start": 0, "end": 1}
+        return await self.call_method_kodi(
+            "Playlist.GetItems",
+            {
+                "properties": ["artistid"],
+                "playlistid": 0,
+                "limits": limits,
             },
         )
 
@@ -1055,6 +1053,14 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
 
         self._data.clear
         self._data = card_json
+
+    async def search_current_artist(self):
+        _LOGGER.debug("Searching current artist")
+
+        result = await self.kodi_search_current_artist()
+        if len(result) > 0:
+            r = result[0].get("artistid")
+            await self.search_artist(r[0])
 
     async def search_recently_played(self):
         _LOGGER.debug("Searching recently played")

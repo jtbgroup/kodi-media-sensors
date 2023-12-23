@@ -73,6 +73,7 @@ ENTITY_NAME_SENSOR_SEARCH = "Kodi Media Sensor Search"
 ATTR_METHOD = "method"
 
 # KODI Constants
+PLAYER_ID_MUSIC = 0
 PLAYLIST_ID_MUSIC = 0
 PLAYLIST_ID_VIDEO = 1
 PLAYLIST_TYPE_MUSIC = "music"
@@ -246,6 +247,9 @@ PROPS_ITEM_LIGHT = [
     # "type",
     # "id",
     "title",
+]
+PROPS_ITEM_ARTISTID = [
+    "artistid",
 ]
 
 PROPS_ADDONS = ["enabled"]

@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.2.0
+
+- New search method allowing to get the items linked to the artist playing in kodi
+
 ## 5.1.2
 
 - Bugfix : Recently added movie wasn't publishing anything due to a state issue. (see [issue #28](https://github.com/jtbgroup/kodi-media-sensors/issues/28)). Thanks to [Rudd-O](https://github.com/Rudd-O).
@@ -31,6 +35,7 @@ The sensor entities now have their unique id. This means it's a breaking change!
 - BugFix: not all the songs of an artist were returned in the search sensor when querying for a specific artist
 
 ## 4.0.0
+
 !!! Attention to some breaking changes in the configuration. Check the readme file !!!
 
 - Bugfix: the return of movies and music movies was inverted for the recently added items
@@ -79,7 +84,7 @@ The sensor entities now have their unique id. This means it's a breaking change!
 
 ## 3.2.3
 
-- No search limit when the configuration option **x_limit*- is 0
+- No search limit when the configuration option \*_x_limit_- is 0
 - Added Search PVR Channels functionality. During the first search operation, the sensor checks if a PVR client addon is present and enabled. if not, the PVR search is deactivated.
 - New properties in the configuration to (de)activate item types in the search and setlimits per item types.
 
@@ -105,7 +110,7 @@ The sensor entities now have their unique id. This means it's a breaking change!
 
 - A new sensor (search) is available and can be used with a new card.
 
-***Remarks***
+**_Remarks_**
 
 - Uninstall and re-install this integration is advised.
 - **Attention that the name of entities also changed.**
