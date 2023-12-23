@@ -1,4 +1,5 @@
 call_method:
+  name: Komi Media Sensor services
   # Description of the service
   description: Search for items in Kodi
   # Different fields that your service accepts
