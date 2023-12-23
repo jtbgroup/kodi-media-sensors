@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.2.1
+
+- Hassfest validation error
+
 ## 5.2.0
 
 - New search method allowing to get the items linked to the artist playing in kodi
