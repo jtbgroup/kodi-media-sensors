@@ -13,7 +13,10 @@ from pykodi import Kodi
 from .const import PROPS_ITEM, PROPS_ITEM_LIGHT
 from .entity_kodi_media_sensor import KodiMediaSensorEntity
 from .media_sensor_event_manager import MediaSensorEventManager
+from homeassistant.helpers import entity_registry as er
 from .types import KodiConfig
+from urllib.parse import urlparse
+from homeassistant.helpers import entity_registry as entity_registry
 
 _UNIQUE_ID_PREFIX = "kms_p_"
 _LOGGER = logging.getLogger(__name__)
@@ -47,6 +50,7 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
         )
 
         self._hass = hass
+        self._kodi_entity_id = kodi_entity_id
 
         homeassistant.helpers.event.async_track_state_change_event(
             hass, kodi_entity_id, self.__handle_event
@@ -245,6 +249,7 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
             player = players[0]
             player_id = player["playerid"]
             self.add_meta("playlist_id", player_id)
+            self.add_meta("kodi_entity_id", self._kodi_entity_id)
             self.add_meta("playlist_type", player["type"])
 
             props_item_playing = await self._kodi.get_playing_item_properties(
@@ -301,6 +306,33 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
                 "limits": limits,
             },
         )
+
+        # result = await self.call_method_kodi(
+        #     "Playlist.GetItems",
+        #     {
+        #         "properties": PROPS_ITEM,
+        #         "playlistid": self._playlistid,
+        #         "limits": limits,
+        #     },
+        # )
+
+        # attrs = self._hass.states.get(self._kodi_entity_id).attributes
+        # if attrs["entity_picture"]:
+        #     parsed_url = urlparse(attrs["entity_picture"]).query
+        #     params = parsed_url.split("&")
+        #     d = dict(s.split("=") for s in params)
+        #     for value in result:
+        #         url = (
+        #             "/api/media_player_proxy/"
+        #             + self._kodi_entity_id
+        #             + "/browse_media/album/"
+        #             + str(value["albumid"])
+        #             # + "?token="
+        #             # + d["token"]
+        #         )
+        #         value["api_image"] = url
+
+        return result
 
     async def kodi_get_playlist_light(self, playlistid):
         limits = {"start": 0}
