@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 5.3.0
+
+- Added the kodi entity id to the meta data
+
 ## 5.2.1
 
 - Hassfest validation error
