@@ -46,11 +46,14 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
         event_manager: MediaSensorEventManager,
     ):
         super().__init__(
-            _UNIQUE_ID_PREFIX + config_unique_id, kodi, config, event_manager
+            _UNIQUE_ID_PREFIX + config_unique_id,
+            kodi,
+            kodi_entity_id,
+            config,
+            event_manager,
         )
 
         self._hass = hass
-        self._kodi_entity_id = kodi_entity_id
 
         homeassistant.helpers.event.async_track_state_change_event(
             hass, kodi_entity_id, self.__handle_event
@@ -249,7 +252,6 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
             player = players[0]
             player_id = player["playerid"]
             self.add_meta("playlist_id", player_id)
-            self.add_meta("kodi_entity_id", self._kodi_entity_id)
             self.add_meta("playlist_type", player["type"])
 
             props_item_playing = await self._kodi.get_playing_item_properties(
@@ -332,7 +334,7 @@ class KodiMediaSensorsPlaylistEntity(KodiMediaSensorEntity):
         #         )
         #         value["api_image"] = url
 
-        return result
+        # return result
 
     async def kodi_get_playlist_light(self, playlistid):
         limits = {"start": 0}

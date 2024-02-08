@@ -129,7 +129,11 @@ class KodiMediaSensorsSearchEntity(KodiMediaSensorEntity):
         event_manager: MediaSensorEventManager,
     ):
         super().__init__(
-            _UNIQUE_ID_PREFIX + config_unique_id, kodi, config, event_manager
+            _UNIQUE_ID_PREFIX + config_unique_id,
+            kodi,
+            kodi_entity_id,
+            config,
+            event_manager,
         )
 
         self._hass = hass

@@ -36,12 +36,14 @@ class KodiMediaSensorEntity(Entity, ABC):
         self,
         unique_id,
         kodi: Kodi,
+        kodi_entity_id,
         config: KodiConfig,
         event_manager: MediaSensorEventManager,
     ) -> None:
         super().__init__()
         self._unique_id = unique_id
         self._kodi = kodi
+        self._kodi_entity_id = kodi_entity_id
         self._event_manager = event_manager
         self._define_base_url(config)
         self._state = STATE_OFF
@@ -218,6 +220,7 @@ class KodiMediaSensorEntity(Entity, ABC):
         self.purge_meta(event_id)
         self._meta[0]["update_time"] = ds
         self._meta[0]["sensor_entity_id"] = self.domain_unique_id
+        self._meta[0]["kodi_entity_id"] = self._kodi_entity_id
         self._meta[0]["service_domain"] = DOMAIN
         self.build_attrs()
         _LOGGER.debug("Init metadata (event %s)", event_id)
