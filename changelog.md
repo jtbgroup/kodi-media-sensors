@@ -1,5 +1,9 @@
 # KODI MEDIA SENSOR - Changelog
 
+## 6.0.0
+
+- Bug resolution linked to the new version of HA (2025.6) where some methods were deprecated. Attention: This version probably won't work well on previous versions. (see [issue #32](https://github.com/jtbgroup/kodi-search-card/issues/32))
+
 ## 5.3.0
 
 - Added the kodi entity id to the meta data
