@@ -129,7 +129,6 @@ class KodiMediaEntity(Entity):
 
 
 class KodiRecentlyAddedTVEntity(KodiMediaEntity):
-
     properties = [
         "art",
         "dateadded",
@@ -218,7 +217,6 @@ class KodiRecentlyAddedTVEntity(KodiMediaEntity):
 
 
 class KodiRecentlyAddedMoviesEntity(KodiMediaEntity):
-
     properties = [
         "art",
         "dateadded",

@@ -2,7 +2,7 @@ from datetime import timedelta
 import logging
 
 from homeassistant import config_entries, core
-from homeassistant.components.kodi.const import DATA_KODI, DOMAIN as KODI_DOMAIN
+from homeassistant.components.kodi.const import DOMAIN as KODI_DOMAIN
 from homeassistant.helpers import entity_platform
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity_registry import async_get
@@ -75,8 +75,6 @@ async def async_setup_entry(
     config_entry: config_entries.ConfigEntry,
     async_add_entities,
 ):
-    """Set up the media player platform for Sonos."""
-
     conf = hass.data[DOMAIN][config_entry.entry_id]
     kodi_config_entry = find_matching_config_entry(hass, conf[CONF_KODI_INSTANCE])
     reg = async_get(hass)
@@ -87,19 +85,30 @@ async def async_setup_entry(
 
     kodi_entity_id = reg.async_get_entity_id(KODI_DOMAIN_PLATFORM, KODI_DOMAIN, key)
 
-    try:
-        data = hass.data[KODI_DOMAIN][conf[CONF_KODI_INSTANCE]]
-    except KeyError:
-        config_entries = [
-            entry.as_dict() for entry in hass.config_entries.async_entries(KODI_DOMAIN)
-        ]
-        _LOGGER.error(
-            "Failed to setup sensor. Could not find kodi data from existing config entries: %s",
-            config_entries,
-        )
-        return
+    media_player_component = hass.data.get("media_player")
+    if media_player_component:
+        entities = media_player_component.entities  # set of Entity
+        for entity in entities:
+            _LOGGER.info("Entity id: %s, state: %s", entity.entity_id, entity.state)
+            kodi = None
+            if kodi_entity_id == entity.entity_id:
+                kodi = entity._kodi
+                break
 
-    kodi = data[DATA_KODI]
+    # try:
+    #     data = hass.data[KODI_DOMAIN][conf[CONF_KODI_INSTANCE]]
+    # except KeyError:
+    #     config_entries = [
+    #         entry.as_dict() for entry in hass.config_entries.async_entries(KODI_DOMAIN)
+    #     ]
+    #     _LOGGER.error(
+    #         "Failed to setup sensor. Could not find kodi data from existing config entries: %s",
+    #         config_entries,
+    #     )
+    #     return
+
+    # kodi = mp[kodi_entity_id]
+
     sensorsList = list()
     event_manager = MediaSensorEventManager()
 

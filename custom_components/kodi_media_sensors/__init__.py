@@ -141,10 +141,10 @@ async def async_setup_entry(hass, config: config_entries.ConfigEntries):
         "unsub_options_update_listener": unsub_options_update_listener,
     }
 
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(config, component)
-        )
+    # for component in PLATFORMS:
+    #     hass.async_create_task(
+    await hass.config_entries.async_forward_entry_setups(config, PLATFORMS)
+    # )
 
     return True
 
