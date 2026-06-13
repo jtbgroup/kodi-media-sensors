@@ -1,0 +1,1 @@
+DOMAIN = "kodi_media_sensors"

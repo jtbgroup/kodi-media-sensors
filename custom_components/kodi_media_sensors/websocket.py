@@ -13,11 +13,11 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     """Register WebSocket commands for the integration."""
     websocket_api.async_register_command(hass, websocket_subscribe_playlist)
 
-# The schema now expects the entity_id from the frontend card
+# Schema expects the entity_id from the frontend card
 SCHEMA_SUBSCRIBE_PLAYLIST = websocket_api.BASE_COMMAND_SCHEMA.extend(
     {
         vol.Required("type"): "kodi_media_sensors/subscribe_playlist",
-        vol.Required("entity_id"): str, # "media_player.kodi_dev_instance"
+        vol.Required("entity_id"): str,
     }
 )
 
@@ -40,8 +40,8 @@ async def websocket_subscribe_playlist(
         connection.send_error(msg["id"], "invalid_entity", f"Entity {entity_id} not found or not linked to an integration.")
         return
 
-    # 2. Fetch the ConfigEntry to extract the network settings (IP, ports)
-    # This assumes your integration stores "host", "port_http", and "port_ws" in its config data
+
+    # 2. Fetch the ConfigEntry to extract the network settings
     config_entry = hass.config_entries.async_get_entry(entity_entry.config_entry_id)
     
     if not config_entry:

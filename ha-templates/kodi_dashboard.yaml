@@ -1,0 +1,12 @@
+title: Kodi Dev Studio
+views:
+  - title: Main View
+    path: main
+    cards:
+      # 1. The Standard Media Player Card for Kodi
+      - type: media-control
+        entity: media_player.kodi # Ensure your Kodi entity ID matches this one in HA
+
+    # 2. Your Custom Playlist Card pointing to the HA entity
+      - type: "custom:kodi-playlist-card"
+        entity: media_player.kodi_dev_instance # The card now talks to this HA entity
