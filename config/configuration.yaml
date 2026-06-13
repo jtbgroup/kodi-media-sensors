@@ -14,7 +14,6 @@ scene: !include scenes.yaml
 lovelace:
   mode: storage # Keeps your main dashboard editable via the UI
   
-  # MAGIE : On déclare la carte externe directement ici
   resources:
     - url: "http://localhost:3000/dist/my-kodi-card.js"
       type: module
