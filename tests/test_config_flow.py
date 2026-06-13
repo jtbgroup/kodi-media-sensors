@@ -3,10 +3,10 @@ from unittest import mock
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.kodi_media_sensors.const import (
+from custom_componentsOLD.kodi_media_sensors.const import (
         DOMAIN,
 )
-from custom_components.kodi_media_sensors.utils import KODI_DOMAIN
+from custom_componentsOLD.kodi_media_sensors.utils import KODI_DOMAIN
 
 
 async def test_flow_init_kodi_not_configured(hass):

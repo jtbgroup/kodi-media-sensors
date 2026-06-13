@@ -1,0 +1,15 @@
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:rc
+    container_name: ha_dev
+    network_mode: host
+    volumes:
+      # Permet à VS Code de s'ouvrir dans votre projet sans erreur
+      - ..:/workspaces/kodi-media-sensors:cached
+      # Permet à Home Assistant de stocker sa configuration locale
+      - ../config:/config
+      # Injecte directement votre code là où Home Assistant le cherche
+      - ../custom_components:/config/custom_components
+    environment:
+      - PYTHONUNBUFFERED=1
+    entrypoint: ["hass", "-c", "/config"]
