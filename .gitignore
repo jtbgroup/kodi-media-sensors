@@ -1,1 +1,15 @@
 /.history
+
+# Ignore all Python bytecode cache directories and files starting with __
+**/__*
+
+# ------------------
+# HA Configuration
+# ------------------
+
+# Ignore everything in the config directory
+config/*
+
+# Ignore internal development container files if any
+.DS_Store
+*.log

@@ -1,0 +1,28 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Declaration of Lovelace dashboards and their attached resources
+lovelace:
+  mode: storage # Keeps your main dashboard editable via the UI
+  
+  resources:
+    - url: "http://localhost:3000/dist/my-kodi-card.js"
+      type: module
+
+  # Custom dashboards
+  dashboards:
+    kodi-dev-dash:
+      mode: yaml
+      filename: kodi_dashboard.yaml
+      title: Kodi Dev Dashboard
+      icon: mdi:television-classic
+      show_in_sidebar: true
