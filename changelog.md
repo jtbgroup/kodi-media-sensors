@@ -1,5 +1,14 @@
 # KODI MEDIA SENSOR - Changelog
 
+
+## 6.0.0
+
+- Complete new structure based on websocket instead of sensors. 
+  
+**IMPORTANT : BREAKING CHANGES**
+
+This version is not backward compatible. The cards linked to the previous versions (Search card and Playlist card) must also be upgraded to new version. The other cards potentially based on the previous version of this integration will probably not work anymore.
+
 ## 5.4.0
 
 - Bug resolution linked to the new version of HA (2025.6) where some methods were deprecated. Attention: This version probably won't work well on previous versions. (see [issue #32](https://github.com/jtbgroup/kodi-search-card/issues/32))

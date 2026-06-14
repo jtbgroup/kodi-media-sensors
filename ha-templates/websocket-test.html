@@ -24,19 +24,19 @@
             margin-bottom: 20px;
             font-size: 24px;
         }
-        .config-section {
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .config-section h2 {
+        h2 {
             font-size: 14px;
             color: #666;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+        .section {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
         .input-group {
             margin-bottom: 10px;
@@ -71,6 +71,7 @@
             display: flex;
             gap: 10px;
             margin-top: 15px;
+            flex-wrap: wrap;
         }
         button {
             padding: 10px 16px;
@@ -103,6 +104,17 @@
             background: #ccc;
             cursor: not-allowed;
         }
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #555;
+        }
+        .btn-secondary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
         .status {
             display: flex;
             align-items: center;
@@ -120,6 +132,10 @@
             background: #fce8e6;
             color: #c5221f;
         }
+        .status.warning {
+            background: #fef7e0;
+            color: #b06000;
+        }
         .status-dot {
             display: inline-block;
             width: 8px;
@@ -134,19 +150,12 @@
             background: #d33b27;
             animation: none;
         }
+        .status.warning .status-dot {
+            background: #f9ab00;
+        }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
-        }
-        .log-section {
-            margin-top: 20px;
-        }
-        .log-section h2 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         .log-output {
             background: #1e1e1e;
@@ -155,7 +164,7 @@
             padding: 12px;
             font-family: "Courier New", monospace;
             font-size: 12px;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
             border: 1px solid #3e3e42;
         }
@@ -189,20 +198,16 @@
         .btn-clear:hover {
             background: #555;
         }
-        .playlist {
+        .playlist, .search-results {
             background: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 6px;
             padding: 15px;
             margin-top: 20px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
-        .playlist h2 {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-        .playlist-item {
+        .result-item {
             padding: 8px;
             border-left: 3px solid #0066cc;
             background: white;
@@ -210,11 +215,11 @@
             border-radius: 2px;
             font-size: 13px;
         }
-        .playlist-item-title {
+        .result-item-title {
             font-weight: 500;
             color: #333;
         }
-        .playlist-item-meta {
+        .result-item-meta {
             color: #666;
             font-size: 12px;
             margin-top: 4px;
@@ -225,13 +230,43 @@
             text-align: center;
             padding: 20px;
         }
+        .category-group {
+            margin-bottom: 12px;
+        }
+        .category-group h3 {
+            font-size: 13px;
+            color: #0066cc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .checkbox-group label {
+            min-width: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            flex: none;
+            width: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎵 Kodi Media Sensors WebSocket Test</h1>
 
-        <div class="config-section">
+        <div class="section">
             <h2>Home Assistant Configuration</h2>
             <div class="input-group">
                 <label>Host:</label>
@@ -259,24 +294,59 @@
             </div>
         </div>
 
-        <div class="log-section">
+        <div class="section">
+            <h2>Playlist Subscription</h2>
+            <div class="button-group">
+                <button class="btn-primary" id="subscribeBtn" onclick="subscribePlaylist()" disabled>Subscribe to playlist</button>
+            </div>
+        </div>
+
+        <div class="playlist" id="playlistContainer" style="display: none;">
+            <h2>Playlist</h2>
+            <div id="playlistContent"></div>
+        </div>
+
+        <div class="section">
+            <h2>Search</h2>
+            <div class="input-group">
+                <label>Query:</label>
+                <input type="text" id="searchQuery" placeholder="e.g. batman">
+            </div>
+            <div class="checkbox-group" id="categoryCheckboxes">
+                <label><input type="checkbox" value="movies" checked> Movies</label>
+                <label><input type="checkbox" value="tvshows" checked> TV Shows</label>
+                <label><input type="checkbox" value="songs" checked> Songs</label>
+                <label><input type="checkbox" value="albums" checked> Albums</label>
+                <label><input type="checkbox" value="artists" checked> Artists</label>
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" id="searchBtn" onclick="search()" disabled>Search</button>
+                <button class="btn-secondary" onclick="toggleAllCategories(true)">Select all</button>
+                <button class="btn-secondary" onclick="toggleAllCategories(false)">Select none</button>
+            </div>
+        </div>
+
+        <div class="search-results" id="searchResultsContainer" style="display: none;">
+            <h2>Search Results</h2>
+            <div id="searchResultsContent"></div>
+        </div>
+
+        <div class="section">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Logs</h2>
                 <button class="btn-clear" onclick="clearLogs()">Clear</button>
             </div>
             <div class="log-output" id="log"></div>
         </div>
-
-        <div class="playlist" id="playlistContainer" style="display: none;">
-            <h2>Received Playlist</h2>
-            <div id="playlistContent"></div>
-        </div>
     </div>
 
     <script>
         let ws = null;
+        let nextMsgId = 1;
+        let playlistSubscriptionId = null;
         const log = document.getElementById('log');
         const logOutput = [];
+        const ALL_CATEGORIES = ['movies', 'tvshows', 'songs', 'albums', 'artists'];
 
         function addLog(message, type = 'info') {
             const now = new Date().toLocaleTimeString();
@@ -284,7 +354,6 @@
             const line = `<div class="log-line"><span class="log-time">[${now}]</span> <span class="${logClass}">${escapeHtml(message)}</span></div>`;
             logOutput.push(line);
 
-            // Limit to 100 lines
             if (logOutput.length > 100) {
                 logOutput.shift();
             }
@@ -305,22 +374,41 @@
             addLog('Logs cleared', 'info');
         }
 
-        function updateStatus(connected) {
+        function updateStatus(state) {
             const statusEl = document.getElementById('status');
             const statusText = document.getElementById('statusText');
             const connectBtn = document.getElementById('connectBtn');
             const disconnectBtn = document.getElementById('disconnectBtn');
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            const searchBtn = document.getElementById('searchBtn');
 
-            if (connected) {
+            if (state === 'connected') {
                 statusEl.className = 'status connected';
                 statusText.textContent = 'Connected';
                 connectBtn.disabled = true;
                 disconnectBtn.disabled = false;
+                subscribeBtn.disabled = false;
+                searchBtn.disabled = false;
             } else {
                 statusEl.className = 'status disconnected';
                 statusText.textContent = 'Disconnected';
                 connectBtn.disabled = false;
                 disconnectBtn.disabled = true;
+                subscribeBtn.disabled = true;
+                searchBtn.disabled = true;
+            }
+        }
+
+        function setKodiUnavailable(unavailable) {
+            const statusEl = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+
+            if (unavailable) {
+                statusEl.className = 'status warning';
+                statusText.textContent = 'Connected — Kodi unavailable';
+            } else {
+                statusEl.className = 'status connected';
+                statusText.textContent = 'Connected';
             }
         }
 
@@ -335,6 +423,18 @@
                 return;
             }
 
+            // Persist connection settings for next time
+            try {
+                localStorage.setItem('kodi_ws_test_settings', JSON.stringify({
+                    haHost: host,
+                    haPort: port,
+                    haToken: token,
+                    entryId: entryId
+                }));
+            } catch (err) {
+                addLog('⚠️ Could not save settings to localStorage: ' + err, 'warning');
+            }
+
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             const url = `${protocol}//${host}:${port}/api/websocket`;
 
@@ -344,9 +444,7 @@
 
             ws.onopen = () => {
                 addLog('✓ WebSocket opened', 'success');
-                updateStatus(true);
 
-                // Send authentication
                 const authMsg = {
                     type: 'auth',
                     access_token: token
@@ -361,39 +459,31 @@
 
                 if (msg.type === 'auth_ok') {
                     addLog('✓ Authentication successful', 'success');
-
-                    // Send the subscription command
-                    const subMsg = {
-                        id: 1,
-                        type: 'kodi_media_sensors/subscribe_playlist',
-                        entry_id: entryId
-                    };
-                    addLog('→ Sending subscribe: ' + JSON.stringify(subMsg), 'info');
-                    ws.send(JSON.stringify(subMsg));
+                    updateStatus('connected');
                 }
 
-                if (msg.type === 'result' && msg.id === 1) {
-                    if (msg.success) {
-                        addLog('✓ Subscription confirmed', 'success');
-                    } else {
-                        addLog('❌ Subscription error: ' + JSON.stringify(msg.error), 'error');
-                    }
+                if (msg.type === 'auth_invalid') {
+                    addLog('❌ Authentication failed', 'error');
                 }
 
-                if (msg.type === 'event' && msg.id === 1) {
-                    addLog('🎵 Playlist update received', 'success');
-                    displayPlaylist(msg.event);
+                if (msg.type === 'result') {
+                    handleResult(msg);
+                }
+
+                if (msg.type === 'event') {
+                    handleEvent(msg);
                 }
             };
 
             ws.onerror = (error) => {
                 addLog('❌ WebSocket error: ' + error, 'error');
-                updateStatus(false);
+                updateStatus('disconnected');
             };
 
             ws.onclose = () => {
                 addLog('✗ Connection closed', 'warning');
-                updateStatus(false);
+                updateStatus('disconnected');
+                playlistSubscriptionId = null;
             };
         }
 
@@ -401,21 +491,126 @@
             if (ws) {
                 ws.close();
                 addLog('Disconnection requested', 'info');
-                updateStatus(false);
+                updateStatus('disconnected');
+                playlistSubscriptionId = null;
             }
         }
 
-        function displayPlaylist(event) {
+        function handleResult(msg) {
+            if (msg.id === playlistSubscriptionId) {
+                if (msg.success) {
+                    addLog('✓ Playlist subscription confirmed', 'success');
+                } else {
+                    addLog('❌ Playlist subscription error: ' + JSON.stringify(msg.error), 'error');
+                    playlistSubscriptionId = null;
+                }
+                return;
+            }
+
+            if (msg.success) {
+                addLog('✓ Search results received', 'success');
+                if (msg.result && msg.result.results) {
+                    displaySearchResults(msg.result.results);
+                }
+            } else {
+                addLog('❌ Search error: ' + JSON.stringify(msg.error), 'error');
+            }
+        }
+
+        function handleEvent(msg) {
+            if (msg.id !== playlistSubscriptionId) {
+                return;
+            }
+
+            const evt = msg.event;
+
+            if (evt.type === 'playlist_update') {
+                addLog('🎵 Playlist update received (state: ' + evt.kodi_state + ')', 'success');
+                setKodiUnavailable(false);
+                displayPlaylist(evt.items, evt.kodi_state);
+            }
+
+            if (evt.type === 'kodi_unavailable') {
+                addLog('⚠️ Kodi reported as unavailable', 'warning');
+                setKodiUnavailable(true);
+                displayPlaylistUnavailable();
+            }
+        }
+
+        function subscribePlaylist() {
+            const entryId = document.getElementById('entryId').value;
+            if (!entryId) {
+                addLog('❌ Entry ID is required', 'error');
+                return;
+            }
+
+            playlistSubscriptionId = nextMsgId++;
+            const subMsg = {
+                id: playlistSubscriptionId,
+                type: 'kodi_media_sensors/subscribe_playlist',
+                entry_id: entryId
+            };
+            addLog('→ Sending subscribe: ' + JSON.stringify(subMsg), 'info');
+            ws.send(JSON.stringify(subMsg));
+        }
+
+        function toggleAllCategories(checked) {
+            document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function search() {
+            const entryId = document.getElementById('entryId').value;
+            const query = document.getElementById('searchQuery').value.trim();
+
+            if (!entryId) {
+                addLog('❌ Entry ID is required', 'error');
+                return;
+            }
+            if (!query) {
+                addLog('❌ Search query is required', 'error');
+                return;
+            }
+
+            const checked = Array.from(
+                document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+
+            if (checked.length === 0) {
+                addLog('❌ Select at least one category', 'error');
+                return;
+            }
+
+            const categories = checked.length === ALL_CATEGORIES.length ? ['all'] : checked;
+
+            categories.forEach(category => {
+                const msgId = nextMsgId++;
+                const searchMsg = {
+                    id: msgId,
+                    type: 'kodi_media_sensors/search',
+                    entry_id: entryId,
+                    query: query,
+                    category: category
+                };
+                addLog('→ Sending search: ' + JSON.stringify(searchMsg), 'info');
+                ws.send(JSON.stringify(searchMsg));
+            });
+        }
+
+        function displayPlaylist(items, kodiState) {
             const container = document.getElementById('playlistContainer');
             const content = document.getElementById('playlistContent');
+            const heading = container.querySelector('h2');
+            heading.textContent = kodiState ? `Playlist (Kodi: ${kodiState})` : 'Playlist';
 
-            if (event.items && event.items.length > 0) {
+            if (items && items.length > 0) {
                 let html = '';
-                event.items.forEach((item, index) => {
+                items.forEach((item, index) => {
                     html += `
-                        <div class="playlist-item">
-                            <div class="playlist-item-title">${index + 1}. ${item.title || item.label || 'Untitled'}</div>
-                            <div class="playlist-item-meta">
+                        <div class="result-item">
+                            <div class="result-item-title">${index + 1}. ${item.title || item.label || 'Untitled'}</div>
+                            <div class="result-item-meta">
                                 ${item.artist ? `Artist: ${Array.isArray(item.artist) ? item.artist.join(', ') : item.artist} | ` : ''}
                                 Duration: ${formatDuration(item.duration || 0)}
                             </div>
@@ -429,16 +624,102 @@
             container.style.display = 'block';
         }
 
+        function displayPlaylistUnavailable() {
+            const container = document.getElementById('playlistContainer');
+            const content = document.getElementById('playlistContent');
+            content.innerHTML = '<div class="empty">⚠️ Kodi is currently unavailable</div>';
+            container.style.display = 'block';
+        }
+
+        function displaySearchResults(results) {
+            const container = document.getElementById('searchResultsContainer');
+            const content = document.getElementById('searchResultsContent');
+
+            const labels = {
+                movies: 'Movies',
+                tvshows: 'TV Shows',
+                songs: 'Songs',
+                albums: 'Albums',
+                artists: 'Artists'
+            };
+
+            let html = '';
+            let hasAny = false;
+
+            for (const [category, items] of Object.entries(results)) {
+                if (!items || items.length === 0) continue;
+                hasAny = true;
+                html += `<div class="category-group"><h3>${labels[category] || category} (${items.length})</h3>`;
+                items.forEach(item => {
+                    html += renderSearchItem(category, item);
+                });
+                html += '</div>';
+            }
+
+            content.innerHTML = hasAny ? html : '<div class="empty">No results found</div>';
+            container.style.display = 'block';
+        }
+
+        function renderSearchItem(category, item) {
+            const title = item.title || item.label || item.artist || 'Untitled';
+            let meta = '';
+
+            switch (category) {
+                case 'movies':
+                case 'tvshows':
+                    meta = [item.year, item.rating ? `★ ${item.rating}` : null].filter(Boolean).join(' | ');
+                    break;
+                case 'songs':
+                    meta = [
+                        item.artist ? (Array.isArray(item.artist) ? item.artist.join(', ') : item.artist) : null,
+                        item.album,
+                        item.duration ? formatDuration(item.duration) : null
+                    ].filter(Boolean).join(' | ');
+                    break;
+                case 'albums':
+                    meta = [
+                        item.artist ? (Array.isArray(item.artist) ? item.artist.join(', ') : item.artist) : null,
+                        item.year
+                    ].filter(Boolean).join(' | ');
+                    break;
+                case 'artists':
+                    meta = '';
+                    break;
+            }
+
+            return `
+                <div class="result-item">
+                    <div class="result-item-title">${escapeHtml(String(title))}</div>
+                    ${meta ? `<div class="result-item-meta">${escapeHtml(meta)}</div>` : ''}
+                </div>
+            `;
+        }
+
         function formatDuration(seconds) {
             const mins = Math.floor(seconds / 60);
             const secs = seconds % 60;
             return `${mins}:${String(secs).padStart(2, '0')}`;
         }
 
-        // On page load
+        function loadSavedSettings() {
+            try {
+                const saved = localStorage.getItem('kodi_ws_test_settings');
+                if (!saved) return;
+                const settings = JSON.parse(saved);
+                if (settings.haHost) document.getElementById('haHost').value = settings.haHost;
+                if (settings.haPort) document.getElementById('haPort').value = settings.haPort;
+                if (settings.haToken) document.getElementById('haToken').value = settings.haToken;
+                if (settings.entryId) document.getElementById('entryId').value = settings.entryId;
+                addLog('Loaded saved connection settings', 'info');
+            } catch (err) {
+                addLog('⚠️ Could not load saved settings: ' + err, 'warning');
+            }
+        }
+
         addLog('Kodi Media Sensors WebSocket Test', 'info');
         addLog('Fill in the settings and click "Connect"', 'info');
-        updateStatus(false);
+        loadSavedSettings();
+        updateStatus('disconnected');
     </script>
 </body>
 </html>

@@ -13,8 +13,8 @@ scene: !include scenes.yaml
 logger:
   default: info
   logs:
-    homeassistant.setup: debug
     custom_components.kodi_media_sensors: debug
+    custom_components.kodi_media_sensors.kodi_client: debug
 
 # Declaration of Lovelace dashboards and their attached resources
 lovelace:
