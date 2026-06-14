@@ -7,45 +7,44 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Setup via configuration.yaml — non utilisé, mais requis."""
+    """Setup via configuration.yaml — not used, but required."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Chargement de l'intégration via l'UI."""
+    """Set up the integration from the UI."""
 
-    label = entry.data.get(CONF_LABEL, "inconnu")
-    _LOGGER.info("Kodi Media Sensors démarré — label: '%s'", label)
+    label = entry.data.get(CONF_LABEL, "unknown")
+    _LOGGER.info("Kodi Media Sensors started — label: '%s'", label)
 
-    # Stockage des données de config pour usage ultérieur
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "label": label,
     }
 
-    # ⚠️ IMPORTANT: Enregistrer le WebSocket SANS attendre
-    # Il doit être enregistré au niveau du domaine, pas de l'entry
+    # ⚠️ IMPORTANT: register WebSocket commands without awaiting.
+    # They must be registered at the domain level, not per entry.
     _async_setup_websocket(hass)
-    _LOGGER.info("WebSocket kodi_media_sensors/subscribe enregistré.")
+    _LOGGER.info("WebSocket kodi_media_sensors commands registered.")
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Nettoyage lors de la suppression de l'intégration."""
+    """Clean up when the integration is removed."""
     hass.data[DOMAIN].pop(entry.entry_id, None)
-    _LOGGER.info("Kodi Media Sensors déchargé.")
+    _LOGGER.info("Kodi Media Sensors unloaded.")
     return True
 
 
 def _async_setup_websocket(hass: HomeAssistant) -> None:
-    """Enregistrer les WebSocket commands.
-    
-    Appelé depuis async_setup_entry pour s'assurer que c'est fait
-    avant que le client ne se connecte.
+    """Register WebSocket commands.
+
+    Called from async_setup_entry to ensure registration happens
+    before any client connects.
     """
-    # Import local pour éviter les dépendances circulaires
+    # Local import to avoid circular dependencies
     from .websocket import async_register_websockets
-    
-    # Cette fonction utilise @callback et doit être appelée synchrone
+
+    # This is a @callback and must be called synchronously
     async_register_websockets(hass)

@@ -1,30 +1,48 @@
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
-from .const import DOMAIN, CONF_LABEL
+from homeassistant.helpers import selector
+
+from .const import DOMAIN, CONF_LABEL, CONF_KODI_ENTITY
 
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow pour Kodi Media Sensors."""
+    """Config flow for Kodi Media Sensors."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        """Étape initiale : affiche le formulaire de config."""
+        """Initial step: select the Kodi instance to monitor."""
         errors = {}
 
         if user_input is not None:
-            # Minimal validation: label can't be empty
-            if not user_input.get(CONF_LABEL, "").strip():
+            label = user_input.get(CONF_LABEL, "").strip()
+            kodi_entity = user_input.get(CONF_KODI_ENTITY)
+
+            if not label:
                 errors[CONF_LABEL] = "label_required"
+            elif not kodi_entity:
+                errors[CONF_KODI_ENTITY] = "kodi_entity_required"
             else:
-                return self.async_create_entry(
-                    title=user_input[CONF_LABEL],
-                    data=user_input,
-                )
+                # Prevent configuring the same Kodi entity twice
+                for entry in self._async_current_entries():
+                    if entry.data.get(CONF_KODI_ENTITY) == kodi_entity:
+                        errors[CONF_KODI_ENTITY] = "already_configured"
+                        break
+
+                if not errors:
+                    return self.async_create_entry(
+                        title=label,
+                        data={
+                            CONF_LABEL: label,
+                            CONF_KODI_ENTITY: kodi_entity,
+                        },
+                    )
 
         data_schema = vol.Schema({
-            vol.Required(CONF_LABEL, default="Mon Kodi"): str,
+            vol.Required(CONF_LABEL, default="My Kodi"): str,
+            vol.Required(CONF_KODI_ENTITY): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="media_player", integration="kodi")
+            ),
         })
 
         return self.async_show_form(

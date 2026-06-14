@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -232,7 +232,7 @@
         <h1>🎵 Kodi Media Sensors WebSocket Test</h1>
 
         <div class="config-section">
-            <h2>Configuration Home Assistant</h2>
+            <h2>Home Assistant Configuration</h2>
             <div class="input-group">
                 <label>Host:</label>
                 <input type="text" id="haHost" placeholder="localhost" value="localhost">
@@ -243,32 +243,32 @@
             </div>
             <div class="input-group">
                 <label>Access Token:</label>
-                <input type="password" id="haToken" placeholder="Coller votre token HA">
+                <input type="password" id="haToken" placeholder="Paste your HA token">
             </div>
             <div class="input-group">
                 <label>Entry ID:</label>
                 <input type="text" id="entryId" placeholder="abc123def456" value="">
             </div>
             <div class="button-group">
-                <button class="btn-primary" id="connectBtn" onclick="connect()">Se connecter</button>
-                <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Déconnecter</button>
+                <button class="btn-primary" id="connectBtn" onclick="connect()">Connect</button>
+                <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
             </div>
             <div class="status disconnected" id="status">
                 <span class="status-dot"></span>
-                <span id="statusText">Déconnecté</span>
+                <span id="statusText">Disconnected</span>
             </div>
         </div>
 
         <div class="log-section">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Logs</h2>
-                <button class="btn-clear" onclick="clearLogs()">Effacer</button>
+                <button class="btn-clear" onclick="clearLogs()">Clear</button>
             </div>
             <div class="log-output" id="log"></div>
         </div>
 
         <div class="playlist" id="playlistContainer" style="display: none;">
-            <h2>Playlist reçue</h2>
+            <h2>Received Playlist</h2>
             <div id="playlistContent"></div>
         </div>
     </div>
@@ -283,12 +283,12 @@
             const logClass = `log-${type}`;
             const line = `<div class="log-line"><span class="log-time">[${now}]</span> <span class="${logClass}">${escapeHtml(message)}</span></div>`;
             logOutput.push(line);
-            
-            // Limiter à 100 lignes
+
+            // Limit to 100 lines
             if (logOutput.length > 100) {
                 logOutput.shift();
             }
-            
+
             log.innerHTML = logOutput.join('');
             log.scrollTop = log.scrollHeight;
         }
@@ -302,7 +302,7 @@
         function clearLogs() {
             logOutput.length = 0;
             log.innerHTML = '';
-            addLog('Logs effacés', 'info');
+            addLog('Logs cleared', 'info');
         }
 
         function updateStatus(connected) {
@@ -313,12 +313,12 @@
 
             if (connected) {
                 statusEl.className = 'status connected';
-                statusText.textContent = 'Connecté';
+                statusText.textContent = 'Connected';
                 connectBtn.disabled = true;
                 disconnectBtn.disabled = false;
             } else {
                 statusEl.className = 'status disconnected';
-                statusText.textContent = 'Déconnecté';
+                statusText.textContent = 'Disconnected';
                 connectBtn.disabled = false;
                 disconnectBtn.disabled = true;
             }
@@ -331,68 +331,68 @@
             const entryId = document.getElementById('entryId').value;
 
             if (!host || !port || !token || !entryId) {
-                addLog('❌ Remplir tous les champs', 'error');
+                addLog('❌ Please fill in all fields', 'error');
                 return;
             }
 
             const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
             const url = `${protocol}//${host}:${port}/api/websocket`;
 
-            addLog(`📡 Connexion à ${url}...`, 'info');
+            addLog(`📡 Connecting to ${url}...`, 'info');
 
             ws = new WebSocket(url);
 
             ws.onopen = () => {
-                addLog('✓ WebSocket ouvert', 'success');
+                addLog('✓ WebSocket opened', 'success');
                 updateStatus(true);
-                
-                // Envoyer l'authentification
+
+                // Send authentication
                 const authMsg = {
                     type: 'auth',
                     access_token: token
                 };
-                addLog('→ Envoi auth: ' + JSON.stringify(authMsg), 'info');
+                addLog('→ Sending auth: ' + JSON.stringify(authMsg), 'info');
                 ws.send(JSON.stringify(authMsg));
             };
 
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
-                addLog('← Reçu: ' + JSON.stringify(msg), 'info');
+                addLog('← Received: ' + JSON.stringify(msg), 'info');
 
                 if (msg.type === 'auth_ok') {
-                    addLog('✓ Authentification réussie', 'success');
-                    
-                    // Envoyer la commande de subscription
+                    addLog('✓ Authentication successful', 'success');
+
+                    // Send the subscription command
                     const subMsg = {
                         id: 1,
-                        type: 'kodi_media_sensors/subscribe',
+                        type: 'kodi_media_sensors/subscribe_playlist',
                         entry_id: entryId
                     };
-                    addLog('→ Envoi subscribe: ' + JSON.stringify(subMsg), 'info');
+                    addLog('→ Sending subscribe: ' + JSON.stringify(subMsg), 'info');
                     ws.send(JSON.stringify(subMsg));
                 }
-                
+
                 if (msg.type === 'result' && msg.id === 1) {
                     if (msg.success) {
-                        addLog('✓ Subscription confirmée', 'success');
+                        addLog('✓ Subscription confirmed', 'success');
                     } else {
-                        addLog('❌ Erreur subscription: ' + msg.error, 'error');
+                        addLog('❌ Subscription error: ' + JSON.stringify(msg.error), 'error');
                     }
                 }
-                
+
                 if (msg.type === 'event' && msg.id === 1) {
-                    addLog('🎵 Playlist mise à jour reçue', 'success');
+                    addLog('🎵 Playlist update received', 'success');
                     displayPlaylist(msg.event);
                 }
             };
 
             ws.onerror = (error) => {
-                addLog('❌ Erreur WebSocket: ' + error, 'error');
+                addLog('❌ WebSocket error: ' + error, 'error');
                 updateStatus(false);
             };
 
             ws.onclose = () => {
-                addLog('✗ Connexion fermée', 'warning');
+                addLog('✗ Connection closed', 'warning');
                 updateStatus(false);
             };
         }
@@ -400,7 +400,7 @@
         function disconnect() {
             if (ws) {
                 ws.close();
-                addLog('Déconnexion demandée', 'info');
+                addLog('Disconnection requested', 'info');
                 updateStatus(false);
             }
         }
@@ -408,23 +408,23 @@
         function displayPlaylist(event) {
             const container = document.getElementById('playlistContainer');
             const content = document.getElementById('playlistContent');
-            
-            if (event.playlist && event.playlist.length > 0) {
+
+            if (event.items && event.items.length > 0) {
                 let html = '';
-                event.playlist.forEach((item, index) => {
+                event.items.forEach((item, index) => {
                     html += `
                         <div class="playlist-item">
-                            <div class="playlist-item-title">${index + 1}. ${item.title || 'Sans titre'}</div>
+                            <div class="playlist-item-title">${index + 1}. ${item.title || item.label || 'Untitled'}</div>
                             <div class="playlist-item-meta">
-                                ${item.artist ? `Artiste: ${item.artist} | ` : ''}
-                                Durée: ${formatDuration(item.duration || 0)}
+                                ${item.artist ? `Artist: ${Array.isArray(item.artist) ? item.artist.join(', ') : item.artist} | ` : ''}
+                                Duration: ${formatDuration(item.duration || 0)}
                             </div>
                         </div>
                     `;
                 });
                 content.innerHTML = html;
             } else {
-                content.innerHTML = '<div class="empty">Playlist vide</div>';
+                content.innerHTML = '<div class="empty">Empty playlist</div>';
             }
             container.style.display = 'block';
         }
@@ -435,9 +435,9 @@
             return `${mins}:${String(secs).padStart(2, '0')}`;
         }
 
-        // Au chargement de la page
-        addLog('Test WebSocket Kodi Media Sensors', 'info');
-        addLog('Remplissez les paramètres et cliquez sur "Se connecter"', 'info');
+        // On page load
+        addLog('Kodi Media Sensors WebSocket Test', 'info');
+        addLog('Fill in the settings and click "Connect"', 'info');
         updateStatus(false);
     </script>
 </body>

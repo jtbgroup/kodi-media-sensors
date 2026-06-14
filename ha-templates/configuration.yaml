@@ -24,11 +24,3 @@ lovelace:
     - url: "http://localhost:3000/dist/my-kodi-card.js"
       type: module
 
-  # Custom dashboards
-  dashboards:
-    kodi-dev-dash:
-      mode: yaml
-      filename: kodi_dashboard.yaml
-      title: Kodi Dev Dashboard
-      icon: mdi:television-classic
-      show_in_sidebar: true

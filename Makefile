@@ -13,6 +13,7 @@ help:
 	@echo "  make docker-build    - Build the Docker image"
 	@echo "  make docker-up       - Start Home Assistant container"
 	@echo "  make docker-down     - Stop Home Assistant container"
+	@echo "  make docker-restart     - Restart Home Assistant container"
 	@echo "  make docker-logs     - Show container logs"
 	@echo "  make docker-shell    - Open shell in running container"
 	@echo "  make tests           - Run tests"
@@ -31,6 +32,9 @@ docker-up: docker-build
 
 docker-down:
 	docker compose -f $(COMPOSE_FILE) down
+
+docker-restart:
+	docker compose -f $(COMPOSE_FILE) restart
 
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f
