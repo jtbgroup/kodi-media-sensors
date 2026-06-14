@@ -4,8 +4,9 @@
 **/__*
 
 # ------------------
-# HA Configuration
+# Utils tools
 # ------------------
+ha-templates/test connections.txt
 
 # Ignore everything in the config directory
 config/*

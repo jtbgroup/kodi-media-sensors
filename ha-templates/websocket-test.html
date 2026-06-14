@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodi Media Sensors WebSocket Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .config-section {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .config-section h2 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        label {
+            min-width: 120px;
+            color: #333;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        input[type="text"],
+        input[type="password"],
+        select {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: monospace;
+        }
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .btn-danger {
+            background: #cc0000;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #a30000;
+        }
+        .btn-danger:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .status.connected {
+            background: #e6f4ea;
+            color: #137333;
+        }
+        .status.disconnected {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status.connected .status-dot {
+            background: #30a14e;
+        }
+        .status.disconnected .status-dot {
+            background: #d33b27;
+            animation: none;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .log-section {
+            margin-top: 20px;
+        }
+        .log-section h2 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: "Courier New", monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #3e3e42;
+        }
+        .log-line {
+            margin-bottom: 6px;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        .log-time {
+            color: #858585;
+        }
+        .log-info {
+            color: #4fc3f7;
+        }
+        .log-success {
+            color: #4caf50;
+        }
+        .log-error {
+            color: #f44336;
+        }
+        .log-warning {
+            color: #ff9800;
+        }
+        .btn-clear {
+            background: #666;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .btn-clear:hover {
+            background: #555;
+        }
+        .playlist {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .playlist h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .playlist-item {
+            padding: 8px;
+            border-left: 3px solid #0066cc;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 2px;
+            font-size: 13px;
+        }
+        .playlist-item-title {
+            font-weight: 500;
+            color: #333;
+        }
+        .playlist-item-meta {
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .empty {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Kodi Media Sensors WebSocket Test</h1>
+
+        <div class="config-section">
+            <h2>Configuration Home Assistant</h2>
+            <div class="input-group">
+                <label>Host:</label>
+                <input type="text" id="haHost" placeholder="localhost" value="localhost">
+            </div>
+            <div class="input-group">
+                <label>Port:</label>
+                <input type="text" id="haPort" placeholder="8123" value="8123">
+            </div>
+            <div class="input-group">
+                <label>Access Token:</label>
+                <input type="password" id="haToken" placeholder="Coller votre token HA">
+            </div>
+            <div class="input-group">
+                <label>Entry ID:</label>
+                <input type="text" id="entryId" placeholder="abc123def456" value="">
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" id="connectBtn" onclick="connect()">Se connecter</button>
+                <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Déconnecter</button>
+            </div>
+            <div class="status disconnected" id="status">
+                <span class="status-dot"></span>
+                <span id="statusText">Déconnecté</span>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Logs</h2>
+                <button class="btn-clear" onclick="clearLogs()">Effacer</button>
+            </div>
+            <div class="log-output" id="log"></div>
+        </div>
+
+        <div class="playlist" id="playlistContainer" style="display: none;">
+            <h2>Playlist reçue</h2>
+            <div id="playlistContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const log = document.getElementById('log');
+        const logOutput = [];
+
+        function addLog(message, type = 'info') {
+            const now = new Date().toLocaleTimeString();
+            const logClass = `log-${type}`;
+            const line = `<div class="log-line"><span class="log-time">[${now}]</span> <span class="${logClass}">${escapeHtml(message)}</span></div>`;
+            logOutput.push(line);
+            
+            // Limiter à 100 lignes
+            if (logOutput.length > 100) {
+                logOutput.shift();
+            }
+            
+            log.innerHTML = logOutput.join('');
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function clearLogs() {
+            logOutput.length = 0;
+            log.innerHTML = '';
+            addLog('Logs effacés', 'info');
+        }
+
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            if (connected) {
+                statusEl.className = 'status connected';
+                statusText.textContent = 'Connecté';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+            } else {
+                statusEl.className = 'status disconnected';
+                statusText.textContent = 'Déconnecté';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+        }
+
+        function connect() {
+            const host = document.getElementById('haHost').value;
+            const port = document.getElementById('haPort').value;
+            const token = document.getElementById('haToken').value;
+            const entryId = document.getElementById('entryId').value;
+
+            if (!host || !port || !token || !entryId) {
+                addLog('❌ Remplir tous les champs', 'error');
+                return;
+            }
+
+            const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const url = `${protocol}//${host}:${port}/api/websocket`;
+
+            addLog(`📡 Connexion à ${url}...`, 'info');
+
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                addLog('✓ WebSocket ouvert', 'success');
+                updateStatus(true);
+                
+                // Envoyer l'authentification
+                const authMsg = {
+                    type: 'auth',
+                    access_token: token
+                };
+                addLog('→ Envoi auth: ' + JSON.stringify(authMsg), 'info');
+                ws.send(JSON.stringify(authMsg));
+            };
+
+            ws.onmessage = (event) => {
+                const msg = JSON.parse(event.data);
+                addLog('← Reçu: ' + JSON.stringify(msg), 'info');
+
+                if (msg.type === 'auth_ok') {
+                    addLog('✓ Authentification réussie', 'success');
+                    
+                    // Envoyer la commande de subscription
+                    const subMsg = {
+                        id: 1,
+                        type: 'kodi_media_sensors/subscribe',
+                        entry_id: entryId
+                    };
+                    addLog('→ Envoi subscribe: ' + JSON.stringify(subMsg), 'info');
+                    ws.send(JSON.stringify(subMsg));
+                }
+                
+                if (msg.type === 'result' && msg.id === 1) {
+                    if (msg.success) {
+                        addLog('✓ Subscription confirmée', 'success');
+                    } else {
+                        addLog('❌ Erreur subscription: ' + msg.error, 'error');
+                    }
+                }
+                
+                if (msg.type === 'event' && msg.id === 1) {
+                    addLog('🎵 Playlist mise à jour reçue', 'success');
+                    displayPlaylist(msg.event);
+                }
+            };
+
+            ws.onerror = (error) => {
+                addLog('❌ Erreur WebSocket: ' + error, 'error');
+                updateStatus(false);
+            };
+
+            ws.onclose = () => {
+                addLog('✗ Connexion fermée', 'warning');
+                updateStatus(false);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                addLog('Déconnexion demandée', 'info');
+                updateStatus(false);
+            }
+        }
+
+        function displayPlaylist(event) {
+            const container = document.getElementById('playlistContainer');
+            const content = document.getElementById('playlistContent');
+            
+            if (event.playlist && event.playlist.length > 0) {
+                let html = '';
+                event.playlist.forEach((item, index) => {
+                    html += `
+                        <div class="playlist-item">
+                            <div class="playlist-item-title">${index + 1}. ${item.title || 'Sans titre'}</div>
+                            <div class="playlist-item-meta">
+                                ${item.artist ? `Artiste: ${item.artist} | ` : ''}
+                                Durée: ${formatDuration(item.duration || 0)}
+                            </div>
+                        </div>
+                    `;
+                });
+                content.innerHTML = html;
+            } else {
+                content.innerHTML = '<div class="empty">Playlist vide</div>';
+            }
+            container.style.display = 'block';
+        }
+
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Au chargement de la page
+        addLog('Test WebSocket Kodi Media Sensors', 'info');
+        addLog('Remplissez les paramètres et cliquez sur "Se connecter"', 'info');
+        updateStatus(false);
+    </script>
+</body>
+</html>

@@ -1,99 +1,55 @@
+import logging
 import voluptuous as vol
 import asyncio
-import logging
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
-from pykodi import Kodi
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @callback
 def async_register_websockets(hass: HomeAssistant) -> None:
-    """Register WebSocket commands for the integration."""
-    websocket_api.async_register_command(hass, websocket_subscribe_playlist)
+    """Enregistre les commandes WebSocket de l'intégration."""
+    _LOGGER.debug("Enregistrement de la commande WebSocket subscribe")
+    websocket_api.async_register_command(hass, websocket_subscribe)
 
-# Schema expects the entity_id from the frontend card
-SCHEMA_SUBSCRIBE_PLAYLIST = websocket_api.BASE_COMMAND_SCHEMA.extend(
-    {
-        vol.Required("type"): "kodi_media_sensors/subscribe_playlist",
-        vol.Required("entity_id"): str,
-    }
-)
 
-@websocket_api.websocket_command(SCHEMA_SUBSCRIBE_PLAYLIST)
+@websocket_api.websocket_command({
+    vol.Required("type"): "kodi_media_sensors/subscribe",
+    vol.Required("entry_id"): str,
+})
 @websocket_api.async_response
-async def websocket_subscribe_playlist(
-    hass: HomeAssistant, 
-    connection: websocket_api.ActiveConnection, 
-    msg: dict
+async def websocket_subscribe(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict,
 ) -> None:
-    """Handle a long-lived WebSocket subscription mapped to a HA entity."""
+    """Subscribe to playlist updates for a specific Kodi instance."""
     
-    entity_id = msg["entity_id"]
+    entry_id = msg["entry_id"]
+    _LOGGER.debug("WebSocket subscribe demandé pour entry_id=%s", entry_id)
     
-    # 1. Retrieve the entity from the Home Assistant Entity Registry
-    entity_reg = er.async_get(hass)
-    entity_entry = entity_reg.async_get(entity_id)
+    # Récupérer l'intégration correspondante
+    config_entry = hass.config_entries.async_get_entry(entry_id)
     
-    if not entity_entry or not entity_entry.config_entry_id:
-        connection.send_error(msg["id"], "invalid_entity", f"Entity {entity_id} not found or not linked to an integration.")
+    if not config_entry or config_entry.domain != DOMAIN:
+        _LOGGER.error("Entry %s not found or invalid domain", entry_id)
+        connection.send_error(msg["id"], "invalid_entry", f"Entry {entry_id} not found")
         return
-
-
-    # 2. Fetch the ConfigEntry to extract the network settings
-    config_entry = hass.config_entries.async_get_entry(entity_entry.config_entry_id)
     
-    if not config_entry:
-        connection.send_error(msg["id"], "config_not_found", "Could not retrieve configuration for this entity.")
-        return
-
-    # Extract network parameters from your integration's config entry data
-    host = config_entry.data.get("host")
-    port_http = config_entry.data.get("port_http", 8080)
-    port_ws = config_entry.data.get("port_ws", 9090)
-
-    # Initialize the Kodi client using the credentials managed by HA
-    kodi_client = Kodi(host, port_http=port_http, port_ws=port_ws)
-
-    # Acknowledge the subscription request to the frontend card
+    _LOGGER.info("Subscription confirmée pour %s", entry_id)
+    
+    # Envoyer immédiatement une confirmation
     connection.send_result(msg["id"])
-
-    async def send_current_playlist():
-        """Fetch the active playlist from Kodi and push it to the Home Assistant frontend."""
-        try:
-            playlist_data = await kodi_client.call_method(
-                "Playlist.GetItems", playlistid=0, properties=["title", "artist", "duration"]
-            )
-            connection.send_message(
-                websocket_api.event_message(msg["id"], {
-                    "event_type": "playlist_updated",
-                    "playlist": playlist_data.get("items", [])
-                })
-            )
-        except Exception as e:
-            _LOGGER.error("Failed to fetch playlist data from Kodi: %s", e)
-
-    # Start the realtime loops (same as before)
-    await send_current_playlist()
-
-    async def kodi_listener():
-        """Listen for WebSocket notification events broadcasted by Kodi."""
-        try:
-            await kodi_client.ws_connect()
-            while kodi_client.ws_connected:
-                kodi_msg = await kodi_client.ws_receive()
-                if kodi_msg is None:
-                    break
-                
-                method = kodi_msg.get("method", "")
-                if method in ["Playlist.OnAdd", "Playlist.OnRemove", "Playlist.OnClear", "Player.OnPlay"]:
-                    await send_current_playlist()
-                    
-        except asyncio.CancelledError:
-            await kodi_client.ws_close()
-        except Exception as e:
-            _LOGGER.error("Error inside the Kodi WebSocket event listener loop: %s", e)
-
-    listener_task = hass.async_create_task(kodi_listener())
-    connection.on_close(listener_task.cancel)
+    
+    # Envoyer un message de test
+    connection.send_message(websocket_api.event_message(msg["id"], {
+        "type": "playlist_update",
+        "items": [
+            {"title": "Test Song 1", "artist": "Test Artist", "duration": 180},
+            {"title": "Test Song 2", "artist": "Test Artist", "duration": 200},
+        ]
+    }))
+    
+    _LOGGER.debug("Message de test envoyé au client")

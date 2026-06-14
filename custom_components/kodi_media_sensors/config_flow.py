@@ -1,21 +1,34 @@
-from homeassistant import config_entries
 import voluptuous as vol
-from .const import DOMAIN
+from homeassistant import config_entries
+from homeassistant.core import callback
+from .const import DOMAIN, CONF_LABEL
+
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Kodi Media Sensors."""
+    """Config flow pour Kodi Media Sensors."""
+
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
+        """Étape initiale : affiche le formulaire de config."""
+        errors = {}
+
         if user_input is not None:
-            return self.async_create_entry(title="Kodi Media Sensors", data=user_input)
+            # Minimal validation: label can't be empty
+            if not user_input.get(CONF_LABEL, "").strip():
+                errors[CONF_LABEL] = "label_required"
+            else:
+                return self.async_create_entry(
+                    title=user_input[CONF_LABEL],
+                    data=user_input,
+                )
 
         data_schema = vol.Schema({
-            vol.Required("host", default="127.0.0.1"): str,
-            vol.Required("port_http", default=8080): int,
-            vol.Required("port_ws", default=9090): int,
+            vol.Required(CONF_LABEL, default="Mon Kodi"): str,
         })
 
-        return self.async_show_form(step_id="user", data_schema=data_schema)
-
-config_entries.HANDLERS.register(DOMAIN, KodiMediaSensorsConfigFlow)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=data_schema,
+            errors=errors,
+        )

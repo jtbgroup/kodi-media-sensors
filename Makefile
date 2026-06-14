@@ -1,7 +1,7 @@
 .PHONY: help docker-build docker-up docker-down docker-logs docker-shell tests lint clean
 
 # Variables
-COMPOSE_FILE ?= docker-compose.yml
+COMPOSE_FILE ?= .devcontainer/docker-compose.yml
 DOCKER_IMAGE ?= homeassistant/home-assistant:latest
 CONTAINER_NAME ?= kodi-media-sensors-ha
 
