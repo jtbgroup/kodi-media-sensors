@@ -9,6 +9,7 @@ Provides the `kodi_media_sensors/subscribe_playlist` command:
   so the client can distinguish "no playlist data yet" from "Kodi is
   simply not reachable right now".
 """
+
 import asyncio
 import logging
 import voluptuous as vol
@@ -39,15 +40,29 @@ async def _async_fetch_playlist(hass: HomeAssistant, entity_id: str, playlist_id
         "Playlist.GetItems",
         playlistid=playlist_id,
         properties=[
-            "title",
-            "artist",
+            # "title",
+            # "artist",
+            # "album",
+            # "duration",
+            # "thumbnail",
+            # "file",
+             "showtitle",
+            # "episode",
+            # "season",
             "album",
+            "albumid",
+            "artist",
+            "artistid",
             "duration",
+            "genre",
             "thumbnail",
-            "file",
-            "showtitle",
+            "title",
+            "track",
+            "year",
             "episode",
             "season",
+            "art",
+            "file",
         ],
     )
     if result is None:
@@ -58,10 +73,12 @@ async def _async_fetch_playlist(hass: HomeAssistant, entity_id: str, playlist_id
     return items
 
 
-@websocket_api.websocket_command({
-    vol.Required("type"): "kodi_media_sensors/subscribe_playlist",
-    vol.Required("entry_id"): str,
-})
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/subscribe_playlist",
+        vol.Required("entry_id"): str,
+    }
+)
 @websocket_api.async_response
 async def websocket_subscribe_playlist(
     hass: HomeAssistant,
@@ -119,9 +136,12 @@ async def websocket_subscribe_playlist(
                 last_items_sent = None
                 last_kodi_state_sent = None
                 connection.send_message(
-                    websocket_api.event_message(msg_id, {
-                        "type": "kodi_unavailable",
-                    })
+                    websocket_api.event_message(
+                        msg_id,
+                        {
+                            "type": "kodi_unavailable",
+                        },
+                    )
                 )
             return
 
@@ -147,11 +167,14 @@ async def websocket_subscribe_playlist(
         last_kodi_state_sent = kodi_state
         last_status_sent = "playlist_update"
         connection.send_message(
-            websocket_api.event_message(msg_id, {
-                "type": "playlist_update",
-                "items": items,
-                "kodi_state": kodi_state,
-            })
+            websocket_api.event_message(
+                msg_id,
+                {
+                    "type": "playlist_update",
+                    "items": items,
+                    "kodi_state": kodi_state,
+                },
+            )
         )
 
     @callback
