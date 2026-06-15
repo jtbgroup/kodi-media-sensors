@@ -8,6 +8,7 @@ Provides the `kodi_media_sensors/subscribe_playlist` command:
   playlist when the Kodi entity is unavailable (Kodi/host unreachable),
   so the client can distinguish "no playlist data yet" from "Kodi is
   simply not reachable right now".
+- sends an empty playlist when Kodi is idle (no active player).
 """
 
 import asyncio
@@ -32,6 +33,36 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_subscribe_playlist)
 
 
+async def _async_get_active_playlist_id(hass: HomeAssistant, entity_id: str) -> int | None:
+    """Determine the active playlist ID based on what's currently playing.
+    
+    Returns:
+        - 0 for audio playlist
+        - 1 for video playlist
+        - None if no player is active (idle state)
+    """
+    result = await async_call_method(hass, entity_id, "Player.GetActivePlayers")
+    
+    if result is None or not result:
+        # No active player (idle)
+        _LOGGER.debug("No active player for %s (idle)", entity_id)
+        return None
+    
+    # Check what's currently playing
+    for player in result:
+        player_type = player.get("type")
+        if player_type == "video":
+            _LOGGER.debug("Video player active for %s", entity_id)
+            return 1
+        elif player_type == "audio":
+            _LOGGER.debug("Audio player active for %s", entity_id)
+            return 0
+    
+    # Fallback: no recognized player type
+    _LOGGER.debug("No recognized player type for %s", entity_id)
+    return None
+
+
 async def _async_fetch_playlist(hass: HomeAssistant, entity_id: str, playlist_id: int):
     """Fetch the current playlist items via Playlist.GetItems."""
     result = await async_call_method(
@@ -40,15 +71,7 @@ async def _async_fetch_playlist(hass: HomeAssistant, entity_id: str, playlist_id
         "Playlist.GetItems",
         playlistid=playlist_id,
         properties=[
-            # "title",
-            # "artist",
-            # "album",
-            # "duration",
-            # "thumbnail",
-            # "file",
-             "showtitle",
-            # "episode",
-            # "season",
+            "showtitle",
             "album",
             "albumid",
             "artist",
@@ -103,14 +126,13 @@ async def websocket_subscribe_playlist(
         )
         return
 
-    playlist_id = config_entry.data.get("playlist_id", DEFAULT_PLAYLIST_ID)
-
     # Tracks the last payload sent, to avoid pushing duplicates.
     # Also used to track whether the last message sent was an
     # "unavailable" status, so we don't spam it on every state change
     # while Kodi stays off.
     last_items_sent: list | None = None
     last_kodi_state_sent: str | None = None
+    last_playlist_id_sent: int | None = None
     last_status_sent: str | None = None
 
     # Prevents overlapping fetches: state_changed can fire rapidly
@@ -128,13 +150,15 @@ async def websocket_subscribe_playlist(
         return kodi_state is not None and kodi_state != STATE_UNAVAILABLE
 
     async def _send_playlist() -> None:
-        nonlocal last_items_sent, last_kodi_state_sent, last_status_sent
+        nonlocal last_items_sent, last_kodi_state_sent, last_playlist_id_sent, last_status_sent
 
         if not _is_kodi_available():
+            # Kodi is unreachable
             if last_status_sent != "kodi_unavailable":
                 last_status_sent = "kodi_unavailable"
                 last_items_sent = None
                 last_kodi_state_sent = None
+                last_playlist_id_sent = None
                 connection.send_message(
                     websocket_api.event_message(
                         msg_id,
@@ -145,8 +169,16 @@ async def websocket_subscribe_playlist(
                 )
             return
 
+        # Determine which playlist is active
+        active_playlist_id = await _async_get_active_playlist_id(hass, entity_id)
+
         async with fetch_lock:
-            items = await _async_fetch_playlist(hass, entity_id, playlist_id)
+            if active_playlist_id is None:
+                # No active player (idle) → empty playlist
+                items = []
+            else:
+                # Player is active → fetch the corresponding playlist
+                items = await _async_fetch_playlist(hass, entity_id, active_playlist_id)
 
         if items is None:
             # Kodi entity is available but the JSON-RPC call failed or
@@ -159,12 +191,14 @@ async def websocket_subscribe_playlist(
         if (
             items == last_items_sent
             and kodi_state == last_kodi_state_sent
+            and active_playlist_id == last_playlist_id_sent
             and last_status_sent == "playlist_update"
         ):
             return
 
         last_items_sent = items
         last_kodi_state_sent = kodi_state
+        last_playlist_id_sent = active_playlist_id
         last_status_sent = "playlist_update"
         connection.send_message(
             websocket_api.event_message(
@@ -173,6 +207,7 @@ async def websocket_subscribe_playlist(
                     "type": "playlist_update",
                     "items": items,
                     "kodi_state": kodi_state,
+                    "playlist_id": active_playlist_id,
                 },
             )
         )
