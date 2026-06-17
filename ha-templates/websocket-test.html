@@ -214,6 +214,11 @@
             margin-bottom: 8px;
             border-radius: 2px;
             font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .result-item:hover {
+            background: #f0f0f0;
         }
         .result-item-title {
             font-weight: 500;
@@ -259,6 +264,20 @@
         .checkbox-group input[type="checkbox"] {
             flex: none;
             width: auto;
+        }
+        .btn-item-delete {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-item-delete:hover {
+            background: #ff5252;
         }
     </style>
 </head>
@@ -547,7 +566,7 @@
             playlistSubscriptionId = nextMsgId++;
             const subMsg = {
                 id: playlistSubscriptionId,
-                type: 'kodi_media_sensors/subscribe_playlist',
+                type: 'kodi_media_sensors/playlist_subscribe',  // ✅ NOUVEAU NOM
                 entry_id: entryId
             };
             addLog('→ Sending subscribe: ' + JSON.stringify(subMsg), 'info');
@@ -609,10 +628,15 @@
                 items.forEach((item, index) => {
                     html += `
                         <div class="result-item">
-                            <div class="result-item-title">${index + 1}. ${item.title || item.label || 'Untitled'}</div>
-                            <div class="result-item-meta">
-                                ${item.artist ? `Artist: ${Array.isArray(item.artist) ? item.artist.join(', ') : item.artist} | ` : ''}
-                                Duration: ${formatDuration(item.duration || 0)}
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                <div style="flex: 1; cursor: pointer;" onclick="playItem(${index})">
+                                    <div class="result-item-title">${index + 1}. ${item.title || item.label || 'Untitled'}</div>
+                                    <div class="result-item-meta">
+                                        ${item.artist ? `Artist: ${Array.isArray(item.artist) ? item.artist.join(', ') : item.artist} | ` : ''}
+                                        Duration: ${formatDuration(item.duration || 0)}
+                                    </div>
+                                </div>
+                                <button class="btn-item-delete" onclick="removeItem(${index})" title="Remove from playlist">🗑️</button>
                             </div>
                         </div>
                     `;
@@ -629,6 +653,42 @@
             const content = document.getElementById('playlistContent');
             content.innerHTML = '<div class="empty">⚠️ Kodi is currently unavailable</div>';
             container.style.display = 'block';
+        }
+
+        function playItem(index) {
+            const entryId = document.getElementById('entryId').value;
+            if (!entryId) {
+                addLog('❌ Entry ID is required', 'error');
+                return;
+            }
+
+            const msgId = nextMsgId++;
+            const playMsg = {
+                id: msgId,
+                type: 'kodi_media_sensors/playlist_play_item',  // ✅ NOUVEAU ENDPOINT
+                entry_id: entryId,
+                index: index
+            };
+            addLog('→ Playing item at index ' + index + ': ' + JSON.stringify(playMsg), 'info');
+            ws.send(JSON.stringify(playMsg));
+        }
+
+        function removeItem(index) {
+            const entryId = document.getElementById('entryId').value;
+            if (!entryId) {
+                addLog('❌ Entry ID is required', 'error');
+                return;
+            }
+
+            const msgId = nextMsgId++;
+            const removeMsg = {
+                id: msgId,
+                type: 'kodi_media_sensors/playlist_remove_item',  // ✅ NOUVEAU ENDPOINT
+                entry_id: entryId,
+                index: index
+            };
+            addLog('→ Removing item at index ' + index + ': ' + JSON.stringify(removeMsg), 'info');
+            ws.send(JSON.stringify(removeMsg));
         }
 
         function displaySearchResults(results) {
