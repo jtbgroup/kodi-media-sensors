@@ -1,16 +1,38 @@
+# BUILD FOLDERS
+dist/ 
+build/
+target/
+
+# DEPENDENCIES
+node_modules/
+vendor/
+.venv/
+venv/
+
+
+# SYSTEM SPECIFIC
+.DS_Store
+.Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.project/
+.settings/
+
+# LOGS, Backups, ...
+*.log
 /.history
 
-# Ignore all Python bytecode cache directories and files starting with __
-**/__pycache__*
+# SPECIFIC TO THE PROJECT
+# Python cache
+**/__pycache__* 
+
+# HA Config folder
+config/
 
 # ------------------
-# Utils tools
+# Personnal files for config
 # ------------------
 ha-templates/test connections.txt
 
-# Ignore everything in the config directory
-/config/
-
-# Ignore internal development container files if any
-.DS_Store
-*.log
