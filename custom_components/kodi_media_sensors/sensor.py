@@ -119,24 +119,35 @@ class KodiConfigSensor(SensorEntity):
                 self._kodi_entity_id,
                 "Player.GetItem",
                 playerid=player_id,
-                # properties=["type", "songid", "movieid", "episodeid", "albumid"],
+                properties=["artistid"],
             )
 
             if item_result and "item" in item_result:
                 item = item_result["item"]
                 item_type = item.get("type")
                 item_id = item.get("id")
+                raw_artist_id = item.get("artistid")
+                artist_id = None
                 
-                
+                # Si c'est une liste et qu'elle n'est pas vide, on prend le premier (index 0)
+                if isinstance(raw_artist_id, list) and raw_artist_id:
+                    artist_id = raw_artist_id[0]
+                # S'il y a une valeur mais que ce n'est bizarrement pas une liste
+                elif raw_artist_id is not None and not isinstance(raw_artist_id, list):
+                    artist_id = raw_artist_id
+                        
                 if item_id is not None:
+                    # 1. Base obligatoire
                     self._current_track = {
                         "id": item_id,      
-                        "type": item_type,  
+                        "type": item_type,
                     }
-                else:
-                    self._current_track = None
-            else:
-                self._current_track = None
+                    
+                    # 2. Ajout de l'artist_id seulement s'il a été trouvé
+                    if artist_id is not None:
+                        self._current_track["artist_id"] = artist_id
+                    else:
+                        self._current_track = None
 
         except Exception as err:
             _LOGGER.debug("Error updating current track: %s", err)

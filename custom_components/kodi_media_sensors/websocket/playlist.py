@@ -47,7 +47,7 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     """Register playlist-related WebSocket commands."""
     websocket_api.async_register_command(hass, websocket_playlist_subscribe)
     websocket_api.async_register_command(hass, websocket_playlist_get)
-    websocket_api.async_register_command(hass, websocket_playlist_play_item)
+    websocket_api.async_register_command(hass, websocket_playlist_goto_index)
     websocket_api.async_register_command(hass, websocket_playlist_remove_item)
     websocket_api.async_register_command(hass, websocket_playlist_reorder)
 
@@ -240,14 +240,14 @@ async def websocket_playlist_get(hass, connection, msg):
 
 @websocket_api.websocket_command(
     {
-        vol.Required("type"): "kodi_media_sensors/playlist_play_item",
+        vol.Required("type"): "kodi_media_sensors/playlist_goto_index",
         vol.Required("entry_id"): str,
         vol.Required("index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Required(CONF_KODI_ENTITY): str,
     }
 )
 @websocket_api.async_response
-async def websocket_playlist_play_item(
+async def websocket_playlist_goto_index(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     kodi_entity_id = msg[CONF_KODI_ENTITY]
