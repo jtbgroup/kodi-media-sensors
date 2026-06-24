@@ -29,7 +29,7 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback, Event
 from homeassistant.helpers.event import async_track_state_change_event
 
-from ..const import DOMAIN, CONF_KODI_ENTITY, KODI_PLAYLIST_ID_VIDEO, KODI_PLAYLIST_ID_AUDIO, KODI_STATE_UNAVAILABLE, KODI_STATE_OFF
+from ..const import DOMAIN, CONF_KODI_ENTITY, KODI_PLAYER_ID_VIDEO, KODI_PLAYER_ID_AUDIO, KODI_STATE_UNAVAILABLE, KODI_STATE_OFF
 from ..kodi_client import async_call_method
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,7 +50,8 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_playlist_goto_index)
     websocket_api.async_register_command(hass, websocket_playlist_remove_item)
     websocket_api.async_register_command(hass, websocket_playlist_reorder)
-
+    websocket_api.async_register_command(hass, websocket_playlist_play_item)
+    websocket_api.async_register_command(hass, websocket_playlist_add_item)
 
 async def _async_get_active_playlist_id(
     hass: HomeAssistant, entity_id: str
@@ -61,10 +62,11 @@ async def _async_get_active_playlist_id(
     if result is None or not result:
         return None
     for player in result:
-        if player.get("type") == "video":
-            return KODI_PLAYLIST_ID_VIDEO
-        elif player.get("type") == "audio":
-            return KODI_PLAYLIST_ID_AUDIO
+        # if player.get("type") == "video":
+        #     return KODI_PLAYER_ID_VIDEO
+        # elif player.get("type") == "audio":
+        #     return KODI_PLAYER_ID_AUDIO
+        return player.get("playerid");
     return None
 
 
@@ -372,3 +374,96 @@ async def websocket_playlist_reorder(
         connection.send_error(
             msg["id"], "reorder_failed", "Failed to insert item at new position"
         )
+
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/playlist_play_item",
+        vol.Required("entry_id"): str,
+        vol.Required("item_id"): int,
+        vol.Required("item_name"): vol.In(["songid", "movieid", "albumid", "musicvideoid","episodeid", "channelid", "filemusicplaylist"]),
+        vol.Required(CONF_KODI_ENTITY): str,
+    }
+)
+@websocket_api.async_response
+async def websocket_playlist_play_item(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    entry_id = msg["entry_id"]
+    kodi_entity_id = msg[CONF_KODI_ENTITY]
+    item_id = msg["item_id"]
+    item_name = msg["item_name"]  # Récupération du paramètre (ex: "song")
+
+    # 1. Récupérer la playlist active ou déterminer s'il faut en cibler une par défaut
+    playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
+    active_player_id = await _async_get_active_player_id(hass, kodi_entity_id)
+
+    # Si aucune playlist n'est active, on se base sur le type d'item demandé
+    # En règle générale : playlist 0 pour l'audio, playlist 1 pour la vidéo
+    if playlist_id is None:
+        playlist_id = 0 if item_name == "song" else 1
+
+    # 2. Récupérer les items de la playlist pour connaître sa longueur et trouver l'index actuel
+    playlist_items = await _async_fetch_playlist(hass, kodi_entity_id, playlist_id) or []
+    
+    current_index = -1
+    if active_player_id is not None:
+        current_index = await _async_get_active_item_index(hass, kodi_entity_id, active_player_id)
+
+    # 3. Déterminer la position d'insertion (juste après l'item courant, ou à la fin)
+    if current_index != -1:
+        insert_index = current_index + 1
+    else:
+        insert_index = len(playlist_items)
+
+    # 4. Construction de l'objet item dynamique (ex: {"songid": 123})
+    kodi_item = {f"{item_name}id": item_id}
+
+    # 5. Insérer le nouvel élément dans la playlist de Kodi
+    inserted = await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Playlist.Insert",
+        playlistid=playlist_id,
+        position=insert_index,
+        item={item_name: item_id}, # <-- CORRECTION : On envoie un dictionnaire {"songid": 40716}
+    )
+
+    if not inserted:
+        _LOGGER.error("Failed to insert item %s %d into playlist %d", item_name, item_id, playlist_id)
+        connection.send_error(msg["id"], "insert_failed", f"Failed to insert {item_name} into playlist")
+        return
+
+    # 6. Ouvrir le player à la position de l'élément inséré pour lancer la lecture immédiate
+    opened = await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Player.Open",
+        item={"playlistid": playlist_id, "position": insert_index},
+    )
+
+    if opened:
+        # Notification au bus d'événement pour rafraîchir instantanément l'UI Home Assistant
+        hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})
+        connection.send_result(msg["id"])
+    else:
+        _LOGGER.error("Failed to open player for playlist %d at position %d", playlist_id, insert_index)
+        connection.send_error(msg["id"], "play_failed", "Failed to start playback of the inserted item")
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/playlist_add_item",
+        vol.Required("entry_id"): str,
+        vol.Required("itemid"): int,
+        vol.Required(CONF_KODI_ENTITY): str,
+    }
+)
+@websocket_api.async_response
+async def websocket_playlist_add_item(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    entry_id = msg["entry_id"]
+    kodi_entity_id = msg[CONF_KODI_ENTITY]
+    playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
