@@ -1,10 +1,11 @@
 
 # Loads default set of integrations. Do not remove.
-default_config:
+#default_config:
 
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
+
 
 automation: !include automations.yaml
 script: !include scripts.yaml

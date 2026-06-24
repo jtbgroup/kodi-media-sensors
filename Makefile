@@ -36,6 +36,26 @@ docker-down:
 docker-restart:
 	docker compose -f $(COMPOSE_FILE) restart
 
+docker-restart2:
+	# 1. Arrête le container
+	docker compose -f $(COMPOSE_FILE) down
+
+	# 2. Nettoie les caches Python
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete
+
+	# 3. (Optionnel) Supprime l'image Docker pour la reconstruire
+	docker rmi kodi-media-sensors-ha_homeassistant 2>/dev/null || true
+
+	# 4. Redémarre tout
+	docker compose -f $(COMPOSE_FILE) up -d
+
+	# 5. Attends 30 secondes pour que HA se recharge
+	sleep 2
+
+	# 6. Vérifie les logs
+	docker compose -f $(COMPOSE_FILE) logs -f homeassistant
+
 docker-logs:
 	docker compose -f $(COMPOSE_FILE) logs -f
 
