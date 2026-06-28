@@ -53,6 +53,41 @@ def _is_kodi_connected(hass: HomeAssistant, entity_id: str) -> bool:
     )
 
 
+def _filter_items_by_player_type(items: list, player_type: str) -> list:
+    """✅ FILTRE CRITIQUE : Rejette les items qui ne correspondent pas au type de player actif.
+    
+    Cela évite le mélange de songs et movies lors d'une transition rapide entre deux media types.
+    
+    Args:
+        items: List of Kodi items (from Playlist.GetItems)
+        player_type: "video", "audio", or "picture"
+    
+    Returns:
+        Filtered list containing only items matching the player_type
+    """
+    if not items or not player_type:
+        return items
+    
+    filtered = []
+    for item in items:
+        item_type = item.get("type")
+        
+        if player_type == "audio" and item_type in ("song", "musicvideo"):
+            filtered.append(item)
+        elif player_type == "video" and item_type in ("movie", "episode"):
+            filtered.append(item)
+        elif player_type == "picture" and item_type == "picture":
+            filtered.append(item)
+    
+    if len(filtered) < len(items):
+        _LOGGER.warning(
+            "Filtered out %d/%d items (player_type=%s). Race condition during media type switch?",
+            len(items) - len(filtered), len(items), player_type
+        )
+    
+    return filtered
+
+
 @callback
 def async_register_websockets(hass: HomeAssistant) -> None:
     """Register playlist-related WebSocket commands."""
@@ -74,17 +109,19 @@ def _get_kodi_entity_id_from_entry(hass, entry_id):
 async def _async_get_active_playlist_id(
     hass: HomeAssistant, entity_id: str
 ) -> int | None:
+    """Retourne le playlist_id actif = playerid du player actif.
+
+    Kodi utilise le playerid directement comme playlistid (comportement réel).
+    """
     if not _is_kodi_connected(hass, entity_id):
         return None
     result = await async_call_method(hass, entity_id, "Player.GetActivePlayers")
     if result is None or not result:
         return None
     for player in result:
-        # if player.get("type") == "video":
-        #     return KODI_PLAYER_ID_VIDEO
-        # elif player.get("type") == "audio":
-        #     return KODI_PLAYER_ID_AUDIO
-        return player.get("playerid")
+        playerid = player.get("playerid")
+        if playerid is not None:
+            return playerid
     return None
 
 
@@ -152,19 +189,102 @@ async def _async_fetch_playlist(hass: HomeAssistant, entity_id: str, playlist_id
 async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str):
     """Récupère et formate la playlist pour le frontend.
 
+    ✅ IMPROVED: Détecte et valide le player actif, inspiré de la logique legacy.
     Note: Ne retourne PAS kodi_state — le senseur gère l'état Kodi.
     """
     if not _is_kodi_connected(hass, kodi_entity_id):
         return {"items": [], "playlist_id": None, "current_index": -1}
 
-    active_playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
-    active_player_id = await _async_get_active_player_id(hass, kodi_entity_id)
+    # ✅ ÉTAPE 1 : Récupérer les PLAYERS ACTIFS (peut être 0, 1, ou plusieurs)
+    # Logique inspirée de: if len(players) == 1: (legacy)
+    try:
+        active_players = await async_call_method(
+            hass, kodi_entity_id, "Player.GetActivePlayers"
+        )
+    except Exception as err:
+        _LOGGER.error("Failed to get active players: %s", err)
+        return {"items": [], "playlist_id": None, "current_index": -1}
+    
+    # ✅ ÉTAPE 2 : Vérifier qu'il y a EXACTEMENT 1 player actif
+    if not active_players or len(active_players) == 0:
+        # Pas de player actif
+        return {"items": [], "playlist_id": None, "current_index": -1}
+    
+    if len(active_players) > 1:
+        # Plusieurs players actifs → logger un warning
+        # (en théorie ça ne devrait pas arriver)
+        _LOGGER.warning(
+            "Multiple players active (%d). Using the first one.", len(active_players)
+        )
+    
+    # ✅ ÉTAPE 3 : Extraire les infos du premier (et seul) player
+    active_player = active_players[0]
+    active_player_type = active_player.get("type")
+    active_player_id = active_player.get("playerid")
+    
+    # ✅ Utiliser directement playerid comme playlistid (comportement Kodi réel).
+    # L'ancien code le faisait aussi : self._playlistid = player["playerid"]
+    # Le mapping "video→1 / audio→0" est faux : Kodi peut très bien lancer
+    # un film avec playerid=0 (ex: Player.Open {movieid: X}).
+    active_playlist_id = active_player_id
 
+    _LOGGER.warning(
+        "[PLAYLIST] player_id=%s, player_type=%s → using playlist_id=%s",
+        active_player_id, active_player_type, active_playlist_id,
+    )
+
+    # ✅ ÉTAPE 4 : Récupérer les items DE CE PLAYLIST
     items = []
     if active_playlist_id is not None:
-        items = (
-            await _async_fetch_playlist(hass, kodi_entity_id, active_playlist_id) or []
+        try:
+            raw_items = (
+                await _async_fetch_playlist(hass, kodi_entity_id, active_playlist_id) or []
+            )
+
+            # ✅ FILTRE CRITIQUE : Valider que les items correspondent au type de player actif
+            items = _filter_items_by_player_type(raw_items, active_player_type)
+
+            _LOGGER.debug(
+                "Playlist data: type=%s, playlist_id=%d, items_count=%d (raw: %d)",
+                active_player_type, active_playlist_id, len(items), len(raw_items)
+            )
+        except Exception as err:
+            _LOGGER.error("Failed to fetch playlist %d: %s", active_playlist_id, err)
+            return {"items": [], "playlist_id": active_playlist_id, "current_index": -1}
+
+    # ✅ FALLBACK : Playlist vide mais player actif
+    # Kodi joue parfois un item directement (Player.Open avec movieid/songid)
+    # sans l'avoir ajouté à la playlist — dans ce cas on synthétise une
+    # playlist d'un seul item à partir de Player.GetItem.
+    if not items and active_player_id is not None:
+        _LOGGER.warning(
+            "[PLAYLIST] Playlist %d is empty but player %d is active — fetching current item via Player.GetItem",
+            active_playlist_id, active_player_id,
         )
+        try:
+            item_result = await async_call_method(
+                hass,
+                kodi_entity_id,
+                "Player.GetItem",
+                playerid=active_player_id,
+                properties=[
+                    "showtitle", "album", "albumid", "artist", "artistid",
+                    "duration", "genre", "thumbnail", "title", "track",
+                    "year", "episode", "season", "art", "file",
+                ],
+            )
+            if item_result and "item" in item_result:
+                current_item = item_result["item"]
+                # Player.GetItem retourne toujours un item même si rien ne joue ;
+                # on vérifie qu'il a au moins un titre ou un fichier.
+                if current_item.get("title") or current_item.get("file"):
+                    items = [current_item]
+                    _LOGGER.warning(
+                        "[PLAYLIST] Synthesized playlist from Player.GetItem: type=%s id=%s title=%s",
+                        current_item.get("type"), current_item.get("id"), current_item.get("title"),
+                    )
+        except Exception as err:
+            _LOGGER.error("Failed to get current item via Player.GetItem: %s", err)
 
     # 🚀 SIGNATURE DES URLS
     mp_component = hass.data.get("media_player")
@@ -174,15 +294,23 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
         for item in items:
             thumb = item.get("thumbnail")
             if thumb and isinstance(thumb, str) and thumb.startswith("image://"):
-                item["thumbnail"] = await mp_entity.async_get_browse_image(
-                    "image", thumb
-                )
+                try:
+                    item["thumbnail"] = await mp_entity.async_get_browse_image(
+                        "image", thumb
+                    )
+                except Exception as err:
+                    _LOGGER.debug("Failed to get browse image: %s", err)
+                    item["thumbnail"] = None
 
+    # ✅ ÉTAPE 5 : Récupérer l'index courant du player
     current_index = -1
     if active_player_id is not None:
-        current_index = await _async_get_active_item_index(
-            hass, kodi_entity_id, active_player_id
-        )
+        try:
+            current_index = await _async_get_active_item_index(
+                hass, kodi_entity_id, active_player_id
+            )
+        except Exception as err:
+            _LOGGER.debug("Failed to get current item index: %s", err)
 
     return {
         "items": items,
@@ -206,19 +334,74 @@ async def websocket_playlist_subscribe(hass, connection, msg):
 
     # Suivi des derniers items (pour la déduplication)
     last_items = None
+    last_player_type = None  # ✅ NOUVEAU : Tracker le type de player précédent
 
     async def _send_playlist(*args):
-        nonlocal last_items
+        nonlocal last_items, last_player_type
+
+        _LOGGER.warning(
+            "[PLAYLIST] _send_playlist called — last_player_type=%s, last_items_count=%s",
+            last_player_type,
+            len(last_items) if last_items is not None else "None",
+        )
+
+        # ÉTAPE 1 : Récupérer les players actifs
+        active_players = await async_call_method(
+            hass, kodi_entity_id, "Player.GetActivePlayers"
+        )
+
+        _LOGGER.warning(
+            "[PLAYLIST] GetActivePlayers → %s", active_players
+        )
+
+        # ÉTAPE 2 : Aucun player actif (transition en cours ou idle)
+        if not active_players or len(active_players) == 0:
+            # On ne reset PAS last_player_type ici : Kodi peut passer brièvement
+            # par 0 player actif lors d'une transition audio→video. On attend
+            # l'event suivant qui confirmera le nouveau player.
+            _LOGGER.warning(
+                "[PLAYLIST] No active player — skipping (last_player_type=%s stays unchanged)",
+                last_player_type,
+            )
+            # On envoie la playlist vide SEULEMENT si on n'avait rien avant non plus
+            if last_items is not None and len(last_items) > 0:
+                _LOGGER.warning("[PLAYLIST] Had items before, keeping last state — waiting for next event")
+            return
+
+        # ÉTAPE 3 : Extraire le type du player actif
+        current_player_type = active_players[0].get("type")
+
+        _LOGGER.warning(
+            "[PLAYLIST] Active player type=%s (last=%s)",
+            current_player_type, last_player_type,
+        )
+
+        # ÉTAPE 4 : Détection de transition (audio → video ou vice-versa)
+        if last_player_type is not None and last_player_type != current_player_type:
+            _LOGGER.warning(
+                "[PLAYLIST] Player type changed: %s → %s — forcing full refresh",
+                last_player_type, current_player_type,
+            )
+            last_items = None  # Force l'envoi même si les items sont identiques
+
+        last_player_type = current_player_type
+
+        # ÉTAPE 5 : Récupérer les données de playlist
         data = await _async_get_full_playlist_data(hass, kodi_entity_id)
         items = data["items"]
 
+        _LOGGER.warning(
+            "[PLAYLIST] Got %d items (playlist_id=%s, current_index=%s)",
+            len(items), data["playlist_id"], data["current_index"],
+        )
+
         # Déduplication: envoyer seulement si les items ont changé
         if items == last_items:
+            _LOGGER.warning("[PLAYLIST] Items unchanged — skipping send")
             return
 
         last_items = items
 
-        # Envoyer l'event avec les nouvelles données
         payload = {
             "type": "playlist_update",
             "items": items,
@@ -226,6 +409,10 @@ async def websocket_playlist_subscribe(hass, connection, msg):
             "current_index": data["current_index"],
         }
 
+        _LOGGER.warning(
+            "[PLAYLIST] → Sending playlist_update: %d items, playlist_id=%s, current_index=%s",
+            len(items), data["playlist_id"], data["current_index"],
+        )
         connection.send_message(websocket_api.event_message(msg_id, payload))
 
     # ✅ CORRECTION ICI : Remplacement de la lambda par une fonction async dédiée
@@ -452,9 +639,6 @@ async def websocket_playlist_play_item(
         insert_index = current_index + 1
     else:
         insert_index = len(playlist_items)
-
-    # 4. Construction de l'objet item dynamique (ex: {"songid": 123})
-    kodi_item = {f"{item_name}id": item_id}
 
     # 5. Insérer le nouvel élément dans la playlist de Kodi
     inserted = await async_call_method(
