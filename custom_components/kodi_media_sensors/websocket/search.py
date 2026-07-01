@@ -152,10 +152,11 @@ async def _search_episodes(
         sort={
             "method": "title",
             "order": "ascending",
-            "ignorearticle": False,
         },
     )
-    return result.get("movies", []) if result else None
+
+    _LOGGER.warning(result)
+    return result.get("episodes", []) if result else None
 
 
 async def _search_musicvideos(
@@ -201,7 +202,7 @@ async def _search_tvshows(
         hass,
         entity_id,
         "VideoLibrary.GetTVShows",
-        properties=["title", "year", "thumbnail"],
+        properties=["title", "year", "thumbnail", "art"],
         filter={"field": "title", "operator": "contains", "value": query},
         limits={"start": 0, "end": limit_value},
         sort={
@@ -491,7 +492,15 @@ async def websocket_search_recently_added(
             hass,
             kodi_entity_id,
             "AudioLibrary.GetRecentlyAddedSongs",
-            properties=["title", "artist", "album", "duration", "thumbnail", "file"],
+            properties=[
+                "title",
+                "artist",
+                "album",
+                "duration",
+                "thumbnail",
+                "file",
+                "albumid",
+            ],
             limits={"start": 0, "end": songsLimits},
         )
 
@@ -525,12 +534,12 @@ async def websocket_search_recently_added(
             "VideoLibrary.GetRecentlyAddedEpisodes",
             properties=[
                 "title",
-                "showtitle",
-                "season",
                 "episode",
+                "season",
+                "seasonid",
+                "tvshowid",
                 "thumbnail",
-                "file",
-                "rating",
+                "art",
             ],
             limits=episodesLimits,
         )
@@ -539,7 +548,7 @@ async def websocket_search_recently_added(
             hass,
             kodi_entity_id,
             "VideoLibrary.GetRecentlyAddedMusicVideos",
-            properties=["title", "artist", "album", "thumbnail", "file"],
+            properties=["thumbnail", "title", "year", "artist", "album", "art", "genre"],
             limits=musicvideosLimits,
         )
 

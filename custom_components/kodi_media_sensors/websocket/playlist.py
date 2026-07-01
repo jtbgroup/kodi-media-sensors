@@ -452,7 +452,6 @@ async def websocket_playlist_subscribe(hass, connection, msg):
         vol.Required("type"): "kodi_media_sensors/playlist_goto_index",
         vol.Required("entry_id"): str,
         vol.Required("index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
-        # vol.Required(CONF_KODI_ENTITY): str,
     }
 )
 @websocket_api.async_response
