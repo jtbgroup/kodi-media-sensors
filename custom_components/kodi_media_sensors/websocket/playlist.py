@@ -53,39 +53,7 @@ def _is_kodi_connected(hass: HomeAssistant, entity_id: str) -> bool:
     )
 
 
-def _filter_items_by_player_type(items: list, player_type: str) -> list:
-    """✅ FILTRE CRITIQUE : Rejette les items qui ne correspondent pas au type de player actif.
-    
-    Cela évite le mélange de songs et movies lors d'une transition rapide entre deux media types.
-    
-    Args:
-        items: List of Kodi items (from Playlist.GetItems)
-        player_type: "video", "audio", or "picture"
-    
-    Returns:
-        Filtered list containing only items matching the player_type
-    """
-    if not items or not player_type:
-        return items
-    
-    filtered = []
-    for item in items:
-        item_type = item.get("type")
-        
-        if player_type == "audio" and item_type in ("song", "musicvideo"):
-            filtered.append(item)
-        elif player_type == "video" and item_type in ("movie", "episode"):
-            filtered.append(item)
-        elif player_type == "picture" and item_type == "picture":
-            filtered.append(item)
-    
-    if len(filtered) < len(items):
-        _LOGGER.warning(
-            "Filtered out %d/%d items (player_type=%s). Race condition during media type switch?",
-            len(items) - len(filtered), len(items), player_type
-        )
-    
-    return filtered
+
 
 
 @callback
@@ -233,7 +201,7 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
         active_player_id, active_player_type, active_playlist_id,
     )
 
-    # ✅ ÉTAPE 4 : Récupérer les items DE CE PLAYLIST
+   # ✅ ÉTAPE 4 : Récupérer les items DE CE PLAYLIST
     items = []
     if active_playlist_id is not None:
         try:
@@ -241,12 +209,12 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
                 await _async_fetch_playlist(hass, kodi_entity_id, active_playlist_id) or []
             )
 
-            # ✅ FILTRE CRITIQUE : Valider que les items correspondent au type de player actif
-            items = _filter_items_by_player_type(raw_items, active_player_type)
+            # PLUS DE FILTRE ICI, on prend la vraie liste Kodi brute
+            items = raw_items
 
             _LOGGER.debug(
-                "Playlist data: type=%s, playlist_id=%d, items_count=%d (raw: %d)",
-                active_player_type, active_playlist_id, len(items), len(raw_items)
+                "Playlist data: playlist_id=%d, items_count=%d",
+                active_playlist_id, len(items)
             )
         except Exception as err:
             _LOGGER.error("Failed to fetch playlist %d: %s", active_playlist_id, err)
@@ -504,7 +472,6 @@ async def websocket_playlist_remove_item(
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "kodi_media_sensors/playlist_reorder",
-        # vol.Required(CONF_KODI_ENTITY): str,
         vol.Required("entry_id"): str,
         vol.Required("from_index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
         vol.Required("to_index"): vol.All(vol.Coerce(int), vol.Range(min=0)),
@@ -543,10 +510,19 @@ async def websocket_playlist_reorder(
         return
 
     item_to_move = items[from_index]
-    # On isole uniquement le champ 'file' pour éviter l'erreur "Invalid params" de Kodi
-    simplified_item = {"file": item_to_move.get("file")}
+    
+    # 2. Restauration de l'ancienne logique avec les ID (beaucoup plus robuste pour les films/séries)
+    item_type = item_to_move.get("type")
+    item_id = item_to_move.get("id")
+    
+    insert_payload = {}
+    if item_type and item_id and item_id != -1:
+        insert_payload = {f"{item_type}id": item_id}
+    else:
+        # Fallback si ce n'est pas en BDD
+        insert_payload = {"file": item_to_move.get("file")}
 
-    # 2. Suppression de l'ancienne position
+    # 3. Suppression de l'ancienne position
     removed = await async_call_method(
         hass,
         kodi_entity_id,
@@ -559,21 +535,25 @@ async def websocket_playlist_reorder(
         connection.send_error(msg["id"], "removal_failed", "Failed to remove item")
         return
 
-    # 3. Insertion à la nouvelle position
+    # Si on enlève un item au-dessus de la cible, la position cible recule de 1
+    if from_index < to_index:
+        to_index -= 1
+
+    # 4. Insertion à la nouvelle position
     inserted = await async_call_method(
         hass,
         kodi_entity_id,
         "Playlist.Insert",
         playlistid=playlist_id,
         position=to_index,
-        item=simplified_item,
+        item=insert_payload,
     )
 
     if inserted:
         _LOGGER.info(
             "Reorder successful: Item moved from %d to %d.", from_index, to_index
         )
-        # 4. Trigger du rafraîchissement
+        # 5. Trigger du rafraîchissement
         hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})
         connection.send_result(msg["id"])
 

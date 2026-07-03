@@ -84,6 +84,7 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_search_recently_played)
     websocket_api.async_register_command(hass, websocket_search_artist)
     websocket_api.async_register_command(hass, websocket_search_recently_added)
+    websocket_api.async_register_command(hass, websocket_search_tvshow)
 
 
 def _get_kodi_entity_id_from_entry(hass, entry_id):
@@ -141,6 +142,7 @@ async def _search_episodes(
             "seasonid",
             "tvshowid",
             "thumbnail",
+            "showtitle",
             "art",
         ],
         filter={
@@ -358,7 +360,7 @@ async def websocket_search_artist(
             hass,
             kodi_entity_id,
             "AudioLibrary.GetAlbums",
-            properties=["title", "artist", "year", "thumbnail"],
+            properties=["title", "artist", "year", "thumbnail","year"],
             filter={"artistid": artist_id},
         )
 
@@ -424,7 +426,9 @@ async def websocket_search_artist(
                     else:
                         song["thumbnail"] = None
 
-        connection.send_result(msg_id, {"albums": structured_albums})
+        structured_albums.sort(key=lambda x: x.get("year", 0), reverse=True)
+        results = {"albums": structured_albums}
+        connection.send_result(msg_id, {"results": results})
 
     except Exception as e:
         _LOGGER.error("Erreur lors du drill-down de l'artiste %s: %s", artist_id, e)
@@ -539,17 +543,26 @@ async def websocket_search_recently_added(
                 "seasonid",
                 "tvshowid",
                 "thumbnail",
+                "showtitle",
                 "art",
             ],
-            limits=episodesLimits,
+            limits={"start": 0, "end": episodesLimits},
         )
 
         musicvideos_task = async_call_method(
             hass,
             kodi_entity_id,
             "VideoLibrary.GetRecentlyAddedMusicVideos",
-            properties=["thumbnail", "title", "year", "artist", "album", "art", "genre"],
-            limits=musicvideosLimits,
+            properties=[
+                "thumbnail",
+                "title",
+                "year",
+                "artist",
+                "album",
+                "art",
+                "genre",
+            ],
+            limits={"start": 0, "end": musicvideosLimits},
         )
 
         (
@@ -622,6 +635,7 @@ async def websocket_search_recently_played(
     msg: dict,
 ) -> None:
     """Fetch recently played songs."""
+    msg_id = msg["id"]
     entry_id = msg["entry_id"]
     msg_id = msg["id"]
     kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
@@ -690,11 +704,11 @@ async def websocket_search_recently_played(
             "albums": raw_albums.get("albums", []) if raw_albums else [],
         }
 
-        connection.send_result(msg["id"], {"results": results})
+        connection.send_result(msg_id, {"results": results})
 
     except Exception as e:
         connection.send_error(
-            msg["id"],
+            msg_id,
             websocket_api.const.ERR_UNKNOWN_ERROR,
             f"Erreur lors de la requête Kodi : {str(e)}",
         )
@@ -783,6 +797,119 @@ async def websocket_search(
                 else:
                     item["thumbnail"] = None
 
-    connection.send_result(
-        msg_id, {"results": results, "kodi_entity_id": kodi_entity_id}
-    )
+    connection.send_result(msg_id, {"results": results})
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/search_tvshow",
+        vol.Optional("entry_id"): str,
+        vol.Optional("kodi_entity_id"): str,
+        vol.Required("tvshow_id"): vol.Any(int, str),
+    }
+)
+@callback
+def websocket_search_tvshow(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    """Handle search tvshow websocket command."""
+    hass.async_create_task(_async_handle_search_tvshow(hass, connection, msg))
+
+
+async def _async_handle_search_tvshow(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    """Fetch seasons and episodes for a given TV Show."""
+    msg_id = msg["id"]
+    entry_id = msg.get("entry_id")
+    kodi_entity_id = msg.get("kodi_entity_id")
+
+    # Résolution de l'entité Kodi si on n'a que l'entry_id
+    if not kodi_entity_id and entry_id:
+        _get_kodi_entity_id_from_entry = globals().get("_get_kodi_entity_id_from_entry")
+        if _get_kodi_entity_id_from_entry:
+            kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
+
+    if not kodi_entity_id:
+        connection.send_error(msg_id, "invalid_entity", "No Kodi entity configured")
+        return
+
+    tvshow_id = int(msg["tvshow_id"])
+
+    try:
+        # 1. Récupérer les saisons de la série
+        seasons_response = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "VideoLibrary.GetSeasons",
+            tvshowid=tvshow_id,
+            properties=["title", "season", "thumbnail", "tvshowid","art"],
+        )
+        seasons = seasons_response.get("seasons", []) if seasons_response else []
+
+        # 2. Récupérer tous les épisodes (Correction ici : "runtime" au lieu de "duration")
+        episodes_response = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "VideoLibrary.GetEpisodes",
+            tvshowid=tvshow_id,
+            properties=[
+                "title",
+                "season",
+                "episode",
+                "runtime",
+                "thumbnail",
+                "tvshowid",
+                "file",
+                "art",
+            ],
+        )
+        all_episodes = (
+            episodes_response.get("episodes", []) if episodes_response else []
+        )
+
+        # 3. Imbriquer les épisodes dans la saison correspondante
+        for season in seasons:
+            season["type"] = "season"
+            season_num = season.get("season")
+
+            # Filtrer et trier les épisodes de cette saison spécifique
+            season_episodes = [
+                ep for ep in all_episodes if ep.get("season") == season_num
+            ]
+            season_episodes.sort(key=lambda x: x.get("episode", 0))
+
+            # Optionnel : Si tu veux convertir le "runtime" de Kodi (en secondes) en format "duration" pour le front
+            for ep in season_episodes:
+                if "runtime" in ep:
+                    ep["duration"] = ep[
+                        "runtime"
+                    ]  # Permet la compatibilité avec vos types front si besoin
+
+            season["episodes"] = season_episodes
+
+        # 4. Traitement des images (thumbnails) via le media_player de HA
+        mp_component = hass.data.get("media_player")
+        mp_entity = mp_component.get_entity(kodi_entity_id) if mp_component else None
+
+        if mp_entity:
+            for season in seasons:
+                thumb = season.get("thumbnail")
+                if isinstance(thumb, str) and thumb.startswith("image://"):
+                    season["thumbnail"] = await mp_entity.async_get_browse_image(
+                        "image", thumb
+                    )
+
+                for episode in season.get("episodes", []):
+                    ep_thumb = episode.get("thumbnail")
+                    if isinstance(ep_thumb, str) and ep_thumb.startswith("image://"):
+                        episode["thumbnail"] = await mp_entity.async_get_browse_image(
+                            "image", ep_thumb
+                        )
+
+        results = {"seasons": seasons}
+        connection.send_result(msg_id, {"results": results})
+
+    except Exception as e:
+        _LOGGER.error("Error searching TV show details: %s", e)
+        connection.send_error(msg_id, "search_error", str(e))
