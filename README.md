@@ -6,11 +6,11 @@
 
 <!-- [![](https://img.shields.io/github/workflow/status/jtbgroup/kodi-media-sensors/Python%20package?style=for-the-badge)](https://github.com/jtbgroup/kodi-media-sensors/actions) -->
 
-This Home Assistant component is used to feed custom cards like [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card), [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. It is based on the project of Aaron Godfrey (https://github.com/boralyl/kodi-recently-added). Check the [credits section](#credits).
+This Home Assistant component is used to feed custom cards like [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) or [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) with data coming from Kodi. 
 
-| Upcoming Media Card                                      | Kodi playlist Card                                            | Kodi search Card                                       |
-| -------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
-| ![Upcoming Media Card](./assets/upcoming_media_card.png) | ![Kodi Playlist Card](./assets/playlist_audio_dark_3_3_0.png) | ![Kodi Search Card](./assets/search_result_v3.3_1.png) |
+ Kodi playlist Card                                            | Kodi search Card                                       |
+| ------------------------------------------------------------- | ------------------------------------------------------ |
+| ![Kodi Playlist Card](./assets/kodi_playlist_card.png) | ![Kodi Search Card](./assets/kodi_search_card.png) |
 
 ## Table of Contents
 
@@ -18,8 +18,8 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 - [Sensors](#sensors)
 - [Configuration](#configuration)
 - [Services](#services)
-- [Upgrading from configuration.yaml to UI Integration](#upgrading-from-configurationyaml-to-ui-integration)
-- [Known Issues](#known-issues)
+- [Issues](#issues)
+- [Credits](#credits)
 
 ## Installation
 
@@ -31,7 +31,6 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 
 1. Search for `Kodi Media Sensors` under `Integrations` in the HACS Store tab.
 2. **You will need to restart after installation for the component to start working.**
-3. Go to [Integration Installation](#integration_installation) your sensor using the options.
 
 ### Manual Install
 
@@ -40,28 +39,20 @@ This Home Assistant component is used to feed custom cards like [Upcoming Media 
 1. In your `/config` directory, create a `custom_components` folder if one does not exist.
 2. Copy the [kodi_media_sensors](https://github.com/jtbgroup/kodi-media-sensors/tree/master/custom_components) folder and all of it's contents from to your `custom_components` directory.
 3. Restart Home Assistant.
-4. Go to [Integration Installation](#integration-installation) your sensor using the options.
 
 ### Integration Installation
 
-1. After Automatic install or manual install, go to the Integration panel (under Configuration section) and search for the ne component by clicking on the button 'Add Integration'. Enter the name of the component (Kodi Media Sensors).
-2. During the installation, choose the Kodi entity previously installed.
-3. Select the sensors you want to use (see [Available Sensors](#available-sensors))
-4. Click Submit
-5. You should now see new entities in Home Assistant (one for each sensor activated)
+1. After automatic or manual install, go to the Integration panel (under Configuration section) and search for the ne component by clicking on the button 'Add Integration'.
+2. Enter the name for the integration on your system and choose the Kodi entity previously installed. A sensor connected to the kodi integration will become available.
+3. Click Submit
+4. You should now see the sensor in Home Assistant with a status linked to your Kodi integration.
 
-It's not possible to add new sensors after installation, so if you need new ones (or if you don't need one anymore), just uninstall the integration and add it again. You will then be able to select the sensors you need.
 
 ## Sensors
 
 | Sensor name                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sensor.kodi_media_sensor_recently_added_tvshow` | The sensor is contains information about the recently added tvshows in Kodi. The sensor updated by polling kodi on a regular base.                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `sensor.kodi_media_sensor_recently_added_movie`  | The sensor is contains information about the recently added movies in Kodi. The sensor updated by polling kodi on a regular base.                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `sensor.kodi_media_sensor_playlist`              | The sensor is contains information about the running playlist (audio and video) in Kodi. The sensor is updated using the events generated by the Kodi integration.                                                                                                                                                                                                                                                                                                                                                                             |
-| `sensor.kodi_media_sensor_search`                | The sensor allows you to search for media content in the kodi libraries. The sensor has multiple configuration options so you can choose the media type you want to include in your search result. <br/> After calling this method, metadata are also filled in depending on what has been called. So a normal Search or a Rcently Added search will add the method and arguments to the metadata. A Clear willremove the method and arguments from the metadata. Play and Reset Addons will have no effect and will keep the previous result. |
-
-Some sensors come with services you can use. The definition of the services depends on each sensor. The service can be called via **_call_method_**
+| `sensor.<<name of your previously configured sensor>>` | The sensor tha will make the link between your integration and the kodi player. It has several attributes available such as the status, information about the current playing track (id, type, artist).
 
 ## Configuration
 
@@ -94,187 +85,118 @@ toggle additional options. To access the option, the right sensor must be presen
 
 ## Services
 
-### Sensor **Playlist**
+in order to interact withe the integration, some api calls can be used.
 
-1. **_goto(playerid, position)_**
+### **Playlist**
+
+1. **kodi_media_sensors/playlist_subscribe**
+
+   This method allows a client to subscribe to the playlist and being notified in case of changes in the playlist.
+
+   Parameter:
+
+   - entry_id = the entry id of the integration you want to subscribe to.
+
+
+2. **kodi_media_sensors/playlist_goto_index**
 
    This function plays the object at the given position for the given player
 
-   Example:
+   Parameters:
 
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_playlist
-   method: goto
-   item:
-     playerid: 0
-     position: 5
-   ```
-
-2. **_remove(playlistid, position)_**
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - index = the index to be played in the playlist
+  
+3. **kodi_media_sensors/playlist_remove_item**
 
    This function removes an object from the given playlist
 
-   Example:
+   Parameters:
 
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_playlist
-   method: remove
-   item:
-     playlistid: 0
-     position: 5
-   ```
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - from_index = the index of the item to be moved
+   - to_index = the index where the selected item should be moved
 
-3. **_moveto(playlistid, position_from, position_to)_**
+4. **kodi_media_sensors/playlist_reorder"**
 
    This function moves an item from position `from`to position `to` in the given playlist. Basically, the function does a `remove` followed by an `insert`. It means the indexes passed as position must take into account that in some cases, -1 must be calculated for the `position_to`0. If you use a framework such as SortableJS, this calculation is already taken into account.
 
-   Example:
+   Parameters:
+   
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - index = the index to be removed from the playlist
+  
+5. **kodi_media_sensors/playlist_play_item"**
 
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_playlist
-   method: moveto
-   item:
-     playlistid: 0
-     position_from: 5
-     position_to: 2
-   ```
+   This function plays the desired object with the good player. The argument depends on what object has to be played. 
 
-### Sensor **Search**
+   Parameters:
+   
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - item_id = the id of the item to be played.
+   - item_name = a keyword lnked to the type of item to be played. Must be of the following: songid", "movieid", "albumid", "musicvideoid", episodeid", "channelid", "filemusicplaylist".
+  
+6. **kodi_media_sensors/playlist_add_item"**
 
-1. **_search(media_type, value)_**
+   This method adds an item to the right playlist depending on the item passed. The `position`argument indicates where the item must be added in the playlist. The playlist index is 0-based, so 0 is the first position. To add an item at the end of the playlist, just use a index > the length of the playlist (ex: use 1000 when you have a playlist of 50 items, even in party mode).
+  
+   Parameters:
+   
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - item_id = the id of the item to be added.
+   - item_name = a keyword lnked to the type of item to be played. Must be of the following: songid", "movieid", "albumid", "musicvideoid", episodeid", "channelid", "filemusicplaylist".
+   - position = the index where to add the item
+
+### **Search**
+
+1. **kodi_media_sensors/search**
 
    Searches in the specified media type for the referenced value. The media type 'all' will return result for songs, albums, artists, movies and tv shows.
 
-   - `media_type:` { all &#124; artist &#124; tvshow &#124; recently_added &#124; recently_played &#124; current_artist}
-   - `value:` { str (title) &#124; int (artistid) &#124; int (tvshowid) }
+   Parameters:
+   
+   - entry_id = the entry id of the integration you want to subscribe to.
+   - item_id = the id of the item to be added.
+   - query = the text to search in the diferent categories
+   - category (optional) = the category you want to search on.
 
-   Example:
 
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: search
-   item:
-     media_type: all
-     value: beatles
-   ```
+2. **kodi_media_sensors/search_artist**
 
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: search
-   item:
-     media_type: recently_played
-   ```
+3. **kodi_media_sensors/search_tvshow**
 
-2. **_clear()_**
+4. **kodi_media_sensors/search_recently_played**
 
-   This function clears the data of the sensor
-
-   Example:
-
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: clear
-   ```
-
-3. **_play(arg)_**
-
-   This function plays the desired object with the good player. The argument depends on what object has to be played. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid`, `channelid` or `filemusicplaylist`(custom type).
-
-   Examples:
-
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: play
-   songid: 1
-   ```
-
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: play
-   movieid: 15
-   ```
-
-4. **_add(arg)_**
-   This method adds an item to the right playlist depending on the item passed. The argument can be one of `songid`, `albumid`, `movieid`, `episodeid`, `channelid` or `filemusicplaylist`(custom type). The `position`argument indicates where the item must be added in the playlist. The playlist index is 0-based, so 0 is the first position. To add an item at the end of the playlist, just use a index > the length of the playlist (ex: use 1000 when you have a playlist of 50 items, even in party mode).
-
-   Example:
-
-   ```yaml
-   entity_id: sensor.kodi_media_sensor_search
-   method: add
-   songid: 1
-   position: 10
-   ```
-
-5. **_reset_addons()_**
-
-   This method resets the presence (and active status) of the addons. This is to call for example if you activate a PVR client addon and you want to include the search results of the channels in your resultset.
-   ... another option would be to reboot HA!
-
-   Example:
-
-   ```yaml
-   service: kodi_media_sensors.call_method
-   data:
-     entity_id: sensor.kodi_media_sensor_search
-     method: reset_addons
-   ```
+5. **kodi_media_sensors/search_recently_added**
 
 ### Cards to use with sensors
 
 The goal is to group all the sensors and have separate Cards to display the sensors data. The cards that where tested are:
 
-- [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) (kodi_media_sensor_recently_added_tvshow or kodi_media_sensor_recently_added_movie)
 - [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card) (kodi_media_sensor_playlist)
 - [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) (kodi_media_sensor_search)
 
 **Samples** for ui-lovelace.yaml
 
-Depending on the sensors you added and the custom card you installed, you can use the code below to display information from Kodi.
 
-Here two examples with [Upcoming Media Card](https://github.com/custom-cards/upcoming-media-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card)
+Here two examples with [Kodi Search Card](https://github.com/jtbgroup/kodi-search-card) and [Kodi Playlist Card](https://github.com/jtbgroup/kodi-playlist-card)
 
 ```yaml
-- type: custom:upcoming-media-card
-  entity: sensor.kodi_recently_added_tv
-  title: Recently Added Episodes
-  image_style: fanart
+- type: custom:kodi-search-card
+  entity: sensor.kodi_media_sensor_KODI-1
 ```
 
 ```yaml
 - type: custom:kodi-playlist-card
-  entity: sensor.kodi_media_sensor_playlist
+  entity: sensor.kodi_media_sensor_KODI-2
 ```
 
-## Upgrading from configuration.yaml to UI Integration
 
-1. Remove any sensors in your `configuration.yaml` that reference the `kodi_media_sensors`
-   platform.
-2. Restart Home Assistant.
-3. Follow the steps from the beginning in the section [Installation](#installation)
+## Issues
 
-## Known Issues
+Don't hesitate to create tickets in the Github repo for questions.
 
-Below is a list of known issues that either can't be fixed by changes to the component
-itself due to external factors.
-
-### Artwork does not load
-
-One reason this could occur is if you setup you Home Assistance instance to use SSL and
-your Kodi instance does not use SSL. When the upcoming-media-card tries to load the
-artwork it will fail to do so since modern browsers do not allow loading insecure requests.
-See [#6](https://github.com/boralyl/kodi-recently-added/issues/6) for more details and
-possible workarounds.
-
-### Genres, ratings and studios don't show up for TV Shows
-
-Currently genres, rating, and studio are only populated for Movies. This is a limitation
-of the data Kodi stores for TV shows.
 
 ## Credits
 
-[Aaron Godfrey](https://github.com/boralyl) is the original developer of this project and did an excellent job. As I needed something similar to display my running playlist in Kodi, I started to enhance the component.
-Thanks a lot Aaron for letting me enhance your project! Let's hope other people might find it useful.
-Do not hesitate to support Aaron and his many projects.
-
-Also thanks to all the people for testing, reporting dysfunctions and propose improvements.
+Thanks to all the people for testing, reporting dysfunctions and propose improvements.

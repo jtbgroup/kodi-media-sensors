@@ -3,7 +3,9 @@
 
 ## 6.0.0
 
-- Complete new structure based on websocket instead of sensors. 
+!!! BREAKING CHANGE !!!
+
+Complete new structure based on websocket instead of sensors. Please be cautious when using this new version. All the previous features might not be implemented.
   
 **IMPORTANT : BREAKING CHANGES**
 

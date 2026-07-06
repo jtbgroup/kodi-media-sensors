@@ -24,7 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "label": label,
     }
 
-    # ⚠️ IMPORTANT: register WebSocket commands without awaiting.
+    # IMPORTANT: register WebSocket commands without awaiting.
     # They must be registered at the domain level, not per entry.
     _async_setup_websocket(hass)
     _LOGGER.info("WebSocket kodi_media_sensors commands registered.")

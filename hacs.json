@@ -1,5 +1,4 @@
 {
   "name": "Kodi Media Sensors",
-  "homeassistant": "2026.6",
-  "render_readme": true
+  "homeassistant": "2026.6"
 }

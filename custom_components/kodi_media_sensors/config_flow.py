@@ -4,7 +4,10 @@ from homeassistant.helpers import selector
 from homeassistant.core import callback
 
 
-from .const import ( DOMAIN, CONF_LABEL, CONF_KODI_ENTITY,
+from .const import (
+    DOMAIN,
+    CONF_LABEL,
+    CONF_KODI_ENTITY,
     DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
     DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
@@ -39,7 +42,8 @@ from .const import ( DOMAIN, CONF_LABEL, CONF_KODI_ENTITY,
     OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
     OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
     OPTION_SEARCH_SONGS_LIMIT,
-    OPTION_SEARCH_TVSHOWS_LIMIT )
+    OPTION_SEARCH_TVSHOWS_LIMIT,
+)
 
 
 class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -73,19 +77,22 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         },
                     )
 
-        data_schema = vol.Schema({
-            vol.Required(CONF_LABEL, default="My Kodi"): str,
-            vol.Required(CONF_KODI_ENTITY): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="media_player", integration="kodi")
-            ),
-        })
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_LABEL, default="My Kodi"): str,
+                vol.Required(CONF_KODI_ENTITY): selector.EntitySelector(
+                    selector.EntitySelectorConfig(
+                        domain="media_player", integration="kodi"
+                    )
+                ),
+            }
+        )
 
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
             errors=errors,
         )
-    
 
     @staticmethod
     @callback
@@ -93,15 +100,12 @@ class KodiMediaSensorsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
-        # return OptionsFlowHandler(config_entry)
         return OptionsFlowHandler()
-    
+
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handles options flow for the component."""
 
-    # def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-    #     self.config_entry = config_entry
     @property
     def config_entry(self):
         return self.hass.config_entries.async_get_entry(self.handler)
@@ -113,31 +117,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         schema_base = {}
 
-        # sensor_recent_movie_active = self.config_entry.data.get(
-        #     CONF_SENSOR_RECENTLY_ADDED_MOVIE
-        # )
-        # sensor_recent_tvshow_active = self.config_entry.data.get(
-        #     CONF_SENSOR_RECENTLY_ADDED_TVSHOW
-        # )
-        # sensor_search_active = self.config_entry.data.get(CONF_SENSOR_SEARCH)
-
-        # if (
-        #     sensor_recent_movie_active is not None
-        #     and str(sensor_recent_movie_active) == "True"
-        # ) or (
-        #     sensor_recent_tvshow_active is not None
-        #     and str(sensor_recent_tvshow_active) == "True"
-        # ):
-        #     schema_base = self.add_to_schema(
-        #         OPTION_HIDE_WATCHED,
-        #         DEFAULT_OPTION_HIDE_WATCHED,
-        #         bool,
-        #         schema_base,
-        #     )
-
-
-        # if sensor_search_active is not None and str(sensor_search_active) == "True":
-            # SEARCH SONGS
+        # SEARCH SONGS
         schema_base = self.add_int_to_schema(
             OPTION_SEARCH_SONGS_LIMIT,
             int(DEFAULT_OPTION_SEARCH_SONGS_LIMIT),
