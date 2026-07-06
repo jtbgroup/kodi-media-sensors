@@ -5,10 +5,13 @@ exposing an `async_register_websockets` function. This file aggregates
 them for a single registration entry point.
 """
 import logging
+import homeassistant.helpers.config_validation as cv
 from homeassistant.core import HomeAssistant, callback
 
 from . import playlist
 from . import search
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema
 
 _LOGGER = logging.getLogger(__name__)
 
