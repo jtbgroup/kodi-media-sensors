@@ -88,7 +88,7 @@ def async_register_websockets(hass: HomeAssistant) -> None:
 
 
 def _get_kodi_entity_id_from_entry(hass, entry_id):
-    """Récupère kodi_entity_id à partir de entry_id"""
+    """Retrieve kodi_entity_id from entry_id."""
     config_entry = hass.config_entries.async_get_entry(entry_id)
     return config_entry.data.get(CONF_KODI_ENTITY)
 
@@ -102,7 +102,7 @@ async def _is_kodi_connected(hass: HomeAssistant, entity_id: str) -> bool:
 async def _search_movies(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for movies with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_MOVIES, DEFAULT_OPTION_SEARCH_MOVIES_LIMIT)
     )
@@ -126,7 +126,7 @@ async def _search_movies(
 async def _search_episodes(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for episodes with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_EPISODES, DEFAULT_OPTION_SEARCH_EPISODES_LIMIT)
     )
@@ -162,7 +162,7 @@ async def _search_episodes(
 async def _search_musicvideos(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for music videos with a configurable limit."""
     limit_value = int(
         search_limits.get(
             CATEGORY_MUSIC_VIDEOS, DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT
@@ -193,7 +193,7 @@ async def _search_musicvideos(
 async def _search_tvshows(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for TV shows with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_TVSHOWS, DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT)
     )
@@ -217,7 +217,7 @@ async def _search_tvshows(
 async def _search_songs(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for songs with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_SONGS, DEFAULT_OPTION_SEARCH_SONGS_LIMIT)
     )
@@ -252,7 +252,7 @@ async def _search_songs(
 async def _search_albums(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for albums with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_ALBUMS, DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT)
     )
@@ -276,7 +276,7 @@ async def _search_albums(
 async def _search_artists(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
-    """Recherche de morceaux avec limite configurable."""
+    """Search for artists with a configurable limit."""
     limit_value = int(
         search_limits.get(CATEGORY_ARTISTS, DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT)
     )
@@ -428,11 +428,11 @@ async def websocket_search_artist(
         connection.send_result(msg_id, {"results": results})
 
     except Exception as e:
-        _LOGGER.error("Erreur lors du drill-down de l'artiste %s: %s", artist_id, e)
+        _LOGGER.error("Error during artist drill-down for %s: %s", artist_id, e)
         connection.send_error(
             msg_id,
             websocket_api.const.ERR_UNKNOWN_ERROR,
-            f"Erreur lors de la requête Kodi : {str(e)}",
+            f"Error while requesting Kodi: {str(e)}",
         )
 
 
@@ -614,7 +614,7 @@ async def websocket_search_recently_added(
         connection.send_error(
             msg_id,
             websocket_api.const.ERR_UNKNOWN_ERROR,
-            f"Erreur lors de la requête Kodi : {str(e)}",
+            f"Error while requesting Kodi: {str(e)}",
         )
 
 
@@ -707,7 +707,7 @@ async def websocket_search_recently_played(
         connection.send_error(
             msg_id,
             websocket_api.const.ERR_UNKNOWN_ERROR,
-            f"Erreur lors de la requête Kodi : {str(e)}",
+            f"Error while requesting Kodi: {str(e)}",
         )
 
 

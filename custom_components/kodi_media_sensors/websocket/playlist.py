@@ -46,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @callback
 def _is_kodi_connected(hass: HomeAssistant, entity_id: str) -> bool:
-    """Vérifie si l'entité Kodi est disponible."""
+    """Check whether the Kodi entity is available."""
     state = hass.states.get(entity_id)
     return (
         state is not None
@@ -330,7 +330,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
                 last_player_type,
                 current_player_type,
             )
-            last_items = None  # Force l'envoi même si les items sont identiques
+            last_items = None  # Force sending even if the items are identical
 
         last_player_type = current_player_type
 
@@ -443,7 +443,7 @@ async def websocket_playlist_remove_item(
 async def websocket_playlist_reorder(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
-    """Réordonne les items de la playlist via une suppression et une réinsertion."""
+    """Reorders playlist items by removing and reinserting them."""
     entry_id = msg["entry_id"]
     kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
     from_index = msg["from_index"]

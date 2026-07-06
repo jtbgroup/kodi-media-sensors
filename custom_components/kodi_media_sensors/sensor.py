@@ -22,12 +22,12 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Configuration des entités sensor pour Kodi."""
+    """Configuration of the Kodi sensor entities."""
     async_add_entities([KodiConfigSensor(hass, entry)], True)
 
 
 class KodiConfigSensor(SensorEntity):
-    """Entité qui track l'état dynamique du Kodi configuré."""
+    """Entity that tracks the dynamic state of the configured Kodi instance."""
 
     _attr_icon = "mdi:kodi"
     _unsubscribe_state_change: callable | None = None
@@ -51,14 +51,14 @@ class KodiConfigSensor(SensorEntity):
             _LOGGER.error("No Kodi entity configured for sensor %s", self.unique_id)
             return
 
-        # S'abonner aux changements d'état du Kodi
+        # Subscribe to Kodi state changes
         self._unsubscribe_state_change = async_track_state_change_event(
             self._hass,
             [self._kodi_entity_id],
             self._async_on_kodi_state_change,
         )
 
-        # Récupérer l'état initial
+        # Retrieve the initial state
         state = self._hass.states.get(self._kodi_entity_id)
         if state:
             self._attr_state = state.state
@@ -82,7 +82,7 @@ class KodiConfigSensor(SensorEntity):
         
         if new_state:
             self._attr_state = new_state.state
-            # Mettre à jour le current_track de manière asynchrone
+            # Update the current_track asynchronously
             self._hass.async_create_task(self._async_update_current_track())
             self.async_write_ha_state()
             _LOGGER.debug("Kodi sensor %s state updated to %s", self.unique_id, self._attr_state)
@@ -97,7 +97,7 @@ class KodiConfigSensor(SensorEntity):
             return
 
         try:
-            # 1. Récupérer le player actif
+            # 1. Retrieve the active player
             result = await async_call_method(
                 self._hass,
                 self._kodi_entity_id,
@@ -113,7 +113,7 @@ class KodiConfigSensor(SensorEntity):
                 self._current_track = None
                 return
 
-            # 2. Récupérer l'item courant avec tous les IDs possibles
+            # 2. Retrieve the current item with all possible IDs
             item_result = await async_call_method(
                 self._hass,
                 self._kodi_entity_id,
@@ -129,21 +129,21 @@ class KodiConfigSensor(SensorEntity):
                 raw_artist_id = item.get("artistid")
                 artist_id = None
                 
-                # Si c'est une liste et qu'elle n'est pas vide, on prend le premier (index 0)
+                # If it is a list and not empty, take the first item (index 0)
                 if isinstance(raw_artist_id, list) and raw_artist_id:
                     artist_id = raw_artist_id[0]
-                # S'il y a une valeur mais que ce n'est bizarrement pas une liste
+                # If there is a value but it is unexpectedly not a list
                 elif raw_artist_id is not None and not isinstance(raw_artist_id, list):
                     artist_id = raw_artist_id
                         
                 if item_id is not None:
-                    # 1. Base obligatoire
+                    # 1. Required base data
                     self._current_track = {
                         "id": item_id,      
                         "type": item_type,
                     }
                     
-                    # 2. Ajout de l'artist_id seulement s'il a été trouvé
+                    # 2. Add artist_id only if it was found
                     if artist_id is not None:
                         self._current_track["artist_id"] = artist_id
                     else:
@@ -155,7 +155,7 @@ class KodiConfigSensor(SensorEntity):
 
     @property
     def state(self) -> str:
-        """État du sensor = état du Kodi."""
+        """Sensor state = Kodi state."""
         return self._attr_state
 
     @property
