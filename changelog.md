@@ -3,10 +3,6 @@
 
 ## 6.0.0
 
-!!! BREAKING CHANGE !!!
-
-Complete new structure based on websocket instead of sensors. Please be cautious when using this new version. All the previous features might not be implemented.
-  
 **IMPORTANT : BREAKING CHANGES**
 
 This version is not backward compatible. The cards linked to the previous versions (Search card and Playlist card) must also be upgraded to new version. The other cards potentially based on the previous version of this integration will probably not work anymore.
