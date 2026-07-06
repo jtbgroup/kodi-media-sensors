@@ -165,7 +165,7 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
         return {"items": [], "playlist_id": None, "current_index": -1}
 
     if len(active_players) > 1:
-        _LOGGER.warning(
+        _LOGGER.info(
             "Multiple players active (%d). Using the first one.", len(active_players)
         )
 
@@ -175,7 +175,7 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
 
     active_playlist_id = active_player_id
 
-    _LOGGER.warning(
+    _LOGGER.debug(
         "[PLAYLIST] player_id=%s, player_type=%s → using playlist_id=%s",
         active_player_id,
         active_player_type,
@@ -202,7 +202,7 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
             return {"items": [], "playlist_id": active_playlist_id, "current_index": -1}
 
     if not items and active_player_id is not None:
-        _LOGGER.warning(
+        _LOGGER.info(
             "[PLAYLIST] Playlist %d is empty but player %d is active — fetching current item via Player.GetItem",
             active_playlist_id,
             active_player_id,
@@ -235,7 +235,7 @@ async def _async_get_full_playlist_data(hass: HomeAssistant, kodi_entity_id: str
                 current_item = item_result["item"]
                 if current_item.get("title") or current_item.get("file"):
                     items = [current_item]
-                    _LOGGER.warning(
+                    _LOGGER.debug(
                         "[PLAYLIST] Synthesized playlist from Player.GetItem: type=%s id=%s title=%s",
                         current_item.get("type"),
                         current_item.get("id"),
@@ -293,7 +293,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
     async def _send_playlist(*args):
         nonlocal last_items, last_player_type
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "[PLAYLIST] _send_playlist called — last_player_type=%s, last_items_count=%s",
             last_player_type,
             len(last_items) if last_items is not None else "None",
@@ -303,29 +303,29 @@ async def websocket_playlist_subscribe(hass, connection, msg):
             hass, kodi_entity_id, "Player.GetActivePlayers"
         )
 
-        _LOGGER.warning("[PLAYLIST] GetActivePlayers → %s", active_players)
+        _LOGGER.debug("[PLAYLIST] GetActivePlayers → %s", active_players)
 
         if not active_players or len(active_players) == 0:
-            _LOGGER.warning(
+            _LOGGER.info(
                 "[PLAYLIST] No active player — skipping (last_player_type=%s stays unchanged)",
                 last_player_type,
             )
             if last_items is not None and len(last_items) > 0:
-                _LOGGER.warning(
+                _LOGGER.info(
                     "[PLAYLIST] Had items before, keeping last state — waiting for next event"
                 )
             return
 
         current_player_type = active_players[0].get("type")
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "[PLAYLIST] Active player type=%s (last=%s)",
             current_player_type,
             last_player_type,
         )
 
         if last_player_type is not None and last_player_type != current_player_type:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[PLAYLIST] Player type changed: %s → %s — forcing full refresh",
                 last_player_type,
                 current_player_type,
@@ -337,7 +337,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
         data = await _async_get_full_playlist_data(hass, kodi_entity_id)
         items = data["items"]
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "[PLAYLIST] Got %d items (playlist_id=%s, current_index=%s)",
             len(items),
             data["playlist_id"],
@@ -345,7 +345,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
         )
 
         if items == last_items:
-            _LOGGER.warning("[PLAYLIST] Items unchanged — skipping send")
+            _LOGGER.debug("[PLAYLIST] Items unchanged — skipping send")
             return
 
         last_items = items
@@ -357,7 +357,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
             "current_index": data["current_index"],
         }
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "[PLAYLIST] → Sending playlist_update: %d items, playlist_id=%s, current_index=%s",
             len(items),
             data["playlist_id"],
@@ -506,7 +506,7 @@ async def websocket_playlist_reorder(
     )
 
     if inserted:
-        _LOGGER.info(
+        _LOGGER.debug(
             "Reorder successful: Item moved from %d to %d.", from_index, to_index
         )
         hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})

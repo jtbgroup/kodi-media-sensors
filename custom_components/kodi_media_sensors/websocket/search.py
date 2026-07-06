@@ -62,7 +62,7 @@ CATEGORY_TVSHOWS = "tvshows"
 CATEGORY_SONGS = "songs"
 CATEGORY_ALBUMS = "albums"
 CATEGORY_ARTISTS = "artists"
-CATEGORY_MUSIC_VIDEOS = "musicvideo"
+CATEGORY_MUSIC_VIDEOS = "musicvideos"
 CATEGORY_EPISODES = "episodes"
 
 VALID_CATEGORIES = [
@@ -156,8 +156,6 @@ async def _search_episodes(
             "order": "ascending",
         },
     )
-
-    _LOGGER.warning(result)
     return result.get("episodes", []) if result else None
 
 
@@ -184,12 +182,12 @@ async def _search_musicvideos(
         },
         limits={"start": 0, "end": limit_value},
         sort={
-            "method": "artist",
+            "method": "title",
             "order": "ascending",
             "ignorearticle": False,
         },
     )
-    return result.get("movies", []) if result else None
+    return result.get("musicvideos", []) if result else None
 
 
 async def _search_tvshows(
