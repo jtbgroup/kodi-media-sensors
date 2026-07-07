@@ -357,10 +357,9 @@ async def websocket_search_artist(
             hass,
             kodi_entity_id,
             "AudioLibrary.GetAlbums",
-            properties=["title", "artist", "year", "thumbnail","year"],
+            properties=["title", "artist", "year", "thumbnail"],
             filter={"artistid": artist_id},
         )
-
         songs_task = async_call_method(
             hass,
             kodi_entity_id,
