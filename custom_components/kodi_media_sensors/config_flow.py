@@ -10,8 +10,7 @@ from .const import (
     CONF_KODI_ENTITY,
     DEFAULT_OPTION_SEARCH_ALBUMS_LIMIT,
     DEFAULT_OPTION_SEARCH_ARTISTS_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
     DEFAULT_OPTION_SEARCH_MOVIES_LIMIT,
     DEFAULT_OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
@@ -26,10 +25,10 @@ from .const import (
     DEFAULT_OPTION_SEARCH_SONGS_LIMIT,
     DEFAULT_OPTION_SEARCH_TVSHOWS_LIMIT,
     MAX_SEARCH_LIMIT,
+    MIN_SEARCH_RECENTLY_PLAYED,
     OPTION_SEARCH_ALBUMS_LIMIT,
     OPTION_SEARCH_ARTISTS_LIMIT,
-    OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    OPTION_SEARCH_CHANNELS_TV_LIMIT,
+    OPTION_SEARCH_CHANNELS_LIMIT,
     OPTION_SEARCH_EPISODES_LIMIT,
     OPTION_SEARCH_MOVIES_LIMIT,
     OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
@@ -180,19 +179,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             schema_base,
         )
 
-        # SEARCH CHANNELS TV
+        # SEARCH CHANNELS
         schema_base = self.add_int_to_schema(
-            OPTION_SEARCH_CHANNELS_TV_LIMIT,
-            DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
-            0,
-            MAX_SEARCH_LIMIT,
-            schema_base,
-        )
-
-        # SEARCH CHANNELS RADIO
-        schema_base = self.add_int_to_schema(
-            OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-            DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
+            OPTION_SEARCH_CHANNELS_LIMIT,
+            DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
             0,
             MAX_SEARCH_LIMIT,
             schema_base,
@@ -248,14 +238,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         schema_base = self.add_int_to_schema(
             OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
             DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
-            0,
+            MIN_SEARCH_RECENTLY_PLAYED,
             MAX_SEARCH_LIMIT,
             schema_base,
         )
         schema_base = self.add_int_to_schema(
             OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
             DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
-            0,
+            MIN_SEARCH_RECENTLY_PLAYED,
             MAX_SEARCH_LIMIT,
             schema_base,
         )

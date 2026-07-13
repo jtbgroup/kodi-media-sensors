@@ -38,6 +38,8 @@ from ..const import (
     CONF_KODI_ENTITY,
     KODI_STATE_UNAVAILABLE,
     KODI_STATE_OFF,
+    PLAYER_ID_AUDIO,
+    PLAYER_ID_VIDEO,
 )
 from ..kodi_client import async_call_method
 
@@ -64,6 +66,13 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_playlist_reorder)
     websocket_api.async_register_command(hass, websocket_playlist_play_item)
     websocket_api.async_register_command(hass, websocket_playlist_add_item)
+
+
+def _get_default_player_id(item_name):
+    if item_name == "songid":
+        return PLAYER_ID_AUDIO
+
+    return PLAYER_ID_VIDEO
 
 
 def _get_kodi_entity_id_from_entry(hass, entry_id):
@@ -288,7 +297,7 @@ async def websocket_playlist_subscribe(hass, connection, msg):
     entry_id = msg["entry_id"]
 
     last_items = None
-    last_player_type = None 
+    last_player_type = None
 
     async def _send_playlist(*args):
         nonlocal last_items, last_player_type
@@ -542,61 +551,65 @@ async def websocket_playlist_play_item(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     entry_id = msg["entry_id"]
-    # kodi_entity_id = msg[CONF_KODI_ENTITY]
     item_id = msg["item_id"]
     item_name = msg["item_name"]
     kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
 
-    playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
-    active_player_id = await _async_get_active_player_id(hass, kodi_entity_id)
-
-    if playlist_id is None:
-        playlist_id = 0 if item_name == "songid" else 1
-
-    playlist_items = (
-        await _async_fetch_playlist(hass, kodi_entity_id, playlist_id) or []
-    )
-
-    current_index = -1
-    if active_player_id is not None:
-        current_index = await _async_get_active_item_index(
-            hass, kodi_entity_id, active_player_id
+    if item_name == "channelid":
+        opened = await async_call_method(
+            hass, kodi_entity_id, "Player.Open", item={"channelid": item_id}
         )
-
-    if current_index != -1:
-        insert_index = current_index + 1
     else:
-        insert_index = len(playlist_items)
+        playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
+        active_player_id = await _async_get_active_player_id(hass, kodi_entity_id)
 
-    inserted = await async_call_method(
-        hass,
-        kodi_entity_id,
-        "Playlist.Insert",
-        playlistid=playlist_id,
-        position=insert_index,
-        item={
-            item_name: item_id
-        }, 
-    )
+        if playlist_id is None:
+            playlist_id = 0 if item_name == "songid" else 1
 
-    if not inserted:
-        _LOGGER.error(
-            "Failed to insert item %s %d into playlist %d",
-            item_name,
-            item_id,
-            playlist_id,
+        playlist_items = (
+            await _async_fetch_playlist(hass, kodi_entity_id, playlist_id) or []
         )
-        connection.send_error(
-            msg["id"], "insert_failed", f"Failed to insert {item_name} into playlist"
-        )
-        return
 
-    opened = await async_call_method(
-        hass,
-        kodi_entity_id,
-        "Player.Open",
-        item={"playlistid": playlist_id, "position": insert_index},
-    )
+        current_index = -1
+        if active_player_id is not None:
+            current_index = await _async_get_active_item_index(
+                hass, kodi_entity_id, active_player_id
+            )
+        else:
+            active_player_id = _get_default_player_id(item_name)
+
+        if current_index != -1:
+            insert_index = current_index + 1
+        else:
+            insert_index = len(playlist_items)
+
+        inserted = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "Playlist.Insert",
+            playlistid=playlist_id,
+            position=insert_index,
+            item={item_name: item_id},
+        )
+
+        if not inserted:
+            _LOGGER.error(
+                "Failed to insert item %s %d into playlist %d",
+                item_name,
+                item_id,
+                playlist_id,
+            )
+            connection.send_error(
+                msg["id"], "insert_failed", f"Failed to insert {item_name} into playlist"
+            )
+            return
+
+        opened = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "Player.Open",
+            item={"playlistid": playlist_id, "position": insert_index},
+        )
 
     if opened:
         hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})

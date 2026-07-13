@@ -30,10 +30,8 @@ from ..const import (
     DEFAULT_OPTION_SEARCH_MUSICVIDEOS_LIMIT,
     OPTION_SEARCH_EPISODES_LIMIT,
     DEFAULT_OPTION_SEARCH_EPISODES_LIMIT,
-    OPTION_SEARCH_CHANNELS_TV_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_TV_LIMIT,
-    OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
-    DEFAULT_OPTION_SEARCH_CHANNELS_RADIO_LIMIT,
+    OPTION_SEARCH_CHANNELS_LIMIT,
+    DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT,
     OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
     DEFAULT_OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
     OPTION_SEARCH_RECENTLY_ADDED_SONGS_LIMIT,
@@ -64,6 +62,7 @@ CATEGORY_ALBUMS = "albums"
 CATEGORY_ARTISTS = "artists"
 CATEGORY_MUSIC_VIDEOS = "musicvideos"
 CATEGORY_EPISODES = "episodes"
+CATEGORY_CHANNELS = "channels"
 
 VALID_CATEGORIES = [
     CATEGORY_ALL,
@@ -74,6 +73,7 @@ VALID_CATEGORIES = [
     CATEGORY_ARTISTS,
     CATEGORY_MUSIC_VIDEOS,
     CATEGORY_EPISODES,
+    CATEGORY_CHANNELS
 ]
 
 
@@ -297,6 +297,46 @@ async def _search_artists(
     return result.get("artists", []) if result else None
 
 
+async def _search_channels(hass: HomeAssistant, entity_id: str, query: str, search_limits: dict):
+    limit_value = int(
+        search_limits.get(CATEGORY_CHANNELS, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT)
+    )
+    resultTV = await _search_channel (hass, entity_id, query,limit_value, "alltv");
+    resultRadio = await _search_channel(hass, entity_id, query,limit_value, "allradio");
+
+    combined_results = resultTV + resultRadio
+    
+    return combined_results
+
+async def _search_channel(hass: HomeAssistant, entity_id: str, query: str, limit_value: int,channel_group_id: str):    
+    result = await async_call_method(
+        hass,
+        entity_id,
+        "PVR.GetChannels",
+        properties=["uniqueid", "thumbnail", "channeltype", "channel", "channelnumber"],
+        channelgroupid=channel_group_id,
+        sort={
+            "method": "label",
+            "order": "ascending",
+            "ignorearticle": False,
+        },
+    )
+
+    channels = result.get("channels", [])
+
+    if channels:
+        query_lower = query.lower()
+        filtered_channels = [
+            ch for ch in channels 
+            if query_lower in ch.get("label", "").lower()
+        ]
+        final_channels = filtered_channels[:limit_value]
+    else:
+        final_channels = []
+
+    return final_channels
+
+
 _CATEGORY_HANDLERS = {
     CATEGORY_MOVIES: _search_movies,
     CATEGORY_TVSHOWS: _search_tvshows,
@@ -305,8 +345,8 @@ _CATEGORY_HANDLERS = {
     CATEGORY_ARTISTS: _search_artists,
     CATEGORY_MUSIC_VIDEOS: _search_musicvideos,
     CATEGORY_EPISODES: _search_episodes,
+    CATEGORY_CHANNELS: _search_channels,
 }
-
 
 async def _async_search(
     hass: HomeAssistant, entity_id: str, query: str, category: str, search_limits: dict
@@ -424,7 +464,7 @@ async def websocket_search_artist(
 
         structured_albums.sort(key=lambda x: x.get("year", 0), reverse=True)
         results = {"albums": structured_albums}
-        connection.send_result(msg_id, {"results": results})
+        connection.send_result(msg_id, results)
 
     except Exception as e:
         _LOGGER.error("Error during artist drill-down for %s: %s", artist_id, e)
@@ -607,7 +647,7 @@ async def websocket_search_recently_added(
                     else:
                         item["thumbnail"] = None
 
-        connection.send_result(msg_id, {"results": results})
+        connection.send_result(msg_id, results)
 
     except Exception as e:
         connection.send_error(
@@ -634,11 +674,14 @@ async def websocket_search_recently_played(
     msg_id = msg["id"]
     entry_id = msg["entry_id"]
     msg_id = msg["id"]
-    kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
+    _LOGGER.debug(">>> Entering search recently played items")
+
+    kodi_entity_id = _get_kodi_entity_id_from_entry(hass, msg["entry_id"])
     config_entry = hass.config_entries.async_get_entry(entry_id)
     if not config_entry or config_entry.domain != DOMAIN:
         connection.send_error(msg_id, "invalid_entry", f"Entry {entry_id} not found")
         return
+
     songsLimits = int(
         config_entry.options.get(
             OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
@@ -651,6 +694,7 @@ async def websocket_search_recently_played(
             DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_ALBUMS_LIMIT,
         )
     )
+
     try:
         songs_task = async_call_method(
             hass,
@@ -672,8 +716,9 @@ async def websocket_search_recently_played(
                 "method": "lastplayed",
                 "order": "descending",
             },
-            limits={"end": songsLimits},
+            limits={"start": 0, "end": songsLimits},
         )
+
         albums_task = async_call_method(
             hass,
             kodi_entity_id,
@@ -700,7 +745,7 @@ async def websocket_search_recently_played(
             "albums": raw_albums.get("albums", []) if raw_albums else [],
         }
 
-        connection.send_result(msg_id, {"results": results})
+        connection.send_result(msg_id, results)
 
     except Exception as e:
         connection.send_error(
@@ -758,6 +803,9 @@ async def websocket_search(
         CATEGORY_EPISODES: config_entry.options.get(
             OPTION_SEARCH_EPISODES_LIMIT, DEFAULT_OPTION_SEARCH_EPISODES_LIMIT
         ),
+         CATEGORY_CHANNELS: config_entry.options.get(
+            OPTION_SEARCH_CHANNELS_LIMIT, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT
+        ),
     }
 
     if not await _is_kodi_connected(hass, kodi_entity_id):
@@ -771,26 +819,6 @@ async def websocket_search(
         return
 
     results = await _async_search(hass, kodi_entity_id, query, category, search_limits)
-
-    mp_component = hass.data.get("media_player")
-    mp_entity = mp_component.get_entity(kodi_entity_id) if mp_component else None
-    if mp_entity:
-        for cat, items in results.items():
-            for item in items:
-                thumb = item.get("thumbnail")
-
-                final_thumb = None
-                if isinstance(thumb, list):
-                    final_thumb = next((t for t in thumb if t is not None), None)
-                elif isinstance(thumb, str):
-                    final_thumb = thumb
-
-                if final_thumb and final_thumb.startswith("image://"):
-                    item["thumbnail"] = await mp_entity.async_get_browse_image(
-                        "image", final_thumb
-                    )
-                else:
-                    item["thumbnail"] = None
 
     connection.send_result(msg_id, {"results": results})
 
@@ -836,7 +864,7 @@ async def _async_handle_search_tvshow(
             kodi_entity_id,
             "VideoLibrary.GetSeasons",
             tvshowid=tvshow_id,
-            properties=["title", "season", "thumbnail", "tvshowid","art"],
+            properties=["title", "season", "thumbnail", "tvshowid", "art"],
         )
         seasons = seasons_response.get("seasons", []) if seasons_response else []
 
@@ -871,9 +899,7 @@ async def _async_handle_search_tvshow(
 
             for ep in season_episodes:
                 if "runtime" in ep:
-                    ep["duration"] = ep[
-                        "runtime"
-                    ]  
+                    ep["duration"] = ep["runtime"]
 
             season["episodes"] = season_episodes
 
@@ -896,7 +922,7 @@ async def _async_handle_search_tvshow(
                         )
 
         results = {"seasons": seasons}
-        connection.send_result(msg_id, {"results": results})
+        connection.send_result(msg_id, results)
 
     except Exception as e:
         _LOGGER.error("Error searching TV show details: %s", e)
