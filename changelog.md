@@ -5,7 +5,7 @@
 
 **IMPORTANT : BREAKING CHANGES**
 
-This version is not backward compatible. The cards linked to the previous versions (Search card and Playlist card) must also be upgraded to new version. The other cards potentially based on the previous version of this integration will probably not work anymore.
+This version is not backward compatible. The cards linked to the previous versions (Search card and Playlist card) must also be upgraded to new version. The other cards based on the previous version of this integration won't probably work anymore.
 
 ## 5.4.0
 

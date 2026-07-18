@@ -92,6 +92,26 @@ class KodiConfigSensor(SensorEntity):
     
         ID is the unique identifier in Kodi (songid, movieid, episodeid, etc).
         """
+
+       # Quick call to send ID's
+        result = await async_call_method(self._hass, self._kodi_entity_id, "Player.GetActivePlayers")
+        if result:
+            player_id = result[0].get("playerid")
+            
+            item_data = await async_call_method(
+                self._hass, 
+                self._kodi_entity_id, 
+                "Player.GetItem", 
+                playerid=player_id, 
+                properties=["title"]
+            )
+            
+            if item_data and "item" in item_data:
+                item = item_data["item"]
+                self._current_track = {"id": item.get("id"), "type": item.get("type")}
+                self.async_write_ha_state()
+
+        # Back to normal process
         if self._attr_state in ("unavailable", "off", "idle"):
             self._current_track = None
             return

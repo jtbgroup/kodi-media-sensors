@@ -66,6 +66,8 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_playlist_reorder)
     websocket_api.async_register_command(hass, websocket_playlist_play_item)
     websocket_api.async_register_command(hass, websocket_playlist_add_item)
+    websocket_api.async_register_command(hass, websocket_playlist_play_playlist)
+    websocket_api.async_register_command(hass, websocket_playlist_add_playlist)
 
 
 def _get_default_player_id(item_name):
@@ -343,6 +345,8 @@ async def websocket_playlist_subscribe(hass, connection, msg):
 
         last_player_type = current_player_type
 
+       
+
         data = await _async_get_full_playlist_data(hass, kodi_entity_id)
         items = data["items"]
 
@@ -530,6 +534,115 @@ async def websocket_playlist_reorder(
 
 @websocket_api.websocket_command(
     {
+        vol.Required("type"): "kodi_media_sensors/playlist_play",
+        vol.Required("entry_id"): str,
+        vol.Required("path"): str,
+        vol.Optional("playlistid"): int,
+    }
+)
+@websocket_api.async_response
+async def websocket_playlist_play_playlist(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    entry_id = msg["entry_id"]
+    playlist_path = msg["path"]
+    kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
+    playlist_id = msg["playlistid"] | PLAYER_ID_AUDIO
+
+    await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Playlist.Clear",
+        playlistid=playlist_id,
+    )
+
+    await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Playlist.Insert",
+        playlistid=playlist_id,
+        position=0,
+        item={"directory": playlist_path},
+    )
+
+    opened = await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Player.Open",
+        item={
+            "playlistid": playlist_id,
+            "position": 0,
+        },
+    )
+
+    # Delay introduced to avoid race conditions in events and having errors in the log
+    await asyncio.sleep(0.5)
+
+    if opened:
+        hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})
+        connection.send_result(msg["id"])
+    else:
+        _LOGGER.error("Failed to open playlist file: %s", playlist_path)
+        connection.send_error(
+            msg["id"], "play_failed", f"Failed to open playlist {playlist_path}"
+        )
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/playlist_add",
+        vol.Required("entry_id"): str,
+        vol.Required("path"): str,
+        vol.Optional("playlistid"): int,
+        vol.Optional("position"): vol.In(["next", "last"]),
+    }
+)
+@websocket_api.async_response
+async def websocket_playlist_add_playlist(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
+) -> None:
+    entry_id = msg["entry_id"]
+    playlist_path = msg["path"]
+    kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
+    playlist_id = msg["playlistid"] or PLAYER_ID_AUDIO
+    position = msg["position"] or "last"
+    index = 1;
+
+    if position == "last":
+        items = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "Playlist.GetItems",
+            playlistid=playlist_id,
+        )
+        items_list = items.get("items", []) if items else []
+        playlist_length = len(items_list)
+        index = playlist_length
+
+    added = await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Playlist.Insert",
+        playlistid=playlist_id,
+        position=index,
+        item={"directory": playlist_path},
+    )
+
+    # Delay introduced to avoid race conditions in events and having errors in the log
+    await asyncio.sleep(0.5)
+
+    if added:
+        hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})
+        connection.send_result(msg["id"])
+    else:
+        _LOGGER.error("Failed to open playlist file: %s", playlist_path)
+        connection.send_error(
+            msg["id"], "play_failed", f"Failed to open playlist {playlist_path}"
+        )
+
+
+@websocket_api.websocket_command(
+    {
         vol.Required("type"): "kodi_media_sensors/playlist_play_item",
         vol.Required("entry_id"): str,
         vol.Required("item_id"): vol.Any(int, str),
@@ -600,7 +713,9 @@ async def websocket_playlist_play_item(
                 playlist_id,
             )
             connection.send_error(
-                msg["id"], "insert_failed", f"Failed to insert {item_name} into playlist"
+                msg["id"],
+                "insert_failed",
+                f"Failed to insert {item_name} into playlist",
             )
             return
 
@@ -641,7 +756,8 @@ async def websocket_playlist_play_item(
                 "filemusicplaylist",
             ]
         ),
-        vol.Required("position"): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        # vol.Required("position"): vol.All(vol.Coerce(int), vol.Range(min=0)),
+        vol.Optional("position"): vol.In(["next", "last"]),
     }
 )
 @websocket_api.async_response
@@ -652,9 +768,22 @@ async def websocket_playlist_add_item(
     kodi_entity_id = _get_kodi_entity_id_from_entry(hass, entry_id)
     item_id = msg["item_id"]
     item_name = msg["item_name"]
-    insert_position = msg["position"]
+    position = msg["position"] or "last"
 
     playlist_id = await _async_get_active_playlist_id(hass, kodi_entity_id)
+
+    index = 1;
+    if position == "last":
+        items = await async_call_method(
+            hass,
+            kodi_entity_id,
+            "Playlist.GetItems",
+            playlistid=playlist_id,
+        )
+        items_list = items.get("items", []) if items else []
+        playlist_length = len(items_list)
+        index = playlist_length
+
 
     if playlist_id is None:
         playlist_id = 0 if item_name in ["songid", "albumid"] else 1
@@ -664,9 +793,10 @@ async def websocket_playlist_add_item(
         kodi_entity_id,
         "Playlist.Insert",
         playlistid=playlist_id,
-        position=insert_position,
+        position=index,
         item={item_name: item_id},
     )
+
 
     if inserted:
         hass.bus.async_fire(f"{DOMAIN}_playlist_updated", {"entry_id": entry_id})
@@ -677,7 +807,7 @@ async def websocket_playlist_add_item(
             item_name,
             item_id,
             playlist_id,
-            insert_position,
+            index,
         )
         connection.send_error(
             msg["id"], "add_failed", f"Failed to insert {item_name} into playlist"

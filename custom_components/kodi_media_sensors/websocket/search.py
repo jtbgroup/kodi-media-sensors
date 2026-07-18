@@ -7,6 +7,7 @@ query and an optional category, and receives a single result message.
 
 import asyncio
 import logging
+import pathlib
 import voluptuous as vol
 
 from homeassistant.components import websocket_api
@@ -63,6 +64,7 @@ CATEGORY_ARTISTS = "artists"
 CATEGORY_MUSIC_VIDEOS = "musicvideos"
 CATEGORY_EPISODES = "episodes"
 CATEGORY_CHANNELS = "channels"
+CATEGORY_MUSICPLAYLIST = "musicplaylists"
 
 VALID_CATEGORIES = [
     CATEGORY_ALL,
@@ -73,7 +75,7 @@ VALID_CATEGORIES = [
     CATEGORY_ARTISTS,
     CATEGORY_MUSIC_VIDEOS,
     CATEGORY_EPISODES,
-    CATEGORY_CHANNELS
+    CATEGORY_CHANNELS,
 ]
 
 
@@ -85,6 +87,7 @@ def async_register_websockets(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_search_artist)
     websocket_api.async_register_command(hass, websocket_search_recently_added)
     websocket_api.async_register_command(hass, websocket_search_tvshow)
+    websocket_api.async_register_command(hass, websocket_search_musicplaylists)
 
 
 def _get_kodi_entity_id_from_entry(hass, entry_id):
@@ -297,18 +300,26 @@ async def _search_artists(
     return result.get("artists", []) if result else None
 
 
-async def _search_channels(hass: HomeAssistant, entity_id: str, query: str, search_limits: dict):
+async def _search_channels(
+    hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
+):
     limit_value = int(
         search_limits.get(CATEGORY_CHANNELS, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT)
     )
-    resultTV = await _search_channel (hass, entity_id, query,limit_value, "alltv");
-    resultRadio = await _search_channel(hass, entity_id, query,limit_value, "allradio");
-
+    resultTV = await _search_channel(hass, entity_id, query, limit_value, "alltv")
+    resultRadio = await _search_channel(hass, entity_id, query, limit_value, "allradio")
     combined_results = resultTV + resultRadio
-    
+
     return combined_results
 
-async def _search_channel(hass: HomeAssistant, entity_id: str, query: str, limit_value: int,channel_group_id: str):    
+
+async def _search_channel(
+    hass: HomeAssistant,
+    entity_id: str,
+    query: str,
+    limit_value: int,
+    channel_group_id: str,
+):
     result = await async_call_method(
         hass,
         entity_id,
@@ -327,14 +338,54 @@ async def _search_channel(hass: HomeAssistant, entity_id: str, query: str, limit
     if channels:
         query_lower = query.lower()
         filtered_channels = [
-            ch for ch in channels 
-            if query_lower in ch.get("label", "").lower()
+            ch for ch in channels if query_lower in ch.get("label", "").lower()
         ]
         final_channels = filtered_channels[:limit_value]
     else:
         final_channels = []
 
     return final_channels
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): "kodi_media_sensors/search_musicplaylists",
+        vol.Required("entry_id"): str,
+        vol.Optional("path"): str
+    }
+)
+@websocket_api.async_response
+async def websocket_search_musicplaylists(    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict,
+) -> None:
+    """Get detailed view of an artist (Albums containing their Songs)."""
+    msg_id = msg["id"]
+    kodi_entity_id = _get_kodi_entity_id_from_entry(hass, msg["entry_id"])
+    path = "special://musicplaylists"
+
+
+    if "path" in msg:
+        path = msg["path"]
+
+    result = await async_call_method(
+        hass,
+        kodi_entity_id,
+        "Files.GetDirectory",
+        directory=path,
+        media="files",
+        sort={
+        "method": "label",
+        "order": "ascending",
+        "ignorearticle": True
+        }
+    )
+  
+    playlist_files = result.get("files", [])
+
+    results = {"musicplaylists": playlist_files}
+
+    connection.send_result(msg_id, results)
 
 
 _CATEGORY_HANDLERS = {
@@ -346,7 +397,9 @@ _CATEGORY_HANDLERS = {
     CATEGORY_MUSIC_VIDEOS: _search_musicvideos,
     CATEGORY_EPISODES: _search_episodes,
     CATEGORY_CHANNELS: _search_channels,
+    # CATEGORY_MUSICPLAYLIST: _search_musicplaylists,
 }
+
 
 async def _async_search(
     hass: HomeAssistant, entity_id: str, query: str, category: str, search_limits: dict
@@ -803,8 +856,12 @@ async def websocket_search(
         CATEGORY_EPISODES: config_entry.options.get(
             OPTION_SEARCH_EPISODES_LIMIT, DEFAULT_OPTION_SEARCH_EPISODES_LIMIT
         ),
-         CATEGORY_CHANNELS: config_entry.options.get(
+        CATEGORY_CHANNELS: config_entry.options.get(
             OPTION_SEARCH_CHANNELS_LIMIT, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT
+        ),
+        CATEGORY_MUSICPLAYLIST: config_entry.options.get(
+            OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
+            DEFAULT_OPTION_SEARCH_MUSIC_PLAYLISTS_LIMIT,
         ),
     }
 
