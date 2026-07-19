@@ -303,14 +303,32 @@ async def _search_artists(
 async def _search_channels(
     hass: HomeAssistant, entity_id: str, query: str, search_limits: dict
 ):
+    # Verify the PVR addon before launching the queries
+    try:
+        pvr_status = await async_call_method(
+            hass,
+            entity_id,
+            "XBMC.GetInfoBooleans",
+            booleans=["PVR.HasTVChannels", "PVR.HasRadioChannels"]
+        )
+        
+        if not pvr_status or (
+            not pvr_status.get("PVR.HasTVChannels") and 
+            not pvr_status.get("PVR.HasRadioChannels")
+        ):
+            return []
+        
+    except Exception as e:
+        _LOGGER.debug("PVR.GetProperties unavailable or error: %s", e)
+        return []
+
     limit_value = int(
         search_limits.get(CATEGORY_CHANNELS, DEFAULT_OPTION_SEARCH_CHANNELS_LIMIT)
     )
     resultTV = await _search_channel(hass, entity_id, query, limit_value, "alltv")
     resultRadio = await _search_channel(hass, entity_id, query, limit_value, "allradio")
-    combined_results = resultTV + resultRadio
 
-    return combined_results
+    return (resultTV or []) + (resultRadio or [])
 
 
 async def _search_channel(
