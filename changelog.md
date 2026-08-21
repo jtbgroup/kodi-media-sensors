@@ -1,6 +1,10 @@
 # KODI MEDIA SENSOR - Changelog
 
 
+## 6.0.1
+
+- new build
+
 ## 6.0.0
 
 **IMPORTANT : BREAKING CHANGES**
