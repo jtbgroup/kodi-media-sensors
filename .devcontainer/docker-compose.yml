@@ -1,6 +1,6 @@
 services:
   homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:rc
+    image: ghcr.io/home-assistant/home-assistant:2026.7.2
     container_name: ha_dev
     network_mode: host
     volumes:
