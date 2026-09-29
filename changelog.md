@@ -1,7 +1,7 @@
 # KODI MEDIA SENSOR - Changelog
 
 
-## 6.0.2
+## 6.0.3
 
 - Code cleanup.
 
