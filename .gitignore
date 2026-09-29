@@ -32,7 +32,7 @@ venv/
 config/
 
 # ------------------
-# Personnal files for config
+# Personal configuration files
 # ------------------
 ha-templates/test connections.txt
 

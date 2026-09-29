@@ -4,11 +4,11 @@ services:
     container_name: ha_dev
     network_mode: host
     volumes:
-      # Permet à VS Code de s'ouvrir dans votre projet sans erreur
+      # Allow VS Code to open the project without path errors
       - ..:/workspaces/kodi-media-sensors:cached
-      # Permet à Home Assistant de stocker sa configuration locale
+      # Store the local Home Assistant configuration
       - ../config:/config
-      # Injecte directement votre code là où Home Assistant le cherche
+      # Mount the integration where Home Assistant expects it
       - ../custom_components:/config/custom_components
     environment:
       - PYTHONUNBUFFERED=1

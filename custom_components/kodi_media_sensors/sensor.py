@@ -10,11 +10,10 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
-from .const import DOMAIN, CONF_KODI_ENTITY
+from .const import CONF_KODI_ENTITY
 from .kodi_client import async_call_method
 
 _LOGGER = logging.getLogger(__name__)
-
 
 
 async def async_setup_entry(
@@ -33,7 +32,7 @@ class KodiConfigSensor(SensorEntity):
     _unsubscribe_state_change: callable | None = None
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialisation."""
+        """Initialization."""
         self._hass = hass
         self._entry = entry
         self._kodi_entity_id = entry.data.get(CONF_KODI_ENTITY)
@@ -89,32 +88,15 @@ class KodiConfigSensor(SensorEntity):
 
     async def _async_update_current_track(self) -> None:
         """Fetch the current playing item's ID and type only.
-    
+
         ID is the unique identifier in Kodi (songid, movieid, episodeid, etc).
         """
 
-       # Quick call to send ID's
-        result = await async_call_method(self._hass, self._kodi_entity_id, "Player.GetActivePlayers")
-        if result:
-            player_id = result[0].get("playerid")
-            
-            item_data = await async_call_method(
-                self._hass, 
-                self._kodi_entity_id, 
-                "Player.GetItem", 
-                playerid=player_id, 
-                properties=["title"]
-            )
-            
-            if item_data and "item" in item_data:
-                item = item_data["item"]
-                self._current_track = {"id": item.get("id"), "type": item.get("type")}
-                self.async_write_ha_state()
-
-        # Back to normal process
         if self._attr_state in ("unavailable", "off", "idle"):
             self._current_track = None
             return
+
+        self._current_track = None
 
         try:
             # 1. Retrieve the active player
@@ -149,29 +131,26 @@ class KodiConfigSensor(SensorEntity):
                 raw_artist_id = item.get("artistid")
                 artist_id = None
                 
-                # If it is a list and not empty, take the first item (index 0)
+                # Kodi returns artist IDs as a list for music items.
                 if isinstance(raw_artist_id, list) and raw_artist_id:
                     artist_id = raw_artist_id[0]
-                # If there is a value but it is unexpectedly not a list
                 elif raw_artist_id is not None and not isinstance(raw_artist_id, list):
                     artist_id = raw_artist_id
-                        
+
                 if item_id is not None:
-                    # 1. Required base data
                     self._current_track = {
-                        "id": item_id,      
+                        "id": item_id,
                         "type": item_type,
                     }
-                    
-                    # 2. Add artist_id only if it was found
+
                     if artist_id is not None:
                         self._current_track["artist_id"] = artist_id
-                    else:
-                        self._current_track = None
 
         except Exception as err:
             _LOGGER.debug("Error updating current track: %s", err)
             self._current_track = None
+
+        self.async_write_ha_state()
 
     @property
     def state(self) -> str:
@@ -180,7 +159,7 @@ class KodiConfigSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose config entry info et current track."""
+        """Expose config entry information and the current track."""
         attrs = {
             "config_entry_id": self._entry.entry_id,
             "kodi_entity_id": self._kodi_entity_id,

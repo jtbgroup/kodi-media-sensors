@@ -234,7 +234,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             schema_base,
         )
 
-        # SEARCH RECENTLT PLAYED
+        # SEARCH RECENTLY PLAYED
         schema_base = self.add_int_to_schema(
             OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,
             DEFAULT_OPTION_SEARCH_RECENTLY_PLAYED_SONGS_LIMIT,

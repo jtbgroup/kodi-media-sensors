@@ -18,6 +18,8 @@ is the single place that needs updating.
 import logging
 
 from homeassistant.core import HomeAssistant
+from typing import Any
+
 from homeassistant.helpers import entity_registry as er
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +65,7 @@ async def async_call_method(
     entity_id: str,
     method: str,
     **params,
-) -> dict | None:
+) -> Any:
     """Call a Kodi JSON-RPC method and return its result directly.
 
     Returns the JSON-RPC `result` dict from Kodi, or None on error
